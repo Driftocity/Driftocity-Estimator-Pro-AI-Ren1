@@ -2062,7 +2062,8 @@ ${Object.entries(TRADES).map(([k,t])=>`<button class="trade-pill" onclick="App.s
       res.innerHTML = html;
     })
     .catch(function(err) {
-      res.innerHTML = '<div class="ai-error">&#9888;&#65039; ' + self.esc(err.message || 'Unknown error. Check connection and try again.') + '</div>';
+      var msg = typeof err === 'string' ? err : (err && err.message) ? err.message : JSON.stringify(err);
+      res.innerHTML = '<div class="ai-error">&#9888;&#65039; ' + self.esc(msg || 'Unknown error. Check connection and try again.') + '</div>';
     })
     .finally(function() { btn.disabled = false; });
   },
