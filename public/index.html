@@ -1705,10 +1705,10 @@ const App = {
         return;
       }
     }
-    // Only blank the estimate if we're creating a NEW one, not editing existing
-    if (v==='new_estimate' && this.view!=='new_estimate') {
-      const isEditing = this.est && this.estimates.find(x=>x.id===this.est.id);
-      if (!isEditing) this.est = this.blank();
+    // Only blank if genuinely new — never blank if est already has saved data
+    if (v==='new_estimate') {
+      const hasExisting = this.est && this.est.id && this.estimates.find(x=>x.id===this.est.id);
+      if (!hasExisting) this.est = this.blank();
     }
     this.view = v;
     this.render();
@@ -2206,11 +2206,35 @@ ${t.categories.map(cat=>`<div class="picker-category">
   },
 
   editEst(id) {
+    // Find the estimate by id
     const e = this.estimates.find(x=>x.id===id);
-    if (!e) return;
-    // Deep copy the estimate into current est BEFORE calling go()
-    // so go() sees it's an existing estimate and doesn't blank it
-    this.est = JSON.parse(JSON.stringify(e));
+    if (!e) { console.error('editEst: estimate not found', id); return; }
+    // Deep copy ALL fields into this.est
+    this.est = {
+      id:             e.id,
+      date:           e.date,
+      status:         e.status,
+      clientName:     e.clientName     || '',
+      clientEmail:    e.clientEmail    || '',
+      clientPhone:    e.clientPhone    || '',
+      projectAddress: e.projectAddress || '',
+      projectCity:    e.projectCity    || '',
+      projectZip:     e.projectZip     || '',
+      projectName:    e.projectName    || '',
+      tradeType:      e.tradeType      || '',
+      notes:          e.notes          || '',
+      validUntil:     e.validUntil     || '',
+      startDate:      e.startDate      || '',
+      lineItems:      JSON.parse(JSON.stringify(e.lineItems || [])),
+      overhead:       e.overhead       != null ? e.overhead    : 15,
+      profit:         e.profit         != null ? e.profit      : 10,
+      taxRate:        e.taxRate        != null ? e.taxRate     : 8.5,
+      depositPct:     e.depositPct     != null ? e.depositPct  : 30,
+      terms:          e.terms          || '',
+      total:          e.total          || 0,
+      lastMod:        e.lastMod        || Date.now(),
+    };
+    // Go directly to builder without triggering go() which might reset
     this.view = 'new_estimate';
     this.render();
     window.scrollTo(0,0);
