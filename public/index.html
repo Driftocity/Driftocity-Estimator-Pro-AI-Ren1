@@ -2488,14 +2488,14 @@ ${this.hasSub()
 <button class="btn-subscribe" onclick="App.doSubscribe()">Subscribe for $5.99/month</button>
 ${this.trialLeft>0?`<button class="btn-trial" onclick="App.go('dashboard')">Continue Free Trial (1 free estimate)</button>`:''}
 <p class="sub-disclaimer">Powered by Stripe secure payments. Cancel anytime.</p>
-<div class="demo-activate"><p>Demo / Developer mode:</p><button class="btn-link" onclick="App.activateSub()">Activate Demo Subscription</button></div>
+
 </div>`;
   },
 
   doSubscribe() {
     window.open('https://buy.stripe.com/cNicN5c1Cb1AbVF54H0000c','_blank');
   },
-  activateSub() { this.sub={active:true,plan:'monthly',price:5.99,start:Date.now()}; this.save(); toast('✅ Subscription activated!'); this.go('dashboard'); },
+
 
   // ─── UTILS ────────────────────────────────────────────────────
   exportData() {
