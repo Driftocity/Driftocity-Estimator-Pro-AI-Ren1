@@ -1705,7 +1705,11 @@ const App = {
         return;
       }
     }
-    if (v==='new_estimate' && this.view!=='new_estimate') this.est = this.blank();
+    // Only blank the estimate if we're creating a NEW one, not editing existing
+    if (v==='new_estimate' && this.view!=='new_estimate') {
+      const isEditing = this.est && this.estimates.find(x=>x.id===this.est.id);
+      if (!isEditing) this.est = this.blank();
+    }
     this.view = v;
     this.render();
     window.scrollTo(0,0);
@@ -2202,8 +2206,14 @@ ${t.categories.map(cat=>`<div class="picker-category">
   },
 
   editEst(id) {
-    const e=this.estimates.find(x=>x.id===id);
-    if(e){ this.est=JSON.parse(JSON.stringify(e)); this.go('new_estimate'); }
+    const e = this.estimates.find(x=>x.id===id);
+    if (!e) return;
+    // Deep copy the estimate into current est BEFORE calling go()
+    // so go() sees it's an existing estimate and doesn't blank it
+    this.est = JSON.parse(JSON.stringify(e));
+    this.view = 'new_estimate';
+    this.render();
+    window.scrollTo(0,0);
   },
 
   dupEst(id) {
