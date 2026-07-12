@@ -7,6 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Estimate Pro">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <title>Driftocity Estimate Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1993,4 +1997,537 @@ ${Object.entries(TRADES).map(([k,t])=>`<button class="trade-pill" onclick="App.s
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: prompt })
     })
-    .then
+    .then(function(resp) {
+      return resp.json().then(function(data) {
+        if (!resp.ok) throw new Error(data.error || 'API error ' + resp.status);
+        return data;
+      });
+    })
+    .then(function(data) {
+      if (data.error) throw new Error(data.error);
+      var raw = data.content.map(function(b){ return b.text || ''; }).join('');
+
+      // Extract JSON array
+      var s = raw.indexOf('[');
+      var e = raw.lastIndexOf(']');
+      if (s === -1 || e === -1 || e <= s) throw new Error('No JSON array in response. Try again.');
+      var jsonStr = raw.slice(s, e + 1);
+
+      var items;
+      try {
+        items = JSON.parse(jsonStr);
+      } catch(parseErr) {
+        // Try to salvage truncated response
+        var lastClose = jsonStr.lastIndexOf('},');
+        if (lastClose > 0) {
+          try { items = JSON.parse(jsonStr.slice(0, lastClose + 1) + ']'); }
+          catch(e2) { throw new Error('Response cut off. Please try again.'); }
+        } else {
+          throw new Error('Could not parse response. Please try again.');
+        }
+      }
+
+      if (!Array.isArray(items) || !items.length) throw new Error('No items returned. Add more detail to your description.');
+
+      // Validate and clamp each item
+      items = items.map(function(it) {
+        return {
+          id: String(it.id || 'custom_' + Date.now()),
+          name: String(it.name || 'Item'),
+          qty: Math.max(0.01, parseFloat(it.qty) || 1),
+          unit: String(it.unit || 'ls'),
+          unitPrice: Math.max(0, parseFloat(it.unitPrice) || 0),
+          laborPct: Math.min(1, Math.max(0, parseFloat(it.laborPct) || 0.6)),
+          tradeLabel: String(it.tradeLabel || 'General'),
+          notes: String(it.notes || '')
+        };
+      });
+
+      self.aiItems = items;
+      var m = getMultiplier(zip);
+      var total = items.reduce(function(s, it){ return s + it.unitPrice * m * it.qty; }, 0);
+
+      var html = '<div class="ai-result-preview">';
+      items.forEach(function(it) {
+        html += '<div class="ai-result-item">'
+          + '<div><div class="ai-result-name">' + self.esc(it.name) + '</div>'
+          + '<div class="ai-result-detail">' + it.qty + ' ' + it.unit
+          + (it.tradeLabel ? ' &middot; ' + self.esc(it.tradeLabel) : '')
+          + (it.notes ? ' &middot; ' + self.esc(it.notes) : '') + '</div></div>'
+          + '<div class="ai-result-price">' + self.fmt(it.unitPrice * m * it.qty) + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+      html += '<div class="ai-add-bar">'
+        + '<div class="ai-add-count">&#10024; ' + items.length + ' items &middot; ~' + self.fmt(total) + '</div>'
+        + '<button class="btn-ai-add-all" onclick="App.addAiItems()">Add All to Estimate</button>'
+        + '</div>';
+
+      res.innerHTML = html;
+    })
+    .catch(function(err) {
+      var msg = typeof err === 'string' ? err : (err && err.message) ? err.message : JSON.stringify(err);
+      res.innerHTML = '<div class="ai-error">&#9888;&#65039; ' + self.esc(msg || 'Unknown error. Check connection and try again.') + '</div>';
+    })
+    .finally(function() { btn.disabled = false; });
+  },
+
+  addAiItems() {
+    var items = this.aiItems;
+    if (!items || !items.length) return;
+    if (!this.est) this.est = this.blank();
+    this.est.lineItems = this.est.lineItems || [];
+    var count = 0;
+    items.forEach(function(it) {
+      App.est.lineItems.push({
+        id: String(it.id || 'ai') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,4),
+        name: String(it.name || 'Item'),
+        qty: Math.max(0.01, parseFloat(it.qty) || 1),
+        unit: String(it.unit || 'ls'),
+        unitPrice: Math.max(0, parseFloat(it.unitPrice) || 0),
+        laborPct: Math.min(1, Math.max(0, parseFloat(it.laborPct) || 0.6)),
+        tradeLabel: String(it.tradeLabel || 'AI Generated'),
+        notes: String(it.notes || '')
+      });
+      count++;
+    });
+    this.aiItems = null;
+    toast('✅ ' + count + ' items added!');
+    this.render();
+  },
+
+  clearScope() {
+    const i=document.getElementById('ai-input'); if(i) i.value='';
+    const r=document.getElementById('ai-result'); if(r) r.innerHTML='';
+    this.aiItems=null;
+  },
+
+  // ─── ITEM PICKER ──────────────────────────────────────────────
+  showPicker(tradeKey) {
+    const modal = document.getElementById('picker');
+    const body  = document.getElementById('picker-body');
+    if (!modal||!body) return;
+    body.innerHTML = tradeKey ? this.pickerTrade(tradeKey) : this.pickerHome();
+    modal.classList.remove('hidden');
+  },
+  showPickerTrade(k) { this.showPicker(k); },
+
+  pickerHome() {
+    return `<div class="modal-handle"></div><h3 class="modal-title">Add Line Item</h3>
+<div class="trade-picker-grid">
+${Object.entries(TRADES).map(([k,t])=>`<button class="trade-picker-item" onclick="document.getElementById('picker-body').innerHTML=App.pickerTrade('${k}')">
+  <span class="tpi-icon">${t.icon}</span><span class="tpi-label">${t.label}</span>
+</button>`).join('')}
+</div>`;
+  },
+
+  pickerTrade(k) {
+    const t = TRADES[k]; if(!t) return '';
+    const mult = getMultiplier(this.est?.projectZip||'');
+    return `<div class="modal-handle"></div>
+<button class="modal-back" onclick="document.getElementById('picker-body').innerHTML=App.pickerHome()">← All Trades</button>
+<h3 class="modal-sub-title">${t.icon} ${t.label}</h3>
+${t.categories.map(cat=>`<div class="picker-category">
+  <div class="picker-cat-name">${cat.name}</div>
+  ${cat.items.map(item=>`<div class="picker-item" onclick="App.addCatalogItem('${k}','${item.id}');App.closePicker()">
+    <div class="pi-left"><div class="pi-name">${item.name}</div><div class="pi-unit">${UNIT_LABELS[item.unit]||item.unit}</div></div>
+    <div class="pi-right"><div class="pi-price">${this.fmt(item.basePrice*mult)}</div><div class="pi-per">per ${UNIT_LABELS[item.unit]||item.unit}</div></div>
+  </div>`).join('')}
+</div>`).join('')}`;
+  },
+
+  addCatalogItem(tradeKey, itemId) {
+    const t=TRADES[tradeKey]; if(!t) return;
+    let found;
+    for(const cat of t.categories){ found=cat.items.find(i=>i.id===itemId); if(found) break; }
+    if(!found) return;
+    if(!this.est) this.est=this.blank();
+    this.est.lineItems=this.est.lineItems||[];
+    this.est.lineItems.push({id:found.id+'_'+Date.now(),name:found.name,qty:1,unit:found.unit,unitPrice:found.basePrice,laborPct:found.laborPct,tradeLabel:t.label,notes:''});
+    toast('✅ Item added');
+    this.render();
+  },
+
+  addBlank() {
+    if(!this.est) this.est=this.blank();
+    this.est.lineItems=this.est.lineItems||[];
+    this.est.lineItems.push({id:'custom_'+Date.now(),name:'Custom Item',qty:1,unit:'ls',unitPrice:0,laborPct:0.6,tradeLabel:'Custom',notes:''});
+    this.render();
+  },
+
+  closePicker() { const m=document.getElementById('picker'); if(m) m.classList.add('hidden'); },
+
+  // ─── LINE ITEM HELPERS ────────────────────────────────────────
+  setE(f,v) { if(!this.est) this.est=this.blank(); this.est[f]=v; },
+  setLI(i,f,v) { if(this.est&&this.est.lineItems&&this.est.lineItems[i]) this.est.lineItems[i][f]=v; },
+  delLI(i) { if(this.est&&this.est.lineItems){ this.est.lineItems.splice(i,1); this.render(); } },
+
+  // ─── SAVE / LOAD ──────────────────────────────────────────────
+  blank() {
+    return {id:'est_'+Date.now(),date:Date.now(),status:'draft',lineItems:[],overhead:DEF_OVERHEAD,profit:DEF_PROFIT,taxRate:DEF_TAX,depositPct:DEF_DEPOSIT,terms:this.defTerms()};
+  },
+
+  defTerms() {
+    return `Payment Terms: ${DEF_DEPOSIT}% deposit required before work begins. Balance due upon completion. This estimate is valid for 30 days. Any changes to project scope must be agreed upon in writing. All work guaranteed for 1 year unless otherwise noted.`;
+  },
+
+  saveEst(andPreview) {
+    const e=this.est;
+    if(!e) return;
+    if(!e.clientName||!e.projectName){ alert('Please fill in Client Name and Project Name.'); return; }
+
+    // Check if this is a NEW estimate and trial is used up
+    const isNew = !this.estimates.find(x=>x.id===e.id);
+    if (isNew && !this.hasSub() && this.estimates.length >= 1) {
+      this.go('subscribe');
+      return;
+    }
+
+    const c=this.calc(e); e.total=c.total; e.lastMod=Date.now();
+    const idx=this.estimates.findIndex(x=>x.id===e.id);
+    if(idx>=0) this.estimates[idx]=e; else this.estimates.push(e);
+    this.save();
+
+    // Update trial count after saving
+    if (!this.hasSub()) this.trialLeft = this.estimates.length < 1 ? 1 : 0;
+
+    if(andPreview){ this.go('estimate_detail'); } else { toast('✅ Estimate saved!'); }
+  },
+
+  previewEst() { this.saveEst(true); },
+
+  openEst(id) {
+    const e=this.estimates.find(x=>x.id===id);
+    if(e){ this.est=e; this.go('estimate_detail'); }
+  },
+
+  editEst(id) {
+    const e=this.estimates.find(x=>x.id===id);
+    if(e){ this.est=JSON.parse(JSON.stringify(e)); this.go('new_estimate'); }
+  },
+
+  dupEst(id) {
+    const e=this.estimates.find(x=>x.id===id);
+    if(e){ const d=JSON.parse(JSON.stringify(e)); d.id='est_'+Date.now(); d.date=Date.now(); d.status='draft'; d.projectName+=' (Copy)'; this.estimates.push(d); this.save(); this.render(); }
+  },
+
+  delEst(id) {
+    if(!confirm('Delete this estimate?')) return;
+    this.estimates=this.estimates.filter(x=>x.id!==id); this.save(); this.render();
+  },
+
+  startTrade(k) { this.est=this.blank(); this.est.tradeType=k; this.go('new_estimate'); },
+
+  convertToInvoice(id) {
+    // Get estimate — from list by id, or current unsaved estimate
+    const e = id ? this.estimates.find(x=>x.id===id) : this.est;
+    if (!e) { alert('Please save the estimate first, then convert to invoice.'); return; }
+
+    // Make sure estimate is saved
+    if (!id) {
+      if (!e.clientName || !e.projectName) { alert('Please fill in Client Name and Project Name before converting.'); return; }
+      const c2 = this.calc(e); e.total = c2.total; e.lastMod = Date.now();
+      const ei = this.estimates.findIndex(x=>x.id===e.id);
+      if (ei >= 0) this.estimates[ei] = e; else this.estimates.push(e);
+    }
+
+    const c   = this.calc(e);
+    const due = new Date(); due.setDate(due.getDate()+30);
+
+    const inv = {
+      id:          'inv_' + Date.now(),
+      number:      this.invoices.length + 1001,
+      date:        Date.now(),
+      dueDate:     due.toISOString().split('T')[0],
+      estimateId:  e.id,
+      status:      'unpaid',
+      // Client & project info from estimate
+      clientName:    e.clientName    || '',
+      clientEmail:   e.clientEmail   || '',
+      clientPhone:   e.clientPhone   || '',
+      projectName:   e.projectName   || '',
+      projectAddress:e.projectAddress|| '',
+      projectCity:   e.projectCity   || '',
+      projectZip:    e.projectZip    || '',
+      tradeType:     e.tradeType     || '',
+      lineItems:     e.lineItems     || [],
+      notes:         e.notes         || '',
+      terms:         e.terms         || '',
+      // Pricing settings
+      overhead:      e.overhead,
+      profit:        e.profit,
+      taxRate:       e.taxRate,
+      depositPct:    e.depositPct,
+      // Calculated totals
+      total:         c.total,
+      laborAmt:      c.labor,
+      materialsAmt:  c.mat,
+      overheadAmt:   c.oh,
+      profitAmt:     c.pr,
+      taxAmt:        c.tx,
+      depositAmt:    c.dep,
+      balanceDue:    c.bal,
+      // Payment info
+      payInfo:       this.company.payInfo || '',
+    };
+
+    this.invoices.push(inv);
+
+    // Mark estimate as approved
+    const estIdx = this.estimates.findIndex(x=>x.id===e.id);
+    if (estIdx >= 0) this.estimates[estIdx].status = 'approved';
+
+    this.save();
+    this.inv = inv;
+    toast('✅ Invoice created!');
+    this.go('invoice_detail');
+  },
+
+  // ─── ESTIMATES LIST ───────────────────────────────────────────
+  pgEstimates() {
+    const sorted=[...this.estimates].sort((a,b)=>b.date-a.date);
+    return `<div class="view-list">
+<div class="list-filter-bar">
+  <input class="search-input" placeholder="🔍 Search estimates..." oninput="App.filterEsts(this.value)">
+  <select class="filter-select" onchange="App.filterEstsStatus(this.value)">
+    <option value="">All</option><option value="draft">Draft</option><option value="sent">Sent</option><option value="approved">Approved</option><option value="declined">Declined</option>
+  </select>
+</div>
+<div id="ests-list">
+${sorted.length ? sorted.map(e=>this.estCard(e,true)).join('') : '<div class="empty-state"><div class="empty-icon">📋</div><h3>No estimates yet</h3></div>'}
+</div></div>`;
+  },
+
+  estCard(e,actions) {
+    const sc={draft:'#888',sent:'#2196F3',approved:'#4CAF50',declined:'#F44336'};
+    const c=this.calc(e); const tr=TRADES[e.tradeType];
+    return `<div class="list-card" onclick="App.openEst('${e.id}')">
+<div class="card-top"><div class="card-info">
+  <h4 class="card-title">${this.esc(e.projectName||'Untitled')}</h4>
+  <p class="card-sub">${this.esc(e.clientName||'No client')}${e.projectZip?' · '+e.projectZip:''}</p>
+  <p class="card-meta">${this.fmtDate(e.date)}${tr?' · '+tr.icon+' '+tr.label:''}</p>
+</div><div class="card-right">
+  <div class="card-amount">${this.fmt(c.total)}</div>
+  <span class="status-badge" style="background:${sc[e.status]||'#888'}20;color:${sc[e.status]||'#888'}">${e.status||'draft'}</span>
+</div></div>
+${actions?`<div class="card-actions" onclick="event.stopPropagation()">
+  <button class="card-btn" onclick="App.editEst('${e.id}')">Edit</button>
+  <button class="card-btn" onclick="App.dupEst('${e.id}')">Duplicate</button>
+  <button class="card-btn" onclick="App.convertToInvoice('${e.id}')">→ Invoice</button>
+  <button class="card-btn danger" onclick="App.delEst('${e.id}')">Delete</button>
+</div>`:''}
+</div>`;
+  },
+
+  filterEsts(q) {
+    const c=document.getElementById('ests-list'); if(!c) return;
+    const f=this.estimates.filter(e=>(e.projectName||'').toLowerCase().includes(q.toLowerCase())||(e.clientName||'').toLowerCase().includes(q.toLowerCase())).sort((a,b)=>b.date-a.date);
+    c.innerHTML=f.length?f.map(e=>this.estCard(e,true)).join(''):'<div class="empty-state"><p>No results</p></div>';
+  },
+  filterEstsStatus(s) {
+    const c=document.getElementById('ests-list'); if(!c) return;
+    const f=(s?this.estimates.filter(e=>e.status===s):this.estimates).sort((a,b)=>b.date-a.date);
+    c.innerHTML=f.length?f.map(e=>this.estCard(e,true)).join(''):'<div class="empty-state"><p>No results</p></div>';
+  },
+
+  // ─── INVOICES LIST ────────────────────────────────────────────
+  pgInvoices() {
+    const sorted=[...this.invoices].sort((a,b)=>b.date-a.date);
+    return `<div class="view-list">
+<div class="list-filter-bar">
+  <input class="search-input" placeholder="🔍 Search invoices...">
+  <select class="filter-select" onchange="App.filterInvsStatus(this.value)">
+    <option value="">All</option><option value="unpaid">Unpaid</option><option value="partial">Partial</option><option value="paid">Paid</option>
+  </select>
+</div>
+<div id="invs-list">
+${sorted.length?sorted.map(i=>this.invCard(i)).join(''):'<div class="empty-state"><div class="empty-icon">📄</div><h3>No invoices yet</h3><p>Convert an estimate to create one</p></div>'}
+</div></div>`;
+  },
+
+  invCard(inv) {
+    const sc={unpaid:'#FF6B35',partial:'#FF9800',paid:'#4CAF50',overdue:'#F44336'};
+    const past=inv.dueDate&&new Date(inv.dueDate)<new Date()&&inv.status!=='paid';
+    const st=past?'overdue':(inv.status||'unpaid');
+    return `<div class="list-card" onclick="App.openInv('${inv.id}')">
+<div class="card-top"><div class="card-info">
+  <h4 class="card-title">Invoice #${inv.number||inv.id.slice(-6).toUpperCase()}</h4>
+  <p class="card-sub">${this.esc(inv.clientName||'No client')} · ${this.esc(inv.projectName||'')}</p>
+  <p class="card-meta">Issued: ${this.fmtDate(inv.date)}${inv.dueDate?' · Due: '+inv.dueDate:''}</p>
+</div><div class="card-right">
+  <div class="card-amount">${this.fmt(inv.total||0)}</div>
+  <span class="status-badge" style="background:${sc[st]||'#888'}20;color:${sc[st]||'#888'}">${st}</span>
+</div></div>
+<div class="card-actions" onclick="event.stopPropagation()">
+  <button class="card-btn" onclick="App.markPaid('${inv.id}')">Mark Paid</button>
+  <button class="card-btn" onclick="App.openInv('${inv.id}');setTimeout(()=>window.print(),300)">Print/PDF</button>
+  <button class="card-btn danger" onclick="App.delInv('${inv.id}')">Delete</button>
+</div></div>`;
+  },
+
+  openInv(id) { const i=this.invoices.find(x=>x.id===id); if(i){this.inv=i;this.go('invoice_detail');} },
+  markPaid(id) { const i=this.invoices.find(x=>x.id===id); if(i){i.status='paid';i.paidDate=new Date().toISOString().split('T')[0];this.save();toast('✅ Marked as paid!');this.render();} },
+  delInv(id) { if(!confirm('Delete this invoice?')) return; this.invoices=this.invoices.filter(x=>x.id!==id);this.save();this.render(); },
+  filterInvsStatus(s) { const c=document.getElementById('invs-list');if(!c)return;const f=(s?this.invoices.filter(i=>i.status===s):this.invoices).sort((a,b)=>b.date-a.date);c.innerHTML=f.length?f.map(i=>this.invCard(i)).join(''):'<div class="empty-state"><p>No results</p></div>'; },
+
+  // ─── ESTIMATE DETAIL ──────────────────────────────────────────
+  pgEstDetail() {
+    const e=this.est; if(!e) return '<div class="empty-state"><p>Not found</p></div>';
+    const c=this.calc(e); const tr=TRADES[e.tradeType]; const mult=getMultiplier(e.projectZip||'');
+    return `<div class="view-detail">
+<div class="detail-header"><div class="detail-number">ESTIMATE #${e.id.slice(-6).toUpperCase()}</div><div class="detail-date">${this.fmtDate(e.date)}</div></div>
+${this.coHeader()}
+<div class="detail-parties">
+  <div class="detail-party"><div class="party-label">Bill To</div><div class="party-name">${this.esc(e.clientName||'')}</div><div class="party-address">${this.esc(e.projectAddress||'')}</div><div class="party-address">${this.esc(e.projectCity||'')}${e.projectZip?', '+e.projectZip:''}</div>${e.clientEmail?`<div class="party-contact">${this.esc(e.clientEmail)}</div>`:''}</div>
+  <div class="detail-party"><div class="party-label">Project</div><div class="party-name">${this.esc(e.projectName||'')}</div>${tr?`<div class="party-trade">${tr.icon} ${tr.label}</div>`:''} ${e.validUntil?`<div class="party-contact">Valid: ${e.validUntil}</div>`:''}</div>
+</div>
+${e.notes?`<div class="detail-notes"><strong>Scope: </strong>${this.esc(e.notes)}</div>`:''}
+<table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th></tr></thead><tbody>
+${(e.lineItems||[]).map(it=>{const ap=(it.unitPrice||0)*mult;const tot=(it.qty||0)*ap;return `<tr><td class="item-name-cell">${this.esc(it.name)}<span class="item-trade-tag">${this.esc(it.tradeLabel||'')}</span></td><td class="right">${it.qty||0}</td><td>${UNIT_LABELS[it.unit]||it.unit||''}</td><td class="right">${this.fmt(ap)}</td><td class="right">${this.fmt(tot)}</td></tr>`;}).join('')}
+</tbody></table>
+<div class="detail-totals">
+  <div class="dt-row"><span>Labor</span><span>${this.fmt(c.labor)}</span></div>
+  <div class="dt-row"><span>Materials</span><span>${this.fmt(c.mat)}</span></div>
+  <div class="dt-row"><span>Overhead</span><span>${this.fmt(c.oh)}</span></div>
+  <div class="dt-row"><span>Profit</span><span>${this.fmt(c.pr)}</span></div>
+  <div class="dt-row"><span>Tax</span><span>${this.fmt(c.tx)}</span></div>
+  <div class="dt-row dt-total"><span>TOTAL</span><span>${this.fmt(c.total)}</span></div>
+  <div class="dt-row dt-deposit"><span>Deposit Required</span><span>${this.fmt(c.dep)}</span></div>
+  <div class="dt-row"><span>Balance Due</span><span>${this.fmt(c.bal)}</span></div>
+</div>
+${e.terms?`<div class="detail-terms"><h4>Terms &amp; Conditions</h4><p>${this.esc(e.terms)}</p></div>`:''}
+<div class="action-buttons">
+  <button class="btn-primary" onclick="App.editEst('${e.id}')">✏️ Edit Estimate</button>
+  <button class="btn-secondary" onclick="window.print()">🖨️ Print / PDF</button>
+  <button class="btn-secondary" onclick="App.convertToInvoice('${e.id}')">📄 Convert to Invoice</button>
+</div></div>`;
+  },
+
+  // ─── INVOICE DETAIL ───────────────────────────────────────────
+  pgInvDetail() {
+    const inv=this.inv; if(!inv) return '<div class="empty-state"><p>Not found</p></div>';
+    return `<div class="view-detail">
+<div class="detail-header"><div class="detail-number">INVOICE #${inv.number||inv.id.slice(-6).toUpperCase()}</div><div class="detail-date">${this.fmtDate(inv.date)}</div>${inv.dueDate?`<div class="detail-due">Due: ${inv.dueDate}</div>`:''}</div>
+${this.coHeader()}
+<div class="detail-parties">
+  <div class="detail-party"><div class="party-label">Bill To</div><div class="party-name">${this.esc(inv.clientName||'')}</div><div class="party-address">${this.esc(inv.projectAddress||'')}</div>${inv.clientEmail?`<div class="party-contact">${this.esc(inv.clientEmail)}</div>`:''}</div>
+  <div class="detail-party"><div class="party-label">Project</div><div class="party-name">${this.esc(inv.projectName||'')}</div>${inv.estimateId?`<div class="party-contact">From Est #${inv.estimateId.slice(-6).toUpperCase()}</div>`:''}</div>
+</div>
+<table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th></tr></thead><tbody>
+${(inv.lineItems||[]).map(it=>{const ap=(it.unitPrice||0)*getMultiplier(inv.projectZip||'');const tot=(it.qty||0)*ap;return `<tr><td class="item-name-cell">${this.esc(it.name)}</td><td class="right">${it.qty||0}</td><td>${UNIT_LABELS[it.unit]||it.unit||''}</td><td class="right">${this.fmt(ap)}</td><td class="right">${this.fmt(tot)}</td></tr>`;}).join('')}
+</tbody></table>
+<div class="detail-totals">
+  <div class="dt-row dt-total"><span>TOTAL DUE</span><span>${this.fmt(inv.total||0)}</span></div>
+  ${inv.depositAmt?`<div class="dt-row"><span>Deposit Required</span><span>${this.fmt(inv.depositAmt)}</span></div><div class="dt-row dt-deposit"><span>BALANCE DUE</span><span>${this.fmt(inv.balanceDue||0)}</span></div>`:''}
+</div>
+${inv.payInfo||this.company.payInfo?`<div class="detail-terms"><h4>Payment Instructions</h4><p>${this.esc(inv.payInfo||this.company.payInfo||'')}</p></div>`:''}
+<div class="action-buttons">
+  <button class="btn-primary" onclick="App.markPaid('${inv.id}');App.render()">✅ Mark as Paid</button>
+  <button class="btn-secondary" onclick="window.print()">🖨️ Print / PDF</button>
+</div></div>`;
+  },
+
+  coHeader() {
+    const c=this.company;
+    if(!c.name) return `<div class="company-header-empty"><p>Add your company info in Settings</p></div>`;
+    return `<div class="company-header"><div class="company-logo-placeholder">🏗️</div><div class="company-details"><div class="company-name">${this.esc(c.name)}</div>${c.address?`<div class="company-meta">${this.esc(c.address)}</div>`:''}${c.phone?`<div class="company-meta">${this.esc(c.phone)}</div>`:''}${c.email?`<div class="company-meta">${this.esc(c.email)}</div>`:''}${c.license?`<div class="company-meta">Lic #${this.esc(c.license)}</div>`:''}</div></div>`;
+  },
+
+  // ─── SETTINGS ─────────────────────────────────────────────────
+  pgSettings() {
+    const c=this.company;
+    return `<div class="view-settings">
+<div class="form-section"><h3 class="section-title">Company Profile</h3>
+  <div class="form-row"><input class="form-input" placeholder="Company Name *" value="${this.esc(c.name||'')}" oninput="App.setCo('name',this.value)"></div>
+  <div class="form-row"><input class="form-input" placeholder="Street Address" value="${this.esc(c.address||'')}" oninput="App.setCo('address',this.value)"></div>
+  <div class="form-row-split">
+    <input class="form-input" placeholder="City" value="${this.esc(c.city||'')}" oninput="App.setCo('city',this.value)">
+    <input class="form-input" placeholder="State" value="${this.esc(c.state||'')}" oninput="App.setCo('state',this.value)">
+    <input class="form-input zip-input" placeholder="ZIP" value="${this.esc(c.zip||'')}" oninput="App.setCo('zip',this.value)">
+  </div>
+  <div class="form-row"><input class="form-input" type="tel" placeholder="Phone" value="${this.esc(c.phone||'')}" oninput="App.setCo('phone',this.value)"></div>
+  <div class="form-row"><input class="form-input" type="email" placeholder="Email" value="${this.esc(c.email||'')}" oninput="App.setCo('email',this.value)"></div>
+  <div class="form-row"><input class="form-input" placeholder="Contractor License #" value="${this.esc(c.license||'')}" oninput="App.setCo('license',this.value)"></div>
+  <div class="form-row"><input class="form-input" placeholder="Website" value="${this.esc(c.website||'')}" oninput="App.setCo('website',this.value)"></div>
+  <div class="form-row"><textarea class="form-input form-textarea" placeholder="Payment instructions..." oninput="App.setCo('payInfo',this.value)">${this.esc(c.payInfo||'')}</textarea></div>
+  <button class="btn-primary" onclick="App.saveCo()">Save Company Info</button>
+</div>
+<div class="form-section"><h3 class="section-title">Subscription</h3>
+${this.hasSub()
+  ? `<div class="sub-active"><div class="sub-check">✅ Active Subscription</div><p>You have full access. Thank you!</p></div>`
+  : `<div class="sub-trial"><p>${this.trialLeft>0?`<strong>${this.trialLeft} days</strong> left in your free trial.`:'Your trial has ended.'}</p><p>Subscribe for <strong>$5.99/month</strong> for unlimited access.</p><button class="btn-primary" onclick="App.go('subscribe')">Subscribe Now</button></div>`}
+</div>
+<div class="form-section"><h3 class="section-title">Data</h3>
+  <button class="btn-secondary" onclick="App.exportData()">Export Data (JSON)</button>
+  <button class="btn-secondary danger" style="margin-top:8px" onclick="App.clearAll()">Clear All Data</button>
+</div>
+<div class="form-section"><h3 class="section-title">About</h3>
+  <div class="about-info"><p><strong>Driftocity Estimate Pro</strong></p><p>Version 1.0.0</p><p>Professional contractor estimates &amp; invoices with ZIP-code regional pricing for 14 trade types.</p><p class="about-note">Pricing based on national averages adjusted by regional cost-of-living multipliers. Always verify local rates.</p></div>
+</div></div>`;
+  },
+
+  setCo(f,v){ this.company[f]=v; },
+  saveCo(){ this.save(); toast('✅ Company info saved!'); },
+
+  // ─── SUBSCRIBE ────────────────────────────────────────────────
+  pgSubscribe() {
+    return `<div class="view-subscribe">
+<div class="sub-hero"><div class="sub-logo">🏗️</div><h2>Driftocity Estimate Pro</h2><p class="sub-tagline">Professional estimates &amp; invoices<br>for every trade</p></div>
+<div class="pricing-card"><div class="price-amount">$5.99<span>/month</span></div><div class="price-label">Everything you need to win more jobs</div>
+<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px">Try free with 1 estimate — no credit card needed</div></div>
+<div class="features-list">
+  <div class="feature-item">✅ Unlimited estimates &amp; invoices</div>
+  <div class="feature-item">🆓 1 free estimate to try it out</div>
+  <div class="feature-item">✅ 14 contractor trade types</div>
+  <div class="feature-item">✅ ZIP code regional pricing</div>
+  <div class="feature-item">✅ AI job scope builder</div>
+  <div class="feature-item">✅ Convert estimates to invoices</div>
+  <div class="feature-item">✅ Print / Save to PDF</div>
+  <div class="feature-item">✅ Works offline on iOS &amp; Android</div>
+</div>
+<button class="btn-subscribe" onclick="App.doSubscribe()">Subscribe for $5.99/month</button>
+${this.trialLeft>0?`<button class="btn-trial" onclick="App.go('dashboard')">Continue Free Trial (1 free estimate)</button>`:''}
+<p class="sub-disclaimer">Powered by Stripe secure payments. Cancel anytime.</p>
+<div class="demo-activate"><p>Demo / Developer mode:</p><button class="btn-link" onclick="App.activateSub()">Activate Demo Subscription</button></div>
+</div>`;
+  },
+
+  doSubscribe() {
+    window.open('https://buy.stripe.com/cNicN5c1Cb1AbVF54H0000c','_blank');
+  },
+  activateSub() { this.sub={active:true,plan:'monthly',price:5.99,start:Date.now()}; this.save(); toast('✅ Subscription activated!'); this.go('dashboard'); },
+
+  // ─── UTILS ────────────────────────────────────────────────────
+  exportData() {
+    const d={estimates:this.estimates,invoices:this.invoices,company:this.company,exported:new Date().toISOString()};
+    const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='driftocity-data.json'; a.click(); URL.revokeObjectURL(u);
+  },
+  clearAll() { if(!confirm('Delete ALL data? Cannot be undone.')) return; localStorage.clear(); location.reload(); },
+  fmt(n)  { return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0); },
+  fmtDate(ts) { if(!ts) return ''; return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); },
+  esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); },
+};
+
+function toast(msg,type) {
+  type=type||'success';
+  const t=document.getElementById('toast'); if(!t) return;
+  t.textContent=msg; t.className='toast toast-'+type; t.classList.remove('hidden');
+  setTimeout(()=>t.classList.add('hidden'),3000);
+}
+
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault(); let dp=e;
+  const banner=document.getElementById('install-banner');
+  if(banner&&!localStorage.getItem('install_dismissed')) banner.classList.remove('hidden');
+  document.getElementById('install-btn')&&document.getElementById('install-btn').addEventListener('click',function(){ dp.prompt(); banner.classList.add('hidden'); });
+  document.getElementById('install-dismiss')&&document.getElementById('install-dismiss').addEventListener('click',function(){ banner.classList.add('hidden'); localStorage.setItem('install_dismissed','1'); });
+});
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
+document.addEventListener('DOMContentLoaded',()=>App.init());
+
+</script>
+</body>
+</html>
