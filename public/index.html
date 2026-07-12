@@ -1665,6 +1665,7 @@ const App = {
   view: 'dashboard',
   est: null,
   inv: null,
+  editingId: null,
   estimates: [],
   invoices:  [],
   company:   {},
@@ -1696,19 +1697,18 @@ const App = {
 
   go(v) {
     // If navigating to new estimate and trial is up, redirect to subscribe
-    if (v==='new_estimate' && !this.hasSub()) {
-      const isExisting = this.est && this.estimates.find(x=>x.id===this.est.id);
-      if (!isExisting && this.estimates.length >= 1) {
+    if (v==='new_estimate' && !this.hasSub() && !this.editingId) {
+      if (this.estimates.length >= 1) {
         this.view = 'subscribe';
         this.render();
         window.scrollTo(0,0);
         return;
       }
     }
-    // Only blank if genuinely new — never blank if est already has saved data
+    // Only blank if genuinely new
     if (v==='new_estimate') {
-      const hasExisting = this.est && this.est.id && this.estimates.find(x=>x.id===this.est.id);
-      if (!hasExisting) this.est = this.blank();
+      if (!this.editingId) this.est = this.blank();
+      this.editingId = null;
     }
     this.view = v;
     this.render();
@@ -2206,35 +2206,10 @@ ${t.categories.map(cat=>`<div class="picker-category">
   },
 
   editEst(id) {
-    // Find the estimate by id
-    const e = this.estimates.find(x=>x.id===id);
-    if (!e) { console.error('editEst: estimate not found', id); return; }
-    // Deep copy ALL fields into this.est
-    this.est = {
-      id:             e.id,
-      date:           e.date,
-      status:         e.status,
-      clientName:     e.clientName     || '',
-      clientEmail:    e.clientEmail    || '',
-      clientPhone:    e.clientPhone    || '',
-      projectAddress: e.projectAddress || '',
-      projectCity:    e.projectCity    || '',
-      projectZip:     e.projectZip     || '',
-      projectName:    e.projectName    || '',
-      tradeType:      e.tradeType      || '',
-      notes:          e.notes          || '',
-      validUntil:     e.validUntil     || '',
-      startDate:      e.startDate      || '',
-      lineItems:      JSON.parse(JSON.stringify(e.lineItems || [])),
-      overhead:       e.overhead       != null ? e.overhead    : 15,
-      profit:         e.profit         != null ? e.profit      : 10,
-      taxRate:        e.taxRate        != null ? e.taxRate     : 8.5,
-      depositPct:     e.depositPct     != null ? e.depositPct  : 30,
-      terms:          e.terms          || '',
-      total:          e.total          || 0,
-      lastMod:        e.lastMod        || Date.now(),
-    };
-    // Go directly to builder without triggering go() which might reset
+    const src = this.estimates.find(x=>x.id===id);
+    if (!src) return;
+    this.est = JSON.parse(JSON.stringify(src));
+    this.editingId = id;
     this.view = 'new_estimate';
     this.render();
     window.scrollTo(0,0);
