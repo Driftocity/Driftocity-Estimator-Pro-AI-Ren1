@@ -1724,14 +1724,6 @@ const App = {
     const root = document.getElementById('app');
     if (!root) return;
     if (!this.canUse() && this.view!=='subscribe' && this.view!=='settings') this.view='subscribe';
-    // Save any in-progress form data before re-render
-    if (this.view==='new_estimate' && this.est) {
-      const fields = ['clientName','clientEmail','clientPhone','projectAddress','projectCity','projectZip','projectName','notes','terms'];
-      fields.forEach(f => {
-        const el = document.querySelector(`[oninput*="${f}"]`);
-        if (el && el.value !== undefined) this.est[f] = el.value;
-      });
-    }
     root.innerHTML = this.shell();
     document.querySelectorAll('.modal-sheet').forEach(el => el.addEventListener('click',e=>e.stopPropagation()));
     const sp = document.getElementById('splash');
@@ -2174,7 +2166,10 @@ ${t.categories.map(cat=>`<div class="picker-category">
   closePicker() { const m=document.getElementById('picker'); if(m) m.classList.add('hidden'); },
 
   // ─── LINE ITEM HELPERS ────────────────────────────────────────
-  setE(f,v) { if(!this.est) this.est=this.blank(); this.est[f]=v; },
+  setE(f,v) { 
+    if(!this.est) this.est=this.blank(); 
+    this.est[f]=v; 
+  },
   setLI(i,f,v) { if(this.est&&this.est.lineItems&&this.est.lineItems[i]) this.est.lineItems[i][f]=v; },
   delLI(i) { if(this.est&&this.est.lineItems){ this.est.lineItems.splice(i,1); this.render(); } },
 
