@@ -2328,10 +2328,10 @@ ${sorted.length ? sorted.map(e=>this.estCard(e,true)).join('') : '<div class="em
   <span class="status-badge" style="background:${sc[e.status]||'#888'}20;color:${sc[e.status]||'#888'}">${e.status||'draft'}</span>
 </div></div>
 ${actions?`<div class="card-actions" onclick="event.stopPropagation()">
-  <button class="card-btn" onclick="App.editEst('${e.id}')">Edit</button>
-  <button class="card-btn" onclick="App.dupEst('${e.id}')">Duplicate</button>
-  <button class="card-btn" onclick="App.convertToInvoice('${e.id}')">→ Invoice</button>
-  <button class="card-btn danger" onclick="App.delEst('${e.id}')">Delete</button>
+  <button class="card-btn" onclick="event.stopPropagation();App.editEst('${e.id}')">Edit</button>
+  <button class="card-btn" onclick="event.stopPropagation();App.dupEst('${e.id}')">Duplicate</button>
+  <button class="card-btn" onclick="event.stopPropagation();App.convertToInvoice('${e.id}')">→ Invoice</button>
+  <button class="card-btn danger" onclick="event.stopPropagation();App.delEst('${e.id}')">Delete</button>
 </div>`:''}
 </div>`;
   },
