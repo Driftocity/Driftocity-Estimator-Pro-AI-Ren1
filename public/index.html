@@ -1724,9 +1724,16 @@ const App = {
     const root = document.getElementById('app');
     if (!root) return;
     if (!this.canUse() && this.view!=='subscribe' && this.view!=='settings') this.view='subscribe';
+    // Save any in-progress form data before re-render
+    if (this.view==='new_estimate' && this.est) {
+      const fields = ['clientName','clientEmail','clientPhone','projectAddress','projectCity','projectZip','projectName','notes','terms'];
+      fields.forEach(f => {
+        const el = document.querySelector(`[oninput*="${f}"]`);
+        if (el && el.value !== undefined) this.est[f] = el.value;
+      });
+    }
     root.innerHTML = this.shell();
     document.querySelectorAll('.modal-sheet').forEach(el => el.addEventListener('click',e=>e.stopPropagation()));
-    // dismiss splash
     const sp = document.getElementById('splash');
     if (sp) { sp.style.opacity='0'; setTimeout(()=>{ if(sp.parentNode) sp.parentNode.removeChild(sp); },400); }
   },
@@ -1832,7 +1839,7 @@ ${Object.entries(TRADES).map(([k,t])=>`<button class="trade-pill" onclick="App.s
   <div class="form-row"><input class="form-input" placeholder="Project Address" value="${this.esc(e.projectAddress||'')}" oninput="App.setE('projectAddress',this.value)"></div>
   <div class="form-row-split">
     <input class="form-input" placeholder="City" value="${this.esc(e.projectCity||'')}" oninput="App.setE('projectCity',this.value)">
-    <input class="form-input zip-input" placeholder="ZIP" maxlength="5" value="${this.esc(e.projectZip||'')}" oninput="App.setE('projectZip',this.value);App.rerender()">
+    <input class="form-input zip-input" placeholder="ZIP" maxlength="5" value="${this.esc(e.projectZip||'')}" oninput="App.setE('projectZip',this.value)" onblur="App.rerender()">
   </div>
   ${e.projectZip ? `<div class="zip-info">📍 Regional multiplier: <strong>${(mult*100).toFixed(0)}%</strong> of national average</div>` : ''}
 </div>
@@ -1840,7 +1847,7 @@ ${Object.entries(TRADES).map(([k,t])=>`<button class="trade-pill" onclick="App.s
 <div class="form-section"><h3 class="section-title">Project Details</h3>
   <div class="form-row"><input class="form-input" placeholder="Project Name *" value="${this.esc(e.projectName||'')}" oninput="App.setE('projectName',this.value)"></div>
   <div class="form-row-split">
-    <select class="form-input" onchange="App.setE('tradeType',this.value);App.rerender()">
+    <select class="form-input" onchange="App.setE('tradeType',this.value);App.render()">
       <option value="">Select Trade</option>
       ${Object.entries(TRADES).map(([k,t])=>`<option value="${k}"${e.tradeType===k?' selected':''}>${t.icon} ${t.label}</option>`).join('')}
     </select>
@@ -1963,7 +1970,12 @@ ${Object.entries(TRADES).map(([k,t])=>`<button class="trade-pill" onclick="App.s
     if (el&&this.est) el.innerHTML = this.totalsHTML(this.est);
   },
 
-  rerender() { this.render(); },
+  rerender() {
+    // Save current form values before re-rendering so nothing gets lost
+    const zip = document.getElementById('zip-input') || document.querySelector('input[placeholder="ZIP"]');
+    if (zip && this.est) this.est.projectZip = zip.value;
+    this.render();
+  },
 
   // ─── AI SCOPE WRITER ──────────────────────────────────────────
   async genScope() {
@@ -2202,14 +2214,15 @@ ${t.categories.map(cat=>`<div class="picker-category">
 
   openEst(id) {
     const e=this.estimates.find(x=>x.id===id);
-    if(e){ this.est=e; this.go('estimate_detail'); }
+    if(e){ this.est=JSON.parse(JSON.stringify(e)); this.go('estimate_detail'); }
   },
 
   editEst(id) {
     const src = this.estimates.find(x=>x.id===id);
-    if (!src) return;
-    this.est = JSON.parse(JSON.stringify(src));
+    if (!src) { alert('Estimate not found'); return; }
     this.editingId = id;
+    this.est = JSON.parse(JSON.stringify(src));
+    // Set view directly - never go through go() which might reset
     this.view = 'new_estimate';
     this.render();
     window.scrollTo(0,0);
