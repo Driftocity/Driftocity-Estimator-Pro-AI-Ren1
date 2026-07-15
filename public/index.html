@@ -861,8 +861,47 @@ const DB = {
   set(k,v) { try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 };
 
-let state = { view:'dashboard', currentEstimateId:null, currentInvoiceId:null, aiItems:null };
-let _draft = null;
+let state = { view:'dashboard', currentInvoiceId:null, aiItems:null };
+
+// ═══════════════════════════════════════════
+// THE WORKBENCH
+// One single object holds whatever estimate is being edited.
+// This is the ONLY thing pgBuilder() ever reads from.
+// Opening an estimate = copy it into the workbench.
+// Saving = copy the workbench back into the estimates array.
+// Nothing else touches storage during editing.
+// ═══════════════════════════════════════════
+let workbench = null;          // the estimate currently being edited (or null)
+let workbenchIsNew = true;     // true = brand new estimate, false = editing existing
+
+function openNewEstimate() {
+  workbench = blankEst();
+  workbenchIsNew = true;
+}
+
+function openEstimateInWorkbench(id) {
+  const src = getEsts().find(function(x){ return x.id === id; });
+  if (!src) return false;
+  // Deep copy so editing the workbench never touches the saved array until Save is clicked
+  workbench = JSON.parse(JSON.stringify(src));
+  workbenchIsNew = false;
+  return true;
+}
+
+function saveWorkbenchToStorage() {
+  if (!workbench) return false;
+  const ests = getEsts();
+  const c = calc(workbench);
+  workbench.total = c.total;
+  workbench.lastMod = Date.now();
+  const idx = ests.findIndex(function(x){ return x.id === workbench.id; });
+  if (idx >= 0) ests[idx] = workbench;
+  else ests.push(workbench);
+  saveEsts(ests);
+  workbenchIsNew = false;
+  return true;
+}
+
 
 function getEsts()  { return DB.get('dep_e')||[]; }
 function getInvs()  { return DB.get('dep_i')||[]; }
@@ -876,10 +915,7 @@ function hasSub()   { var s=getSub(); return s&&s.active; }
 function trialLeft(){ return getEsts().length<1?1:0; }
 function canUse()   { return hasSub()||trialLeft()>0||getEsts().length>0||getInvs().length>0; }
 
-function getWorkingEst() {
-  if (state.currentEstimateId) return getEsts().find(function(x){return x.id===state.currentEstimateId;})||null;
-  return _draft;
-}
+
 
 function toast(msg, type) {
   type = type||'ok';
@@ -899,27 +935,32 @@ function render() {
 }
 
 function go(v) {
-  if (v==='new_estimate' && state.currentEstimateId===null && !hasSub() && getEsts().length>=1) {
-    state.view='subscribe'; render(); window.scrollTo(0,0); return;
+  if (v === 'new_estimate' && workbenchIsNew && !hasSub() && getEsts().length >= 1) {
+    state.view = 'subscribe';
+    render();
+    window.scrollTo(0,0);
+    return;
   }
-  state.view=v; render(); window.scrollTo(0,0);
+  state.view = v;
+  render();
+  window.scrollTo(0,0);
 }
 
 function goBack() {
   var map = {new_estimate:'dashboard',estimates:'dashboard',invoices:'dashboard',settings:'dashboard',subscribe:'dashboard',estimate_detail:'estimates',invoice_detail:'invoices'};
-  state.currentEstimateId=null; state.currentInvoiceId=null;
-  go(map[state.view]||'dashboard');
+  state.currentInvoiceId = null;
+  go(map[state.view] || 'dashboard');
 }
 
-function startNew() { state.currentEstimateId=null; _draft=blankEst(); go('new_estimate'); }
-function startWithTrade(k) { state.currentEstimateId=null; _draft=blankEst(); _draft.tradeType=k; go('new_estimate'); }
+function startNew() { openNewEstimate(); go('new_estimate'); }
+function startWithTrade(k) { openNewEstimate(); workbench.tradeType=k; go('new_estimate'); }
 
 function buildShell() {
   return '<div class="shell">'+buildTopBar()+'<div class="content">'+buildPage()+'</div>'+buildNav()+'</div>';
 }
 
 function buildTopBar() {
-  var titles = {dashboard:'Dashboard',new_estimate:state.currentEstimateId?'Edit Estimate':'New Estimate',estimates:'My Estimates',invoices:'My Invoices',settings:'Settings',subscribe:'Subscription',estimate_detail:'Estimate',invoice_detail:'Invoice'};
+  var titles = {dashboard:'Dashboard',new_estimate:(!workbenchIsNew?'Edit Estimate':'New Estimate'),estimates:'My Estimates',invoices:'My Invoices',settings:'Settings',subscribe:'Subscription',estimate_detail:'Estimate',invoice_detail:'Invoice'};
   var back = state.view!=='dashboard'
     ? '<button class="btn-back" onclick="goBack()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg></button>'
     : '<div style="width:38px"></div>';
@@ -989,14 +1030,8 @@ function pgDash() {
 // ── ESTIMATE BUILDER ──────────────────────────────────────────────
 // THE KEY: always load fresh from storage by ID - never use a stale copy
 function pgBuilder() {
-  var e;
-  if (state.currentEstimateId) {
-    e = getEsts().find(function(x){return x.id===state.currentEstimateId;});
-    if (!e) { state.currentEstimateId=null; e=blankEst(); _draft=e; }
-  } else {
-    if (!_draft) _draft=blankEst();
-    e = _draft;
-  }
+  if (!workbench) openNewEstimate();
+  var e = workbench;
 
   var mult=getMultiplier(e.projectZip||'');
   var tr=e.tradeType?TRADES[e.tradeType]:null;
@@ -1134,69 +1169,55 @@ function calc(e) {
 }
 
 function refreshTotals() {
-  var e=getWorkingEst(); if(!e) return;
-  var tw=document.getElementById('totals-wrap');
-  if (tw) tw.innerHTML=buildTotals(e);
+  if (!workbench) return;
+  var tw = document.getElementById('totals-wrap');
+  if (tw) tw.innerHTML = buildTotals(workbench);
 }
 
 // KEY FIELD SETTERS - write through to storage immediately
-function setF(field,value) {
-  if (state.currentEstimateId) {
-    var ests=getEsts();
-    var idx=ests.findIndex(function(x){return x.id===state.currentEstimateId;});
-    if (idx>=0){ests[idx][field]=value;saveEsts(ests);}
-  } else {
-    if (!_draft)_draft=blankEst();
-    _draft[field]=value;
-  }
+function setF(field, value) {
+  if (!workbench) openNewEstimate();
+  workbench[field] = value;
 }
 
-function setLI(i,field,value) {
-  if (state.currentEstimateId) {
-    var ests=getEsts();
-    var idx=ests.findIndex(function(x){return x.id===state.currentEstimateId;});
-    if (idx>=0&&ests[idx].lineItems&&ests[idx].lineItems[i]){ests[idx].lineItems[i][field]=value;saveEsts(ests);}
-  } else {
-    if (_draft&&_draft.lineItems&&_draft.lineItems[i]) _draft.lineItems[i][field]=value;
-  }
+function setLI(i, field, value) {
+  if (!workbench || !workbench.lineItems || !workbench.lineItems[i]) return;
+  workbench.lineItems[i][field] = value;
 }
 
 function delLI(i) {
-  if (state.currentEstimateId) {
-    var ests=getEsts();
-    var idx=ests.findIndex(function(x){return x.id===state.currentEstimateId;});
-    if (idx>=0){ests[idx].lineItems.splice(i,1);saveEsts(ests);}
-  } else { if(_draft)_draft.lineItems.splice(i,1); }
+  if (!workbench || !workbench.lineItems) return;
+  workbench.lineItems.splice(i, 1);
   render();
 }
 
 function addBlankItem() {
-  var item={id:'c_'+Date.now(),name:'Custom Item',qty:1,unit:'ls',unitPrice:0,laborPct:.6,tradeLabel:'Custom'};
-  if (state.currentEstimateId) {
-    var ests=getEsts();var idx=ests.findIndex(function(x){return x.id===state.currentEstimateId;});
-    if (idx>=0){ests[idx].lineItems=ests[idx].lineItems||[];ests[idx].lineItems.push(item);saveEsts(ests);}
-  } else { if(!_draft)_draft=blankEst();_draft.lineItems=_draft.lineItems||[];_draft.lineItems.push(item); }
+  if (!workbench) openNewEstimate();
+  workbench.lineItems = workbench.lineItems || [];
+  workbench.lineItems.push({id:'c_'+Date.now(), name:'Custom Item', qty:1, unit:'ls', unitPrice:0, laborPct:.6, tradeLabel:'Custom'});
   render();
 }
 
 // SAVE ESTIMATE
 function saveEst(andPreview) {
-  var e=getWorkingEst();
-  if (!e){alert('Nothing to save.');return;}
-  if (!e.clientName||!e.projectName){alert('Please fill in Client Name and Project Name.');return;}
-  var ests=getEsts();
-  var c=calc(e);e.total=c.total;e.lastMod=Date.now();
-  if (state.currentEstimateId) {
-    var idx=ests.findIndex(function(x){return x.id===e.id;});
-    if (idx>=0) ests[idx]=e; else ests.push(e);
-    saveEsts(ests);
-  } else {
-    if (!hasSub()&&ests.length>=1){go('subscribe');return;}
-    ests.push(e);saveEsts(ests);
-    state.currentEstimateId=e.id;_draft=null;
+  if (!workbench) { alert('Nothing to save.'); return; }
+  if (!workbench.clientName || !workbench.projectName) { alert('Please fill in Client Name and Project Name.'); return; }
+
+  // Paywall check only applies to brand new estimates
+  if (workbenchIsNew && !hasSub() && getEsts().length >= 1) {
+    go('subscribe');
+    return;
   }
-  if (andPreview){state.view='estimate_detail';render();}
-  else{toast('Estimate saved!');}
+
+  saveWorkbenchToStorage();
+
+  if (andPreview) {
+    state.view = 'estimate_detail';
+    state.detailEstimateId = workbench.id;
+    render();
+  } else {
+    toast('Estimate saved!');
+  }
 }
 
 function previewEst(){saveEst(true);}
@@ -1204,19 +1225,19 @@ function previewEst(){saveEst(true);}
 // EDIT ESTIMATE - the simple correct way
 // Just set the ID. pgBuilder reads fresh from storage every time.
 function editEst(id) {
-  var found=getEsts().find(function(x){return x.id===id;});
-  if (!found){alert('Estimate not found');return;}
-  _draft=null;
-  state.currentEstimateId=id;
-  state.view='new_estimate';
+  var ok = openEstimateInWorkbench(id);
+  if (!ok) { alert('Estimate not found'); return; }
+  state.view = 'new_estimate';
   render();
   window.scrollTo(0,0);
 }
 
+
 function openEst(id) {
-  state.currentEstimateId=id;
-  state.view='estimate_detail';
-  render();window.scrollTo(0,0);
+  state.detailEstimateId = id;
+  state.view = 'estimate_detail';
+  render();
+  window.scrollTo(0,0);
 }
 
 function dupEst(id) {
@@ -1280,29 +1301,44 @@ function filterEstsStatus(s) {
 
 // INVOICE CONVERSION
 function toInvoice(id) {
-  var e=id?getEsts().find(function(x){return x.id===id;}):getWorkingEst();
-  if (!e){alert('Save the estimate first.');return;}
-  if (!e.clientName||!e.projectName){alert('Please fill in Client Name and Project Name.');return;}
-  var c=calc(e);
-  var due=new Date();due.setDate(due.getDate()+30);
-  var invs=getInvs();
-  var inv={
-    id:'inv_'+Date.now(),number:invs.length+1001,date:Date.now(),
-    dueDate:due.toISOString().split('T')[0],estimateId:e.id,status:'unpaid',
-    clientName:e.clientName,clientEmail:e.clientEmail||'',clientPhone:e.clientPhone||'',
-    projectName:e.projectName,projectAddress:e.projectAddress||'',
-    projectCity:e.projectCity||'',projectZip:e.projectZip||'',
+  var e = id ? getEsts().find(function(x){ return x.id === id; }) : workbench;
+  if (!e) { alert('Save the estimate first.'); return; }
+  if (!e.clientName || !e.projectName) { alert('Please fill in Client Name and Project Name.'); return; }
+
+  // If converting from workbench (unsaved), save it first
+  if (!id) {
+    if (workbenchIsNew && !hasSub() && getEsts().length >= 1) { go('subscribe'); return; }
+    saveWorkbenchToStorage();
+    e = workbench;
+  }
+
+  var c = calc(e);
+  var due = new Date(); due.setDate(due.getDate()+30);
+  var invs = getInvs();
+  var inv = {
+    id:'inv_'+Date.now(), number:invs.length+1001, date:Date.now(),
+    dueDate:due.toISOString().split('T')[0], estimateId:e.id, status:'unpaid',
+    clientName:e.clientName, clientEmail:e.clientEmail||'', clientPhone:e.clientPhone||'',
+    projectName:e.projectName, projectAddress:e.projectAddress||'',
+    projectCity:e.projectCity||'', projectZip:e.projectZip||'',
     lineItems:JSON.parse(JSON.stringify(e.lineItems||[])),
-    overhead:e.overhead,profit:e.profit,taxRate:e.taxRate,depositPct:e.depositPct,
-    total:c.total,laborAmt:c.labor,matAmt:c.mat,ohAmt:c.oh,prAmt:c.pr,
-    txAmt:c.tx,depAmt:c.dep,balAmt:c.bal,
-    terms:e.terms||'',payInfo:getCo().payInfo||''
+    overhead:e.overhead, profit:e.profit, taxRate:e.taxRate, depositPct:e.depositPct,
+    total:c.total, laborAmt:c.labor, matAmt:c.mat, ohAmt:c.oh, prAmt:c.pr,
+    txAmt:c.tx, depAmt:c.dep, balAmt:c.bal,
+    terms:e.terms||'', payInfo:getCo().payInfo||''
   };
-  invs.push(inv);saveInvs(invs);
-  var ests=getEsts();var eidx=ests.findIndex(function(x){return x.id===e.id;});
-  if(eidx>=0){ests[eidx].status='approved';saveEsts(ests);}
-  state.currentInvoiceId=inv.id;toast('Invoice created!');state.view='invoice_detail';render();
+  invs.push(inv); saveInvs(invs);
+
+  var ests = getEsts();
+  var eidx = ests.findIndex(function(x){ return x.id === e.id; });
+  if (eidx >= 0) { ests[eidx].status = 'approved'; saveEsts(ests); }
+
+  state.currentInvoiceId = inv.id;
+  toast('Invoice created!');
+  state.view = 'invoice_detail';
+  render();
 }
+
 
 // INVOICES
 function pgInvoices() {
@@ -1341,7 +1377,7 @@ function filterInvStatus(s){var c=document.getElementById('invs-list');if(!c)ret
 
 // ESTIMATE DETAIL
 function pgEstDetail() {
-  var e=state.currentEstimateId?getEsts().find(function(x){return x.id===state.currentEstimateId;}):getWorkingEst();
+  var e = getEsts().find(function(x){ return x.id === state.detailEstimateId; });
   if (!e) return '<div class="empty"><p>Not found</p></div>';
   var c=calc(e);var tr=TRADES[e.tradeType];var mult=getMultiplier(e.projectZip||'');var co=getCo();
   var html='<div class="detail">';
@@ -1458,7 +1494,7 @@ function pickerHome() {
 
 function pickerTrade(k) {
   var t=TRADES[k];if(!t)return'';
-  var e=getWorkingEst();var mult=getMultiplier(e?e.projectZip||'':'');
+  var mult=getMultiplier(workbench?(workbench.projectZip||''):'');
   var html='<div class="modal-handle"></div><button class="modal-back" onclick="document.getElementById(\'picker-body\').innerHTML=pickerHome()">&#x2190; All Trades</button><div class="modal-title">'+t.icon+' '+t.label+'</div>';
   t.categories.forEach(function(cat){
     html+='<div class="cat-name">'+cat.name+'</div>';
@@ -1471,14 +1507,19 @@ function pickerTrade(k) {
   return html;
 }
 
-function addCatalogItem(tradeKey,itemId) {
-  var t=TRADES[tradeKey];if(!t)return;
-  var found;for(var ci=0;ci<t.categories.length;ci++){found=t.categories[ci].items.find(function(i){return i.id===itemId;});if(found)break;}
-  if(!found)return;
-  var item={id:found.id+'_'+Date.now(),name:found.name,qty:1,unit:found.unit,unitPrice:found.basePrice,laborPct:found.laborPct,tradeLabel:t.label};
-  if(state.currentEstimateId){var ests=getEsts();var idx=ests.findIndex(function(x){return x.id===state.currentEstimateId;});if(idx>=0){ests[idx].lineItems=ests[idx].lineItems||[];ests[idx].lineItems.push(item);saveEsts(ests);}}
-  else{if(!_draft)_draft=blankEst();_draft.lineItems=_draft.lineItems||[];_draft.lineItems.push(item);}
-  toast('Item added');render();
+function addCatalogItem(tradeKey, itemId) {
+  var t=TRADES[tradeKey]; if(!t) return;
+  var found;
+  for (var ci=0; ci<t.categories.length; ci++) {
+    found = t.categories[ci].items.find(function(i){ return i.id === itemId; });
+    if (found) break;
+  }
+  if (!found) return;
+  if (!workbench) openNewEstimate();
+  workbench.lineItems = workbench.lineItems || [];
+  workbench.lineItems.push({id:found.id+'_'+Date.now(), name:found.name, qty:1, unit:found.unit, unitPrice:found.basePrice, laborPct:found.laborPct, tradeLabel:t.label});
+  toast('Item added');
+  render();
 }
 function closePicker(){var m=document.getElementById('picker');if(m)m.classList.add('hidden');}
 
@@ -1490,9 +1531,8 @@ function genScope() {
   if(!text){out.innerHTML='<div class="ai-error">Please describe the job first.</div>';return;}
   btn.disabled=true;
   out.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Analyzing job scope...</div>';
-  var e=getWorkingEst();
-  var zip=(e&&e.projectZip)||'';
-  var mult=getMultiplier(zip);
+  var zip = workbench ? (workbench.projectZip||'') : '';
+  var mult = getMultiplier(zip);
   var catalogLines=[];
   Object.entries(TRADES).forEach(function(kv){
     var items=kv[1].categories.reduce(function(a,c){return a.concat(c.items);},[]).slice(0,5);
@@ -1523,13 +1563,19 @@ function genScope() {
 }
 
 function addAiItems() {
-  var items=state.aiItems;if(!items||!items.length)return;
-  items.forEach(function(it){
-    var item={id:it.id+'_'+Date.now(),name:it.name,qty:it.qty,unit:it.unit,unitPrice:it.unitPrice,laborPct:it.laborPct,tradeLabel:it.tradeLabel,notes:it.notes};
-    if(state.currentEstimateId){var ests=getEsts();var idx=ests.findIndex(function(x){return x.id===state.currentEstimateId;});if(idx>=0){ests[idx].lineItems=ests[idx].lineItems||[];ests[idx].lineItems.push(item);saveEsts(ests);}}
-    else{if(!_draft)_draft=blankEst();_draft.lineItems=_draft.lineItems||[];_draft.lineItems.push(item);}
+  var items = state.aiItems;
+  if (!items || !items.length) return;
+  if (!workbench) openNewEstimate();
+  workbench.lineItems = workbench.lineItems || [];
+  items.forEach(function(it) {
+    workbench.lineItems.push({
+      id: it.id+'_'+Date.now(), name: it.name, qty: it.qty, unit: it.unit,
+      unitPrice: it.unitPrice, laborPct: it.laborPct, tradeLabel: it.tradeLabel, notes: it.notes
+    });
   });
-  state.aiItems=null;toast(items.length+' items added!');render();
+  state.aiItems = null;
+  toast(items.length + ' items added!');
+  render();
 }
 
 function clearScope(){var i=document.getElementById('ai-in');if(i)i.value='';var o=document.getElementById('ai-out');if(o)o.innerHTML='';state.aiItems=null;}
