@@ -5,23 +5,15 @@ const path    = require('path');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// Parse JSON bodies
 app.use(express.json({ limit: '1mb' }));
-
-// Serve all static files from /public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── AI endpoint ──────────────────────────────────────────────────
-app.post('/api/generate', async (req, res) => {
+app.post('/api/generate', (req, res) => {
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set on server.' });
-  }
+  if (!key) return res.status(500).json({ error: 'API key not configured on server.' });
 
   const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ error: 'Missing prompt' });
-  }
+  if (!prompt) return res.status(400).json({ error: 'Missing prompt in request body.' });
 
   const payload = JSON.stringify({
     model:      'claude-haiku-4-5',
@@ -47,27 +39,19 @@ app.post('/api/generate', async (req, res) => {
     apiRes.on('end', () => {
       try {
         const parsed = JSON.parse(data);
-        res.status(apiRes.statusCode).json(parsed);
+        if (parsed.error) return res.status(apiRes.statusCode).json({ error: parsed.error.message || JSON.stringify(parsed.error) });
+        return res.status(200).json(parsed);
       } catch(e) {
-        res.status(500).json({ error: 'Failed to parse Anthropic response' });
+        return res.status(500).json({ error: 'Failed to parse Anthropic response' });
       }
     });
   });
 
-  apiReq.on('error', (e) => {
-    console.error('Anthropic request error:', e.message);
-    res.status(500).json({ error: e.message });
-  });
-
+  apiReq.on('error', (e) => res.status(500).json({ error: e.message }));
   apiReq.write(payload);
   apiReq.end();
 });
 
-// ── Catch-all: serve index.html for any other route ─────────────
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => {
-  console.log(`Driftocity Estimate Pro running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log('Driftocity Estimate Pro running on port ' + PORT));
