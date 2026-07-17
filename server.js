@@ -2,11 +2,19 @@ const express = require('express');
 const https   = require('https');
 const path    = require('path');
 
+const validateLicense = require('./api/validate-license');
+const generateLicense  = require('./api/generate-license');
+
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// License endpoints read raw body themselves (see api/ files) — mount before JSON parser
+app.post('/api/validate-license', validateLicense);
+app.post('/api/generate-license', generateLicense);
+
+app.use(express.json({ limit: '1mb' }));
 
 app.post('/api/generate', (req, res) => {
   const key = process.env.ANTHROPIC_API_KEY;
