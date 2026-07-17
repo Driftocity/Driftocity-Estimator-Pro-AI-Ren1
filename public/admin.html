@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Driftocity — License Admin</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#1A1F2E;color:#fff;max-width:480px;margin:40px auto;padding:20px}
+  h1{font-size:20px;margin-bottom:20px}
+  label{display:block;font-size:13px;color:#8B95A8;margin-bottom:4px;margin-top:16px}
+  input{width:100%;padding:12px;background:#242938;border:1px solid #2E3447;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box}
+  button{width:100%;padding:14px;background:#FF6B35;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;margin-top:20px;cursor:pointer}
+  #result{margin-top:20px;padding:16px;background:#242938;border-radius:8px;font-size:14px;word-break:break-all;display:none}
+  #result.show{display:block}
+  .key{font-size:20px;font-weight:700;color:#FF6B35;letter-spacing:1px;margin:8px 0}
+  .err{color:#EF4444}
+</style>
+</head>
+<body>
+<h1>🔑 Generate License Key</h1>
+<p style="font-size:13px;color:#8B95A8">Use this after someone pays via Stripe. Send them the generated key by email.</p>
+
+<label>Admin Secret</label>
+<input type="password" id="secret" placeholder="Your ADMIN_SECRET">
+
+<label>Customer Email (optional, for your records)</label>
+<input type="text" id="email" placeholder="customer@example.com">
+
+<label>Customer Name (optional)</label>
+<input type="text" id="name" placeholder="Jane's Contracting">
+
+<button onclick="generate()">Generate License Key</button>
+
+<div id="result"></div>
+
+<script>
+async function generate() {
+  const secret = document.getElementById('secret').value;
+  const email = document.getElementById('email').value;
+  const name = document.getElementById('name').value;
+  const result = document.getElementById('result');
+
+  if (!secret) { alert('Enter the admin secret'); return; }
+
+  result.className = 'show';
+  result.innerHTML = 'Generating...';
+
+  try {
+    const res = await fetch('/api/generate-license', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret, email, name })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      result.innerHTML = '<span class="err">Error: ' + (data.error || 'Unknown error') + '</span>';
+      return;
+    }
+    result.innerHTML = 'License key created:<div class="key">' + data.key + '</div>Send this to the customer.';
+  } catch (e) {
+    result.innerHTML = '<span class="err">Error: ' + e.message + '</span>';
+  }
+}
+</script>
+</body>
+</html>
