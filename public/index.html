@@ -230,7 +230,41 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .install-text span{font-size:12px;color:var(--steel)}
 .install-btn{padding:8px 14px;background:var(--orange);color:var(--white);border-radius:var(--r-sm);font-size:13px;font-weight:600;flex-shrink:0}
 .install-dismiss{color:var(--steel);padding:4px;flex-shrink:0;font-size:14px}
-@media print{.topbar,.bottomnav,.action-btns,.ai-box,.toast,.card-actions,.install-banner{display:none!important}.shell{height:auto;max-width:none}.content{overflow:visible;padding-bottom:0}.detail{padding:20px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media print{
+  .topbar,.bottomnav,.action-btns,.ai-box,.toast,.card-actions,.install-banner{display:none!important}
+  html,body{background:#fff!important;color:#111!important}
+  .shell{height:auto;max-width:none;border:none!important}
+  .content{overflow:visible;padding-bottom:0}
+  .detail{padding:24px;max-width:760px;margin:0 auto}
+  .det-hdr{margin-bottom:20px}
+  .det-num{color:#111!important;font-size:24px}
+  .det-date{color:#555!important}
+  .co-hdr{background:#f7f7f9!important;border:1px solid #e2e2e6!important}
+  .co-name{color:#111!important}
+  .co-meta{color:#555!important}
+  .co-empty{display:none!important}
+  .parties{margin-bottom:20px}
+  .party{background:#f7f7f9!important;border:1px solid #e2e2e6!important}
+  .party-lbl{color:#888!important}
+  .party-name{color:#111!important}
+  .party-meta{color:#555!important}
+  .items-table{background:#fff!important;border:1px solid #e2e2e6!important;box-shadow:none!important}
+  .items-table thead{background:#f0f0f3!important}
+  .items-table th{color:#666!important}
+  .items-table td{color:#222!important;border-bottom:1px solid #ececef!important}
+  .iname{color:#111!important}
+  .itag{color:#888!important}
+  .det-totals{background:#f7f7f9!important;border:1px solid #e2e2e6!important}
+  .dt-row{color:#555!important;border-bottom:1px solid #ececef!important}
+  .dt-row span:last-child{color:#222!important}
+  .dt-total span{color:#111!important;font-size:18px!important}
+  .dt-dep span{color:#FF6B35!important}
+  .det-terms{background:#f7f7f9!important;border:1px solid #e2e2e6!important}
+  .det-terms h4{color:#888!important}
+  .det-terms p{color:#444!important}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{margin:0.5in}
+}
 @media(min-width:480px){#app{display:flex;justify-content:center}.shell{border-left:1px solid var(--navy-light);border-right:1px solid var(--navy-light)}}
 
 </style>
@@ -1420,7 +1454,7 @@ function invCard(inv) {
   html+='<span class="status-pill" style="background:'+(sc[st]||'#888')+'20;color:'+(sc[st]||'#888')+'">'+st+'</span></div></div>';
   html+='<div class="card-actions">';
   html+='<button class="act-btn" onclick="markPaid(\''+inv.id+'\')">Mark Paid</button>';
-  html+='<button class="act-btn" onclick="openInv(\''+inv.id+'\');setTimeout(function(){window.print();},400)">Print/PDF</button>';
+  html+='<button class="act-btn" onclick="openInv(\''+inv.id+'\');setTimeout(function(){printDoc(\'invoice\',\''+inv.id+'\');},400)">Print/PDF</button>';
   html+='<button class="act-btn danger" onclick="delInv(\''+inv.id+'\')">Delete</button>';
   html+='</div></div>';
   return html;
@@ -1470,7 +1504,7 @@ function pgEstDetail() {
   if (e.terms) html+='<div class="det-terms"><h4>Terms &amp; Conditions</h4><p>'+esc(e.terms)+'</p></div>';
   html+='<div class="action-btns">';
   html+='<button class="btn-primary" onclick="editEst(\''+e.id+'\')">&#x270F; Edit Estimate</button>';
-  html+='<button class="btn-secondary" onclick="window.print()">&#x1F5A8; Print / PDF</button>';
+  html+='<button class="btn-secondary" onclick="printDoc(\'estimate\',\''+e.id+'\')">&#x1F5A8; Print / PDF</button>';
   html+='<button class="btn-secondary" onclick="toInvoice(\''+e.id+'\')">&#x1F4C4; Convert to Invoice</button>';
   html+='</div></div>';
   return html;
@@ -1493,7 +1527,7 @@ function pgInvDetail() {
   if (inv.depAmt) html+='<div class="dt-row"><span>Deposit</span><span>'+fmt(inv.depAmt)+'</span></div><div class="dt-row dt-dep"><span>BALANCE DUE</span><span>'+fmt(inv.balAmt||0)+'</span></div>';
   html+='</div>';
   if (inv.payInfo||co.payInfo) html+='<div class="det-terms"><h4>Payment Instructions</h4><p>'+esc(inv.payInfo||co.payInfo||'')+'</p></div>';
-  html+='<div class="action-btns"><button class="btn-primary" onclick="markPaid(\''+inv.id+'\');render()">&#x2705; Mark as Paid</button><button class="btn-secondary" onclick="window.print()">&#x1F5A8; Print / PDF</button></div></div>';
+  html+='<div class="action-btns"><button class="btn-primary" onclick="markPaid(\''+inv.id+'\');render()">&#x2705; Mark as Paid</button><button class="btn-secondary" onclick="printDoc(\'invoice\',\''+inv.id+'\')">&#x1F5A8; Print / PDF</button></div></div>';
   return html;
 }
 
@@ -1664,6 +1698,26 @@ function defTerms(){return DEF.deposit+'% deposit required before work begins. B
 function fmt(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0);}
 function fmtDate(ts){if(!ts)return'';return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── PRINT / SAVE AS PDF ───────────────────────
+// Sets the document title so Android/Chrome suggests a clean filename
+// when the customer taps "Save as PDF" in the print dialog.
+function printDoc(type, id) {
+  var name = 'Document';
+  var docNum = '';
+  if (type === 'estimate') {
+    var e = getEsts().find(function(x){ return x.id === id; });
+    if (e) { name = (e.clientName || 'Client').replace(/[^a-z0-9]/gi, '-'); docNum = e.id.slice(-6).toUpperCase(); }
+  } else if (type === 'invoice') {
+    var inv = getInvs().find(function(x){ return x.id === id; });
+    if (inv) { name = (inv.clientName || 'Client').replace(/[^a-z0-9]/gi, '-'); docNum = inv.number || inv.id.slice(-6).toUpperCase(); }
+  }
+  var prefix = type === 'invoice' ? 'Invoice' : 'Estimate';
+  var oldTitle = document.title;
+  document.title = 'Driftocity-' + prefix + '-' + docNum + '-' + name;
+  window.print();
+  setTimeout(function(){ document.title = oldTitle; }, 1000);
+}
 
 // BOOT
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){});
