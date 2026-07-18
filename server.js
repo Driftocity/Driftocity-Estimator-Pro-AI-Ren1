@@ -20,13 +20,20 @@ app.post('/api/generate', (req, res) => {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return res.status(500).json({ error: 'API key not configured on server.' });
 
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ error: 'Missing prompt in request body.' });
+  // Accept either a single 'prompt' string (legacy) or a full 'messages' array (chat)
+  let messages;
+  if (Array.isArray(req.body.messages) && req.body.messages.length) {
+    messages = req.body.messages;
+  } else if (req.body.prompt) {
+    messages = [{ role: 'user', content: req.body.prompt }];
+  } else {
+    return res.status(400).json({ error: 'Missing prompt or messages in request body.' });
+  }
 
   const payload = JSON.stringify({
     model:      'claude-haiku-4-5',
     max_tokens: 2048,
-    messages:   [{ role: 'user', content: prompt }]
+    messages:   messages
   });
 
   const options = {
