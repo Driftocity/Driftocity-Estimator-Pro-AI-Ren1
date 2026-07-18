@@ -1213,7 +1213,7 @@ function buildLineItems(e) {
     html+='<div class="li-field"><label>Unit $</label><div class="li-price"><span>$</span><input type="number" min="0" step="0.01" value="'+(item.unitPrice||0)+'" oninput="setLI('+i+',\'unitPrice\',parseFloat(this.value));refreshTotals()"></div></div>';
     html+='<div class="li-field"><label>Subtotal</label><span class="li-sub" id="ls'+i+'">'+fmt(sub)+'</span></div></div>';
     html+='<div style="display:flex;align-items:center;gap:12px"><span style="font-size:12px;color:var(--steel)">Labor %</span>';
-    html+='<input type="number" min="0" max="100" value="'+Math.round((item.laborPct||.6)*100)+'" style="width:60px;padding:5px 8px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:#fff;font-size:13px" oninput="setLI('+i+',\'laborPct\',this.value/100);refreshTotals()"></div>';
+    html+='<input type="number" min="0" max="100" value="'+Math.round((item.laborPct!=null?item.laborPct:1)*100)+'" style="width:60px;padding:5px 8px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:#fff;font-size:13px" oninput="setLI('+i+',\'laborPct\',this.value/100);refreshTotals()"></div>';
     html+='</div>';
     return html;
   }).join('');
@@ -1245,7 +1245,7 @@ function calc(e) {
   var labor=0,mat=0;
   (e.lineItems||[]).forEach(function(it){
     var t=(it.qty||0)*(it.unitPrice||0);
-    var lp=it.laborPct!=null?it.laborPct:.6;
+    var lp=it.laborPct!=null?it.laborPct:1;
     labor+=t*lp; mat+=t*(1-lp);
   });
   labor*=mult; mat*=mult;
@@ -1284,7 +1284,7 @@ function delLI(i) {
 function addBlankItem() {
   if (!workbench) openNewEstimate();
   workbench.lineItems = workbench.lineItems || [];
-  workbench.lineItems.push({id:'c_'+Date.now(), name:'Custom Item', qty:1, unit:'ls', unitPrice:0, laborPct:.6, tradeLabel:'Custom'});
+  workbench.lineItems.push({id:'c_'+Date.now(), name:'Custom Item', qty:1, unit:'ls', unitPrice:0, laborPct:1, tradeLabel:'Custom'});
   render();
 }
 
@@ -1629,7 +1629,7 @@ function addCatalogItem(tradeKey, itemId) {
   if (!found) return;
   if (!workbench) openNewEstimate();
   workbench.lineItems = workbench.lineItems || [];
-  workbench.lineItems.push({id:found.id+'_'+Date.now(), name:found.name, qty:1, unit:found.unit, unitPrice:found.basePrice, laborPct:found.laborPct, tradeLabel:t.label});
+  workbench.lineItems.push({id:found.id+'_'+Date.now(), name:found.name, qty:1, unit:found.unit, unitPrice:found.basePrice, laborPct:1, tradeLabel:t.label});
   toast('Item added');
   render();
 }
@@ -1650,7 +1650,7 @@ function genScope() {
     var items=kv[1].categories.reduce(function(a,c){return a.concat(c.items);},[]).slice(0,5);
     items.forEach(function(i){catalogLines.push(i.id+','+i.name+','+i.basePrice+','+i.unit+','+kv[1].label);});
   });
-  var prompt='Contractor estimator. Job: "'+text.replace(/"/g,"'")+'"\\n\\nCatalog (id,name,basePrice,unit,trade):\\n'+catalogLines.join('\\n')+'\\n\\nReturn a JSON array of up to 12 line items. Each: {"id":"string","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborPct":0.6,"tradeLabel":"string","notes":"string"}\\nReturn ONLY the raw JSON array starting with [ and ending with ]. No markdown.';
+  var prompt='Contractor estimator. Job: "'+text.replace(/"/g,"'")+'"\\n\\nCatalog (id,name,basePrice,unit,trade):\\n'+catalogLines.join('\\n')+'\\n\\nReturn a JSON array of up to 12 line items. Each: {"id":"string","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborPct":1.0,"tradeLabel":"string","notes":"string"}\\nReturn ONLY the raw JSON array starting with [ and ending with ]. No markdown.';
   fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
   .then(function(r){return r.json();})
   .then(function(data){
@@ -1662,7 +1662,7 @@ function genScope() {
     try{items=JSON.parse(raw.slice(s,e2+1));}
     catch(pe){var lc=raw.lastIndexOf('},');if(lc>s)try{items=JSON.parse(raw.slice(s,lc+1)+']');}catch(e3){throw new Error('Response cut off. Try again.');}else throw new Error('Could not parse. Try again.');}
     if(!Array.isArray(items)||!items.length)throw new Error('No items returned. Add more detail.');
-    items=items.map(function(it){return{id:String(it.id||'ai'),name:String(it.name||'Item'),qty:Math.max(.01,parseFloat(it.qty)||1),unit:String(it.unit||'ls'),unitPrice:Math.max(0,parseFloat(it.unitPrice)||0),laborPct:Math.min(1,Math.max(0,parseFloat(it.laborPct)||.6)),tradeLabel:String(it.tradeLabel||'AI'),notes:String(it.notes||'')};});
+    items=items.map(function(it){return{id:String(it.id||'ai'),name:String(it.name||'Item'),qty:Math.max(.01,parseFloat(it.qty)||1),unit:String(it.unit||'ls'),unitPrice:Math.max(0,parseFloat(it.unitPrice)||0),laborPct:Math.min(1,Math.max(0,parseFloat(it.laborPct!=null?it.laborPct:1))),tradeLabel:String(it.tradeLabel||'AI'),notes:String(it.notes||'')};});
     state.aiItems=items;
     var total=items.reduce(function(s,it){return s+it.unitPrice*mult*it.qty;},0);
     var html='<div class="ai-results">';
