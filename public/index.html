@@ -2,533 +2,1720 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LaunchMind — Your Plan is Ready</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#1A1F2E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Estimate Pro">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>Driftocity Estimate Pro</title>
 <style>
-  :root{
-    --navy-deep:#060a14;
-    --navy:#0b1220;
-    --navy-surface:#111a2c;
-    --navy-surface-2:#16203a;
-    --line:#22304f;
-    --gold:#d4af37;
-    --gold-bright:#f0cf5f;
-    --gold-dim:#8a6d1f;
-    --text:#e9e7de;
-    --text-dim:#9aa5bd;
-    --text-faint:#5d6b8a;
-    --good:#4fd18b;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html{scroll-behavior:smooth;}
-  body{
-    background:var(--navy-deep);
-    color:var(--text);
-    font-family:'Space Grotesk',sans-serif;
-    line-height:1.5;
-    -webkit-font-smoothing:antialiased;
-    padding-bottom:96px;
-  }
-  .mono{font-family:'JetBrains Mono',monospace;}
 
-  /* circuit background wash */
-  .circuit-bg{
-    position:fixed; inset:0; z-index:-1; opacity:0.35;
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size:64px 64px;
-    mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, black 10%, transparent 75%);
-  }
+:root{--navy:#1A1F2E;--navy-mid:#242938;--navy-light:#2E3447;--orange:#FF6B35;--orange-mid:#E5582A;--orange-dim:#FF6B3520;--steel:#8B95A8;--concrete:#C8CDD8;--white:#FFFFFF;--green:#2ECC71;--blue:#3B82F6;--red:#EF4444;--red-dim:#EF444420;--purple:#8B5CF6;--yellow:#F59E0B;--r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--navy);color:var(--white);-webkit-font-smoothing:antialiased}
+#app{min-height:100dvh}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,select,textarea{font-family:inherit}
+*{scrollbar-width:none}*::-webkit-scrollbar{display:none}
+.splash{position:fixed;inset:0;z-index:9999;background:var(--navy);display:flex;align-items:center;justify-content:center}
+.splash-inner{text-align:center}
+.splash-logo{font-size:64px;margin-bottom:16px;animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
+.splash-name{font-size:28px;font-weight:700;letter-spacing:.04em;animation:fade .6s .2s ease both}
+.splash-sub{font-size:12px;color:var(--steel);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;animation:fade .6s .35s ease both}
+.splash-bar-wrap{width:120px;height:3px;background:var(--navy-light);border-radius:99px;margin:24px auto 0;overflow:hidden;animation:fade .4s .4s ease both}
+.splash-bar{height:100%;width:0;background:var(--orange);animation:load .8s .5s ease forwards}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes load{to{width:100%}}
+.shell{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto}
+.topbar{display:flex;align-items:center;padding:calc(var(--safe-top) + 10px) 16px 10px;background:var(--navy);border-bottom:1px solid var(--navy-light);min-height:56px;gap:8px;position:sticky;top:0;z-index:100}
+.topbar-left,.topbar-right{flex:0 0 auto;min-width:40px;display:flex;align-items:center}
+.topbar-right{justify-content:flex-end}
+.topbar-title{flex:1;text-align:center;font-size:18px;font-weight:700;letter-spacing:.04em}
+.btn-back{width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--steel);border-radius:var(--r-sm)}
+.badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;background:var(--orange-dim);color:var(--orange);letter-spacing:.06em;text-transform:uppercase}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px}
+.bottomnav{position:sticky;bottom:0;z-index:100;display:flex;background:var(--navy-mid);border-top:1px solid var(--navy-light);padding-bottom:var(--safe-bot)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;color:var(--steel);transition:color .15s;position:relative}
+.nav-btn.active{color:var(--orange)}
+.nav-btn.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:var(--orange);border-radius:99px}
+.nav-lbl{font-size:10px;font-weight:500}
+.nav-fab .nav-icon-wrap{width:44px;height:44px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-12px;box-shadow:0 4px 16px #FF6B3560}
+.dash-hero{display:flex;align-items:center;justify-content:space-between;padding:20px 16px 16px;background:linear-gradient(rgba(26,31,46,.92),rgba(26,31,46,.92)),repeating-linear-gradient(0deg,transparent,transparent 23px,rgba(255,107,53,.08) 24px),repeating-linear-gradient(90deg,transparent,transparent 23px,rgba(255,107,53,.08) 24px)}
+.hero-sub{font-size:12px;color:var(--steel);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.hero-name{font-size:24px;font-weight:700;color:var(--white)}
+.btn-new{display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--orange);color:var(--white);border-radius:var(--r-md);font-size:14px;font-weight:600;box-shadow:0 4px 16px #FF6B3550;white-space:nowrap}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 16px 16px}
+.stat{padding:14px;background:var(--navy-mid);border-radius:var(--r-md);border:1px solid var(--navy-light);position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat.s-orange::before{background:var(--orange)}.stat.s-blue::before{background:var(--blue)}
+.stat.s-green::before{background:var(--green)}.stat.s-purple::before{background:var(--purple)}
+.stat-lbl{font-size:11px;color:var(--steel);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:700;color:var(--white);line-height:1.1}
+.stat-sub{font-size:11px;color:var(--steel);margin-top:3px}
+.section{padding:0 16px 16px}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.section-hdr h3{font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--concrete)}
+.link-btn{font-size:13px;color:var(--orange);font-weight:500}
+.trade-pills{display:flex;flex-wrap:wrap;gap:8px}
+.trade-pill{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:var(--r-sm);background:var(--navy-mid);border:1px solid var(--navy-light);color:var(--concrete);font-size:13px;font-weight:500}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 16px;text-align:center;gap:8px}
+.empty-icon{font-size:48px}.empty h3{font-size:18px;font-weight:600}.empty p{font-size:14px;color:var(--steel);max-width:240px}
+.card{background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-md);margin-bottom:8px;overflow:hidden}
+.card-top{display:flex;gap:16px;padding:16px;align-items:flex-start}
+.card-info{flex:1;min-width:0}
+.card-title{font-size:15px;font-weight:600;color:var(--white);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-sub{font-size:13px;color:var(--steel);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-meta{font-size:12px;color:var(--steel)}
+.card-right{text-align:right;flex-shrink:0}
+.card-amt{font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px}
+.status-pill{font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;text-transform:capitalize}
+.card-actions{display:flex;gap:6px;padding:6px 16px 12px;border-top:1px solid var(--navy-light);flex-wrap:wrap}
+.act-btn{font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--r-sm);color:var(--concrete);background:var(--navy-light)}
+.act-btn.danger{color:var(--red)}
+.form-sec{padding:16px;border-bottom:1px solid var(--navy-light)}
+.form-sec-title{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:14px}
+.form-row{margin-bottom:8px}
+.form-split{display:flex;gap:8px;margin-bottom:8px}
+.form-split>*{flex:1;min-width:0}
+.zip-field{max-width:100px!important;flex:0 0 100px!important}
+.lbl{font-size:11px;color:var(--steel);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;display:block}
+.inp{width:100%;padding:12px 14px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:var(--white);font-size:14px;-webkit-appearance:none}
+.inp:focus{outline:none;border-color:var(--orange)}
+.inp::placeholder{color:var(--steel)}
+textarea.inp{resize:vertical;min-height:80px;line-height:1.5}
+select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238B95A8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.zip-note{font-size:12px;color:var(--steel);padding:6px 10px;background:var(--navy-light);border-radius:var(--r-sm);margin-top:-4px;margin-bottom:8px}
+.zip-note strong{color:var(--orange)}
+.li-row{background:var(--navy-light);border-radius:var(--r-sm);margin-bottom:8px;padding:12px;border:1px solid var(--navy-mid)}
+.li-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.li-name-wrap{flex:1;min-width:0}
+.li-name{width:100%;background:transparent;border:none;color:var(--white);font-size:14px;font-weight:500;padding:4px 0;border-bottom:1px solid var(--navy-light)}
+.li-name:focus{outline:none;border-bottom-color:var(--orange)}
+.li-trade{font-size:10px;color:var(--steel);display:block;margin-top:3px}
+.li-del{color:var(--steel);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);flex-shrink:0}
+.li-del:active{color:var(--red);background:var(--red-dim)}
+.li-grid{display:grid;grid-template-columns:70px 1fr 1fr 1fr;gap:6px;align-items:end;margin-bottom:8px}
+.li-field{display:flex;flex-direction:column;gap:3px}
+.li-field label{font-size:10px;color:var(--steel);text-transform:uppercase;letter-spacing:.06em}
+.li-field input,.li-field select{width:100%;padding:6px 8px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:var(--white);font-size:13px;-webkit-appearance:none}
+.li-field input:focus,.li-field select:focus{outline:none;border-color:var(--orange)}
+.li-price{display:flex;align-items:center;gap:4px}
+.li-price span{font-size:13px;color:var(--steel)}
+.li-price input{flex:1}
+.li-sub{font-size:14px;font-weight:600;color:var(--orange);display:block;margin-top:2px}
+.btn-add-item{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border:1px dashed var(--navy-light);border-radius:var(--r-sm);color:var(--steel);font-size:13px;margin-top:8px}
+.totals{margin:0 16px 16px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-lg);padding:16px}
+.tot-row{display:flex;justify-content:space-between;padding:5px 0;font-size:14px}
+.tot-row span:first-child{color:var(--concrete)}
+.tot-row span:last-child{color:var(--white);font-weight:500}
+.tot-row.muted span{color:var(--steel)!important;font-size:13px}
+.tot-divider{height:1px;background:var(--navy-light);margin:6px 0}
+.tot-total{padding:10px 0!important;border-top:2px solid var(--orange)!important;border-bottom:2px solid var(--orange)!important;margin:4px 0}
+.tot-total span{font-size:22px!important;font-weight:700!important;color:var(--white)!important}
+.tot-dep span{color:var(--orange)!important;font-weight:600!important}
+.tot-note{font-size:11px;color:var(--steel);margin-top:8px;padding-top:8px;border-top:1px solid var(--navy-light)}
+.btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:var(--orange);color:var(--white);border-radius:var(--r-md);font-size:15px;font-weight:600;box-shadow:0 4px 16px #FF6B3540}
+.btn-secondary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:var(--navy-mid);color:var(--concrete);border:1px solid var(--navy-light);border-radius:var(--r-md);font-size:14px;font-weight:500}
+.action-btns{display:flex;flex-direction:column;gap:8px;padding:16px}
+.ai-box{background:linear-gradient(135deg,#1e2538,#242938);border:1px solid #3a4060;border-radius:var(--r-lg);overflow:hidden}
+.ai-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid #2e3447}
+.ai-badge{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:99px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.06em}
+.ai-title{font-size:14px;font-weight:600;flex:1}
+.ai-body{padding:16px}
+.ai-textarea{width:100%;padding:12px 14px;background:#1a1f2e;border:1px solid #3a4060;border-radius:var(--r-sm);color:#fff;font-size:14px;line-height:1.6;resize:vertical;min-height:90px;font-family:inherit}
+.ai-textarea:focus{outline:none;border-color:#6366f1}
+.ai-textarea::placeholder{color:#4a5270}
+.ai-actions{display:flex;gap:8px;margin-top:10px}
+.btn-ai{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:var(--r-md);font-size:14px;font-weight:600;box-shadow:0 4px 16px #6366f140}
+.btn-ai:disabled{opacity:.5;pointer-events:none}
+.btn-ai-clear{padding:12px 16px;background:var(--navy-light);color:var(--steel);border-radius:var(--r-md);font-size:13px;border:1px solid var(--navy-light)}
+.ai-hint{font-size:11px;color:#4a5270;margin-top:8px;line-height:1.5}
+.ai-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px;color:#8b8fff;font-size:13px}
+.ai-spinner{width:18px;height:18px;border:2px solid #3a3f6a;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-results{background:#1a1f2e;border:1px solid #2e3447;border-radius:var(--r-sm)}
+.ai-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px;border-bottom:1px solid #2e3447;gap:8px}
+.ai-item:last-child{border-bottom:none}
+.ai-item-name{font-size:14px;font-weight:500;color:#fff}
+.ai-item-detail{font-size:12px;color:var(--steel);margin-top:2px}
+.ai-item-price{font-size:14px;font-weight:600;color:var(--orange);white-space:nowrap}
+.ai-add-bar{display:flex;align-items:center;gap:8px;margin-top:10px}
+.ai-add-count{font-size:12px;color:var(--steel);flex:1}
+.btn-add-all{padding:10px 16px;background:var(--orange);color:#fff;border-radius:var(--r-sm);font-size:13px;font-weight:600}
+.ai-error{padding:10px 14px;background:#2a1a1a;border:1px solid var(--red);border-radius:var(--r-sm);color:var(--red);font-size:13px;margin-top:10px;line-height:1.5}
+.modal{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;justify-content:flex-end}
+.modal.hidden{display:none}
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.7)}
+.modal-sheet{position:relative;z-index:1;background:var(--navy-mid);border-radius:var(--r-xl) var(--r-xl) 0 0;max-height:80dvh;overflow-y:auto;padding:0 16px calc(var(--safe-bot) + 24px)}
+.modal-handle{width:36px;height:4px;background:var(--navy-light);border-radius:99px;margin:12px auto 16px}
+.modal-title{font-size:20px;font-weight:700;margin-bottom:16px}
+.modal-back{font-size:13px;color:var(--steel);padding:6px 0;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.trade-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trade-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;background:var(--navy-light);border-radius:var(--r-md);border:1px solid var(--navy-mid)}
+.trade-tile-icon{font-size:24px}.trade-tile-lbl{font-size:12px;font-weight:500;color:var(--concrete);text-align:center}
+.cat-name{font-size:11px;font-weight:700;color:var(--steel);letter-spacing:.1em;text-transform:uppercase;padding:8px 0;margin-bottom:4px;border-bottom:1px solid var(--navy-light)}
+.picker-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--navy-light)}
+.picker-item:active{opacity:.7}
+.pi-name{font-size:14px;font-weight:500;color:#fff;margin-bottom:2px}
+.pi-unit{font-size:12px;color:var(--steel)}
+.pi-price{font-size:15px;font-weight:700;color:var(--orange)}
+.pi-per{font-size:11px;color:var(--steel)}
+.detail{padding:16px;padding-bottom:80px}
+.det-hdr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.det-num{font-size:22px;font-weight:700;letter-spacing:.06em}
+.det-date{font-size:13px;color:var(--steel);margin-left:auto}
+.co-hdr{display:flex;align-items:flex-start;gap:16px;padding:16px;background:var(--navy-light);border-radius:var(--r-md);margin-bottom:16px}
+.co-name{font-size:18px;font-weight:700;margin-bottom:2px}
+.co-meta{font-size:12px;color:var(--steel)}
+.co-empty{padding:12px;background:var(--navy-light);border-radius:var(--r-md);font-size:13px;color:var(--steel);text-align:center;margin-bottom:16px}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.party{background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-md);padding:14px}
+.party-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--steel);margin-bottom:4px}
+.party-name{font-size:14px;font-weight:600;margin-bottom:3px}
+.party-meta{font-size:12px;color:var(--steel)}
+.items-table{width:100%;border-collapse:collapse;background:var(--navy-mid);border-radius:var(--r-md);overflow:hidden;margin-bottom:16px;font-size:13px}
+.items-table thead{background:var(--navy-light)}
+.items-table th{padding:10px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--steel)}
+.items-table td{padding:10px;color:var(--concrete);border-bottom:1px solid var(--navy-light);vertical-align:top}
+.items-table tbody tr:last-child td{border-bottom:none}
+.items-table .r{text-align:right}
+.iname{color:#fff!important;font-weight:500}
+.itag{display:block;font-size:10px;color:var(--steel);margin-top:2px;font-weight:400}
+.det-totals{background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-md);padding:16px;margin-bottom:16px}
+.dt-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--steel);border-bottom:1px solid var(--navy-light)}
+.dt-row:last-child{border-bottom:none}
+.dt-row span:last-child{color:var(--concrete);font-weight:500}
+.dt-total{padding:12px 0!important}
+.dt-total span{font-size:20px!important;font-weight:700!important;color:#fff!important}
+.dt-dep span{color:var(--orange)!important;font-size:15px!important;font-weight:700!important}
+.det-terms{background:var(--navy-light);border-radius:var(--r-md);padding:16px;margin-bottom:16px}
+.det-terms h4{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--steel);margin-bottom:8px}
+.det-terms p{font-size:12px;color:var(--steel);line-height:1.6}
+.sub-page{padding:32px 16px;display:flex;flex-direction:column;gap:16px}
+.sub-hero{text-align:center;padding:16px 0}
+.sub-logo{font-size:56px;margin-bottom:16px}
+.sub-hero h2{font-size:28px;font-weight:700;margin-bottom:8px}
+.sub-tagline{font-size:15px;color:var(--steel);line-height:1.5}
+.price-card{text-align:center;background:linear-gradient(135deg,var(--orange),var(--orange-mid));border-radius:var(--r-xl);padding:32px;box-shadow:0 8px 32px #FF6B3540}
+.price-amt{font-size:52px;font-weight:700;color:#fff;line-height:1}
+.price-amt span{font-size:22px;opacity:.85}
+.price-lbl{font-size:14px;color:rgba(255,255,255,.8);margin-top:8px}
+.features{background:var(--navy-mid);border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:10px}
+.feat{font-size:14px;color:var(--concrete)}
+.btn-subscribe{padding:16px;background:var(--orange);color:#fff;border-radius:var(--r-md);font-size:16px;font-weight:700;box-shadow:0 6px 24px #FF6B3550;text-align:center}
+.sub-note{font-size:11px;color:var(--steel);text-align:center;line-height:1.5}
+.settings-page{padding-bottom:80px}
+.sub-active{background:var(--navy-light);border-radius:var(--r-md);padding:16px;margin-bottom:8px}
+.sub-ok{font-size:16px;font-weight:600;color:var(--green);margin-bottom:6px}
+.sub-trial{background:var(--navy-light);border-radius:var(--r-md);padding:16px;margin-bottom:8px}
+.about{font-size:13px;color:var(--steel);line-height:1.6}
+.about p{margin-bottom:4px}.about strong{color:#fff}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 24px;border-radius:var(--r-md);font-size:14px;font-weight:500;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:toast-in .25s ease}
+.toast.hidden{display:none}
+.toast.ok{background:var(--green);color:#fff}
+.toast.err{background:var(--red);color:#fff}
+@keyframes toast-in{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%)}}
+.filter-bar{display:flex;gap:8px;padding:12px 16px 8px;position:sticky;top:56px;z-index:10;background:var(--navy)}
+.search-inp{flex:1;padding:10px 14px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:#fff;font-size:14px}
+.filter-sel{padding:10px 28px 10px 10px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:var(--concrete);font-size:13px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238B95A8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.install-banner{position:fixed;bottom:calc(70px + var(--safe-bot));left:12px;right:12px;z-index:600;max-width:456px;margin:0 auto}
+.install-banner.hidden{display:none}
+.install-banner-inner{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--navy-mid);border:1px solid var(--orange);border-radius:var(--r-md);box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.install-icon{font-size:24px;flex-shrink:0}
+.install-text{flex:1;min-width:0}
+.install-text strong{display:block;font-size:13px;color:var(--white)}
+.install-text span{font-size:12px;color:var(--steel)}
+.install-btn{padding:8px 14px;background:var(--orange);color:var(--white);border-radius:var(--r-sm);font-size:13px;font-weight:600;flex-shrink:0}
+.install-dismiss{color:var(--steel);padding:4px;flex-shrink:0;font-size:14px}
+@media print{.topbar,.bottomnav,.action-btns,.ai-box,.toast,.card-actions,.install-banner{display:none!important}.shell{height:auto;max-width:none}.content{overflow:visible;padding-bottom:0}.detail{padding:20px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media(min-width:480px){#app{display:flex;justify-content:center}.shell{border-left:1px solid var(--navy-light);border-right:1px solid var(--navy-light)}}
 
-  header{
-    max-width:920px; margin:0 auto; padding:36px 24px 8px;
-    display:flex; align-items:center; justify-content:space-between;
-  }
-  .logo{
-    font-weight:700; font-size:1.15rem; letter-spacing:0.02em;
-    display:flex; align-items:center; gap:10px;
-  }
-  .logo-mark{
-    width:22px;height:22px; position:relative; flex:none;
-  }
-  .logo-mark svg{width:100%;height:100%;}
-  .status-pill{
-    font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--good);
-    border:1px solid rgba(79,209,139,0.35); background:rgba(79,209,139,0.08);
-    padding:5px 10px; border-radius:100px; letter-spacing:0.03em;
-    display:flex; align-items:center; gap:6px;
-  }
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--good); box-shadow:0 0 8px var(--good);}
-
-  main{max-width:920px; margin:0 auto; padding:0 24px;}
-
-  .hero{
-    padding:28px 0 20px; border-bottom:1px solid var(--line);
-  }
-  .eyebrow{
-    font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--gold);
-    letter-spacing:0.12em; text-transform:uppercase; margin-bottom:10px;
-  }
-  h1{
-    font-size:clamp(1.6rem,4vw,2.3rem); font-weight:700; letter-spacing:-0.01em;
-    max-width:640px;
-  }
-  h1 span{color:var(--gold-bright);}
-  .sub{color:var(--text-dim); margin-top:10px; max-width:560px; font-size:0.98rem;}
-
-  /* countdown bar */
-  .expiry{
-    margin-top:20px; display:flex; align-items:center; gap:12px;
-    font-family:'JetBrains Mono',monospace; font-size:0.82rem; color:var(--text-dim);
-  }
-  .expiry .clock{
-    color:var(--gold-bright); font-weight:600; letter-spacing:0.03em;
-    border:1px solid var(--gold-dim); padding:4px 10px; border-radius:6px;
-    background:rgba(212,175,55,0.06);
-  }
-
-  /* circuit progress — the signature element */
-  .circuit-progress{
-    margin:28px 0 8px; padding:18px 20px; border:1px solid var(--line);
-    border-radius:10px; background:var(--navy-surface);
-  }
-  .circuit-progress .cp-label{
-    font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--text-faint);
-    text-transform:uppercase; letter-spacing:0.1em; margin-bottom:12px;
-  }
-  .circuit-svg{width:100%; height:auto; display:block;}
-  .circuit-svg .trace-done{stroke:var(--gold-bright); stroke-width:2; fill:none;
-    filter:drop-shadow(0 0 4px rgba(240,207,95,0.6));}
-  .circuit-svg .trace-pending{stroke:var(--text-faint); stroke-width:2; fill:none;
-    stroke-dasharray:4 5; opacity:0.55;}
-  .circuit-svg .node-done{fill:var(--gold-bright); filter:drop-shadow(0 0 5px rgba(240,207,95,0.8));}
-  .circuit-svg .node-pending{fill:var(--navy-surface-2); stroke:var(--text-faint); stroke-width:1.5;}
-  .circuit-svg text{font-family:'JetBrains Mono',monospace; font-size:9.5px;}
-  .circuit-svg .t-done{fill:var(--text-dim);}
-  .circuit-svg .t-pending{fill:var(--text-faint);}
-
-  /* sections of the plan */
-  .plan-section{
-    margin-top:22px; border:1px solid var(--line); border-radius:10px;
-    background:var(--navy-surface); overflow:hidden;
-  }
-  .plan-section .ps-head{
-    padding:16px 20px; display:flex; align-items:center; justify-content:space-between;
-    border-bottom:1px solid var(--line);
-  }
-  .ps-title{display:flex; align-items:center; gap:10px; font-weight:600; font-size:1rem;}
-  .ps-num{
-    font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--navy-deep);
-    background:var(--gold-bright); width:22px;height:22px; border-radius:5px;
-    display:flex; align-items:center; justify-content:center; flex:none;
-  }
-  .ps-num.locked{background:transparent; border:1px solid var(--text-faint); color:var(--text-faint);}
-  .ps-body{padding:18px 20px; color:var(--text-dim); font-size:0.94rem;}
-  .ps-body p + p{margin-top:10px;}
-  .ps-body strong{color:var(--text);}
-
-  .badge-free{
-    font-family:'JetBrains Mono',monospace; font-size:0.66rem; color:var(--good);
-    border:1px solid rgba(79,209,139,0.3); padding:3px 8px; border-radius:100px;
-  }
-  .badge-locked{
-    font-family:'JetBrains Mono',monospace; font-size:0.66rem; color:var(--gold);
-    border:1px solid var(--gold-dim); padding:3px 8px; border-radius:100px;
-    display:flex; align-items:center; gap:5px;
-  }
-
-  /* locked section w/ blur + overlay */
-  .locked-wrap{position:relative;}
-  .locked-content{
-    filter:blur(5px); user-select:none; pointer-events:none;
-    padding:18px 20px; color:var(--text-faint); font-size:0.94rem;
-  }
-  .locked-content p + p{margin-top:10px;}
-  .locked-overlay{
-    position:absolute; inset:0; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; text-align:center;
-    background:linear-gradient(180deg, rgba(17,26,44,0.4), rgba(17,26,44,0.92));
-    gap:10px; padding:20px;
-  }
-  .lock-icon{width:26px;height:26px; color:var(--gold);}
-  .locked-overlay .lo-title{font-weight:600; font-size:0.95rem;}
-  .locked-overlay .lo-sub{font-size:0.82rem; color:var(--text-dim); max-width:320px;}
-
-  /* sticky CTA bar */
-  .sticky-cta{
-    position:fixed; left:0; right:0; bottom:0; z-index:50;
-    background:rgba(6,10,20,0.88); backdrop-filter:blur(10px);
-    border-top:1px solid var(--line);
-    padding:14px 20px; display:flex; align-items:center; justify-content:center; gap:18px;
-  }
-  .sticky-inner{
-    max-width:920px; width:100%; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
-  }
-  .price-block{display:flex; align-items:baseline; gap:8px;}
-  .price{font-size:1.5rem; font-weight:700; color:var(--gold-bright);}
-  .price-note{font-size:0.76rem; color:var(--text-faint); font-family:'JetBrains Mono',monospace;}
-  .cta-btn{
-    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.98rem;
-    background:var(--gold-bright); color:var(--navy-deep); border:none;
-    padding:13px 26px; border-radius:8px; cursor:pointer;
-    display:flex; align-items:center; gap:8px;
-    transition:transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow:0 0 0 rgba(240,207,95,0);
-  }
-  .cta-btn:hover{transform:translateY(-1px); box-shadow:0 6px 20px rgba(240,207,95,0.25);}
-  .cta-btn:active{transform:translateY(0px);}
-  .cta-sub{font-size:0.72rem; color:var(--text-faint); margin-top:4px; font-family:'JetBrains Mono',monospace;}
-
-  /* social proof strip */
-  .proof{
-    margin-top:26px; display:flex; align-items:center; justify-content:space-between;
-    flex-wrap:wrap; gap:14px; padding:16px 20px; border:1px solid var(--line);
-    border-radius:10px; background:var(--navy-surface);
-  }
-  .proof-count{font-family:'JetBrains Mono',monospace; font-size:0.86rem; color:var(--text);}
-  .proof-count b{color:var(--gold-bright);}
-  .stars{color:var(--gold-bright); letter-spacing:2px; font-size:0.9rem;}
-  .quote{
-    font-size:0.85rem; color:var(--text-dim); max-width:420px; font-style:italic;
-  }
-
-  /* bonus strip */
-  .bonus{
-    margin-top:18px; border:1px dashed var(--gold-dim); border-radius:10px;
-    padding:16px 20px; background:rgba(212,175,55,0.05);
-    display:flex; align-items:center; gap:14px;
-  }
-  .bonus-icon{width:30px;height:30px; flex:none; color:var(--gold-bright);}
-  .bonus-title{font-weight:600; font-size:0.92rem;}
-  .bonus-sub{font-size:0.82rem; color:var(--text-dim); margin-top:2px;}
-
-  footer.foot{
-    text-align:center; color:var(--text-faint); font-size:0.78rem;
-    padding:40px 20px 20px; font-family:'JetBrains Mono',monospace;
-  }
-
-  @media (max-width:560px){
-    .sticky-inner{justify-content:center; text-align:center;}
-    .price-block{order:2;}
-  }
-
-  @media (prefers-reduced-motion:reduce){
-    html{scroll-behavior:auto;}
-    .cta-btn{transition:none;}
-  }
-
-  /* signup gate */
-  .signup-wrap{
-    max-width:920px; margin:0 auto; padding:60px 24px 40px;
-    display:flex; flex-direction:column; align-items:center; text-align:center;
-    min-height:70vh; justify-content:center;
-  }
-  .signup-eyebrow{
-    font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--gold);
-    letter-spacing:0.12em; text-transform:uppercase; margin-bottom:14px;
-  }
-  .signup-wrap h1{
-    max-width:640px; margin:0 auto;
-  }
-  .signup-sub{color:var(--text-dim); margin-top:14px; max-width:480px; font-size:0.98rem;}
-  .signup-card{
-    margin-top:34px; width:100%; max-width:440px; border:1px solid var(--line);
-    border-radius:12px; background:var(--navy-surface); padding:26px;
-    text-align:left;
-  }
-  .field-label{
-    font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--text-faint);
-    text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; display:block;
-  }
-  .field{
-    width:100%; background:var(--navy-deep); border:1px solid var(--line);
-    border-radius:8px; padding:12px 14px; color:var(--text); font-family:'Space Grotesk',sans-serif;
-    font-size:0.95rem; margin-bottom:16px; outline:none; transition:border-color 0.15s ease;
-  }
-  .field:focus{border-color:var(--gold-dim);}
-  .field::placeholder{color:var(--text-faint);}
-  .signup-btn{
-    width:100%; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.98rem;
-    background:var(--gold-bright); color:var(--navy-deep); border:none;
-    padding:14px 20px; border-radius:8px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    transition:transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  .signup-btn:hover{transform:translateY(-1px); box-shadow:0 6px 20px rgba(240,207,95,0.25);}
-  .signup-note{
-    text-align:center; font-size:0.74rem; color:var(--text-faint); margin-top:12px;
-    font-family:'JetBrains Mono',monospace;
-  }
-  .signup-perks{
-    margin-top:26px; display:flex; gap:22px; flex-wrap:wrap; justify-content:center;
-  }
-  .perk{
-    display:flex; align-items:center; gap:7px; font-size:0.82rem; color:var(--text-dim);
-  }
-  .perk svg{width:15px;height:15px; color:var(--good); flex:none;}
-
-  #resultsRoot{display:none;}
-  #resultsRoot.show{display:block;}
-  #signupRoot.hide{display:none;}
 </style>
 </head>
 <body>
-
-<div class="circuit-bg"></div>
-
-<div id="signupRoot">
-  <header>
-    <div class="logo">
-      <span class="logo-mark">
-        <svg viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="#d4af37" stroke-width="1.5"/>
-          <path d="M12 6v4M12 14v4M6 12h4M14 12h4" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
-          <circle cx="12" cy="12" r="2" fill="#d4af37"/>
-        </svg>
-      </span>
-      LaunchMind
-    </div>
-  </header>
-
-  <div class="signup-wrap">
-    <div class="signup-eyebrow">Free trial · No card required</div>
-    <h1>Turn your business idea into a real plan in under 2 minutes.</h1>
-    <p class="signup-sub">Answer a few questions about your business and get a free draft plan instantly — overview, target market, and competition, on us.</p>
-
-    <div class="signup-card">
-      <label class="field-label" for="bizName">Business name</label>
-      <input class="field" id="bizName" type="text" placeholder="e.g. Your Business Name">
-
-      <label class="field-label" for="bizEmail">Email address</label>
-      <input class="field" id="bizEmail" type="email" placeholder="you@example.com">
-
-      <button class="signup-btn" onclick="revealResults()">
-        Generate my free plan
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="signup-note">Takes about 90 seconds · No credit card needed</div>
-    </div>
-
-    <div class="signup-perks">
-      <div class="perk"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Free draft, no card</div>
-      <div class="perk"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Ready in under 2 minutes</div>
-      <div class="perk"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Unlock full plan anytime</div>
+<div id="app">
+  <div class="splash" id="splash">
+    <div class="splash-inner">
+      <div class="splash-logo">🏗</div>
+      <div class="splash-name">Driftocity Estimate Pro</div>
+      <div class="splash-sub">Estimates &amp; Invoices</div>
+      <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
     </div>
   </div>
 </div>
-
-<div id="resultsRoot">
-<header>
-  <div class="logo">
-    <span class="logo-mark">
-      <svg viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" stroke="#d4af37" stroke-width="1.5"/>
-        <path d="M12 6v4M12 14v4M6 12h4M14 12h4" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="12" cy="12" r="2" fill="#d4af37"/>
-      </svg>
-    </span>
-    LaunchMind
-  </div>
-  <div class="status-pill"><span class="dot"></span> Plan generated</div>
-</header>
-
-<main>
-
-  <section class="hero">
-    <div class="eyebrow">Your business plan · Draft complete</div>
-    <h1>Nice work — your plan for <span class="js-biz-name">Your Business</span> is drafted.</h1>
-    <p class="sub">We built this from what you told us about your business. Two sections are ready to read below. The rest — financials, funding ask, and your export-ready PDF — are one step away.</p>
-
-    <div class="expiry">
-      <span>This draft is saved for</span>
-      <span class="clock mono" id="clock">23:58:41</span>
-      <span>before it's cleared</span>
+<div id="toast" class="toast hidden"></div>
+<div id="install-banner" class="install-banner hidden">
+  <div class="install-banner-inner">
+    <div class="install-icon">🏗️</div>
+    <div class="install-text">
+      <strong>Install Driftocity Estimate Pro</strong>
+      <span>Add to your home screen for quick access</span>
     </div>
-  </section>
-
-  <!-- signature circuit progress element -->
-  <div class="circuit-progress">
-    <div class="cp-label">Plan completion circuit</div>
-    <svg class="circuit-svg" viewBox="0 0 880 90" xmlns="http://www.w3.org/2000/svg">
-      <path class="trace-done" d="M40 45 H180"/>
-      <path class="trace-done" d="M180 45 H320"/>
-      <path class="trace-done" d="M320 45 H460"/>
-      <path class="trace-pending" d="M460 45 H600"/>
-      <path class="trace-pending" d="M600 45 H740"/>
-      <path class="trace-pending" d="M740 45 H840"/>
-
-      <circle class="node-done" cx="40" cy="45" r="7"/>
-      <circle class="node-done" cx="180" cy="45" r="7"/>
-      <circle class="node-done" cx="320" cy="45" r="7"/>
-      <circle class="node-done" cx="460" cy="45" r="7"/>
-      <circle class="node-pending" cx="600" cy="45" r="7"/>
-      <circle class="node-pending" cx="740" cy="45" r="7"/>
-      <circle class="node-pending" cx="840" cy="45" r="7"/>
-
-      <text class="t-done" x="40" y="72" text-anchor="middle">Idea</text>
-      <text class="t-done" x="180" y="72" text-anchor="middle">Market</text>
-      <text class="t-done" x="320" y="72" text-anchor="middle">Model</text>
-      <text class="t-done" x="460" y="72" text-anchor="middle">Ops</text>
-      <text class="t-pending" x="600" y="72" text-anchor="middle">Financials</text>
-      <text class="t-pending" x="740" y="72" text-anchor="middle">Funding</text>
-      <text class="t-pending" x="840" y="72" text-anchor="middle">Export</text>
-    </svg>
-  </div>
-
-  <!-- free section 1 -->
-  <div class="plan-section">
-    <div class="ps-head">
-      <div class="ps-title"><span class="ps-num">1</span> Business Overview</div>
-      <span class="badge-free">Unlocked</span>
-    </div>
-    <div class="ps-body">
-      <p><strong class="js-biz-name">Your Business</strong> positions itself around the specific promise you described — the thing that makes a customer choose you over the next option in a search result.</p>
-      <p>Your edge: the details you entered about pricing, speed, and service area, distilled into a clear positioning statement you can put on your website today.</p>
-    </div>
-  </div>
-
-  <!-- free section 2 -->
-  <div class="plan-section">
-    <div class="ps-head">
-      <div class="ps-title"><span class="ps-num">2</span> Target Market & Competition</div>
-      <span class="badge-free">Unlocked</span>
-    </div>
-    <div class="ps-body">
-      <p>Your core customer profile is built from the details you entered — age range, location radius, and the moment they're most likely to go looking for what you offer.</p>
-      <p>A handful of local competitors were identified. Your plan flags one clear gap you can move on first, before anyone else does.</p>
-    </div>
-  </div>
-
-  <!-- locked section: financials -->
-  <div class="plan-section locked-wrap">
-    <div class="ps-head">
-      <div class="ps-title"><span class="ps-num locked">3</span> Financial Projections</div>
-      <span class="badge-locked">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 0112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8"/></svg>
-        Locked
-      </span>
-    </div>
-    <div class="locked-content">
-      <p>Year one revenue is projected at $XXX,XXX based on your average sale value and a realistic volume for the hours and staff you told us you have.</p>
-      <p>Break-even is estimated in month X, assuming fixed costs of $X,XXX including insurance, fuel, and equipment financing.</p>
-    </div>
-    <div class="locked-overlay">
-      <svg class="lock-icon" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 0112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8"/></svg>
-      <div class="lo-title">Your real numbers are calculated — just locked</div>
-      <div class="lo-sub">Month-by-month revenue, break-even point, and startup costs, built from what you entered.</div>
-    </div>
-  </div>
-
-  <!-- locked section: funding -->
-  <div class="plan-section locked-wrap">
-    <div class="ps-head">
-      <div class="ps-title"><span class="ps-num locked">4</span> Funding Ask & Use of Funds</div>
-      <span class="badge-locked">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 0112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8"/></svg>
-        Locked
-      </span>
-    </div>
-    <div class="locked-content">
-      <p>Recommended ask: $XX,XXX, split across equipment or inventory (X%), initial marketing (X%), and a three-month operating cushion (X%).</p>
-    </div>
-    <div class="locked-overlay">
-      <svg class="lock-icon" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 0112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8"/></svg>
-      <div class="lo-title">Exactly what to ask a lender for, and why</div>
-      <div class="lo-sub">A clean funding breakdown you can hand straight to a bank or SBA loan officer.</div>
-    </div>
-  </div>
-
-  <!-- locked section: export -->
-  <div class="plan-section locked-wrap">
-    <div class="ps-head">
-      <div class="ps-title"><span class="ps-num locked">5</span> Downloadable Plan (PDF)</div>
-      <span class="badge-locked">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 0112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8"/></svg>
-        Locked
-      </span>
-    </div>
-    <div class="locked-content">
-      <p>A formatted, print-ready version of everything above — the version you actually hand to a bank, partner, or landlord.</p>
-    </div>
-    <div class="locked-overlay">
-      <svg class="lock-icon" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 0112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8"/></svg>
-      <div class="lo-title">One clean PDF, ready to send</div>
-      <div class="lo-sub">Not a screenshot of this page — a real formatted document with your business name on the cover.</div>
-    </div>
-  </div>
-
-  <!-- social proof -->
-  <div class="proof">
-    <div>
-      <div class="proof-count"><b>2,318</b> plans unlocked this month</div>
-      <div class="stars">★★★★★ <span style="color:var(--text-dim); font-family:'Space Grotesk',sans-serif; font-size:0.8rem;">4.9 average</span></div>
-    </div>
-    <div class="quote">"Handed the PDF straight to my loan officer. Didn't touch a spreadsheet." — verified buyer</div>
-  </div>
-
-  <!-- bonus -->
-  <div class="bonus">
-    <svg class="bonus-icon" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke="#f0cf5f" stroke-width="1.4" stroke-linejoin="round"/></svg>
-    <div>
-      <div class="bonus-title">Unlock today and get a bonus one-page pitch summary</div>
-      <div class="bonus-sub">A condensed, single-page version of your plan — built for texting to a partner or pinning to a wall.</div>
-    </div>
-  </div>
-
-</main>
-
-<footer class="foot">LaunchMind · a Driftocity product</footer>
-
-<div class="sticky-cta">
-  <div class="sticky-inner">
-    <div>
-      <div class="price-block">
-        <span class="price">$17</span>
-        <span class="price-note">one-time · no subscription</span>
-      </div>
-      <div class="cta-sub">Less than a single hour with a business consultant.</div>
-    </div>
-    <div style="text-align:right;">
-      <button class="cta-btn" onclick="alert('This connects to your Stripe checkout.')">
-        Unlock full plan + PDF
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
+    <button class="install-btn" onclick="triggerInstall()">Install</button>
+    <button class="install-dismiss" onclick="dismissInstallBanner()">✕</button>
   </div>
 </div>
-
-</div><!-- /resultsRoot -->
-
 <script>
-  // countdown timer
-  (function(){
-    let total = 23*3600 + 58*60 + 41;
-    const el = document.getElementById('clock');
-    function tick(){
-      if(total <= 0){ el.textContent = "00:00:00"; return; }
-      total--;
-      const h = String(Math.floor(total/3600)).padStart(2,'0');
-      const m = String(Math.floor((total%3600)/60)).padStart(2,'0');
-      const s = String(total%60).padStart(2,'0');
-      el.textContent = `${h}:${m}:${s}`;
-    }
-    setInterval(tick, 1000);
-  })();
+// Regional pricing multipliers by ZIP code prefix (first 3 digits)
+// Base rates are national averages; multipliers adjust for local COL
+const REGIONAL_MULTIPLIERS = {
+  // Northeast (high COL)
+  "100": 1.55, "101": 1.55, "102": 1.55, "103": 1.55, "104": 1.55, // NYC
+  "110": 1.45, "111": 1.45, "112": 1.45, "113": 1.45, "114": 1.45, // NYC boroughs
+  "020": 1.40, "021": 1.40, "022": 1.38, "023": 1.35, "024": 1.35, // Boston
+  "060": 1.38, "061": 1.38, "062": 1.35, "063": 1.33, "064": 1.33, // Connecticut
+  "080": 1.30, "081": 1.30, "082": 1.28, "083": 1.28, "084": 1.28, // NJ
+  "190": 1.32, "191": 1.32, "192": 1.30, "193": 1.28, "194": 1.28, // Philadelphia
+  // Mid-Atlantic
+  "200": 1.42, "201": 1.42, "202": 1.42, "203": 1.40, "204": 1.40, // DC/Northern VA
+  "210": 1.22, "211": 1.22, "212": 1.22, "213": 1.20, "214": 1.20, // Baltimore
+  // Southeast (moderate)
+  "300": 1.05, "301": 1.05, "302": 1.05, "303": 1.05, "304": 1.02, // Atlanta
+  "320": 0.98, "321": 0.98, "322": 0.96, "323": 0.95, "324": 0.95, // Jacksonville
+  "330": 1.08, "331": 1.08, "332": 1.06, "333": 1.05, "334": 1.05, // Miami
+  "340": 1.02, "341": 1.02, "342": 1.00, "343": 1.00, "344": 1.00, // Tampa
+  "270": 0.97, "271": 0.97, "272": 0.96, "273": 0.95, "274": 0.95, // NC
+  "280": 0.97, "281": 0.97, "282": 0.96, "283": 0.95, "284": 0.95, // NC Piedmont
+  "290": 0.94, "291": 0.94, "292": 0.93, "293": 0.93, "294": 0.93, // SC
+  // Midwest (below average)
+  "600": 1.25, "601": 1.25, "602": 1.23, "603": 1.22, "604": 1.22, // Chicago
+  "480": 1.10, "481": 1.10, "482": 1.08, "483": 1.08, "484": 1.07, // Detroit
+  "550": 1.05, "551": 1.05, "552": 1.04, "553": 1.04, "554": 1.03, // Minneapolis
+  "430": 1.00, "431": 1.00, "432": 0.99, "433": 0.99, "434": 0.99, // Columbus
+  "440": 1.02, "441": 1.02, "442": 1.00, "443": 1.00, "444": 1.00, // Cleveland
+  "630": 1.00, "631": 1.00, "632": 0.99, "633": 0.98, "634": 0.98, // St. Louis
+  "640": 0.96, "641": 0.96, "642": 0.95, "643": 0.95, "644": 0.95, // Kansas City
+  // South/Southwest (moderate-low)
+  "750": 1.00, "751": 1.00, "752": 0.99, "753": 0.99, "754": 0.98, // Dallas
+  "770": 0.99, "771": 0.99, "772": 0.98, "773": 0.97, "774": 0.97, // Houston
+  "730": 0.93, "731": 0.93, "732": 0.92, "733": 0.92, "734": 0.91, // Oklahoma City
+  "870": 0.92, "871": 0.92, "872": 0.91, "873": 0.91, "874": 0.91, // Albuquerque
+  // Mountain West
+  "800": 1.08, "801": 1.08, "802": 1.07, "803": 1.06, "804": 1.06, // Denver
+  "840": 0.98, "841": 0.98, "842": 0.97, "843": 0.97, "844": 0.97, // Salt Lake
+  "850": 1.00, "851": 1.00, "852": 0.99, "853": 0.98, "854": 0.98, // Phoenix
+  "890": 1.03, "891": 1.03, "892": 1.02, "893": 1.01, "894": 1.01, // Las Vegas
+  // West Coast (high COL)
+  "900": 1.45, "901": 1.45, "902": 1.42, "903": 1.42, "904": 1.40, // LA
+  "910": 1.40, "911": 1.40, "912": 1.38, "913": 1.38, "914": 1.35, // San Fernando
+  "940": 1.52, "941": 1.52, "942": 1.50, "943": 1.48, "944": 1.48, // San Francisco
+  "950": 1.45, "951": 1.45, "952": 1.43, "953": 1.42, "954": 1.42, // San Jose
+  "970": 1.22, "971": 1.22, "972": 1.20, "973": 1.18, "974": 1.18, // Portland
+  "980": 1.28, "981": 1.28, "982": 1.26, "983": 1.24, "984": 1.24, // Seattle
+  // Alaska/Hawaii
+  "995": 1.60, "996": 1.60, "997": 1.58, "998": 1.58, "999": 1.60, // Alaska
+  "967": 1.55, "968": 1.55, // Hawaii
+};
 
-  function revealResults(){
-    const nameInput = document.getElementById('bizName').value.trim();
-    const bizName = nameInput.length ? nameInput : 'Your Business';
-    document.querySelectorAll('.js-biz-name').forEach(function(el){
-      el.textContent = bizName;
-    });
-    document.getElementById('signupRoot').classList.add('hide');
-    document.getElementById('resultsRoot').classList.add('show');
-    window.scrollTo({top:0, behavior:'smooth'});
+// Default multiplier for unlisted ZIP prefixes
+const DEFAULT_MULTIPLIER = 1.00;
+
+function getMultiplier(zip) {
+  if (!zip || zip.length < 3) return DEFAULT_MULTIPLIER;
+  const prefix = zip.substring(0, 3);
+  return REGIONAL_MULTIPLIERS[prefix] || DEFAULT_MULTIPLIER;
+}
+
+// =============================================
+// TRADE TYPES & THEIR LINE ITEMS
+// =============================================
+const TRADES = {
+  general: {
+    label: "General Contracting",
+    icon: "🏗️",
+    description: "General construction, project management, site work",
+    categories: [
+      {
+        name: "Site Preparation",
+        items: [
+          { id: "site_survey", name: "Site Survey & Layout", unit: "ls", basePrice: 850, laborPct: 0.70 },
+          { id: "excavation", name: "Excavation (per cubic yard)", unit: "cy", basePrice: 22, laborPct: 0.65 },
+          { id: "grading", name: "Grading & Leveling", unit: "sqft", basePrice: 1.80, laborPct: 0.60 },
+          { id: "demo_interior", name: "Interior Demolition", unit: "sqft", basePrice: 3.50, laborPct: 0.75 },
+          { id: "demo_exterior", name: "Exterior Demolition", unit: "sqft", basePrice: 5.00, laborPct: 0.70 },
+          { id: "hauling", name: "Debris Hauling (per load)", unit: "load", basePrice: 380, laborPct: 0.60 },
+        ]
+      },
+      {
+        name: "Framing & Structure",
+        items: [
+          { id: "framing_wall", name: "Wall Framing (per LF)", unit: "lf", basePrice: 28, laborPct: 0.55 },
+          { id: "framing_floor", name: "Floor Framing (per sqft)", unit: "sqft", basePrice: 8.50, laborPct: 0.50 },
+          { id: "framing_roof", name: "Roof Framing (per sqft)", unit: "sqft", basePrice: 11, laborPct: 0.50 },
+          { id: "sheathing", name: "OSB/Plywood Sheathing", unit: "sqft", basePrice: 3.20, laborPct: 0.45 },
+          { id: "subfloor", name: "Subfloor Installation", unit: "sqft", basePrice: 4.50, laborPct: 0.50 },
+          { id: "lvl_beam", name: "LVL Beam Installation (per LF)", unit: "lf", basePrice: 95, laborPct: 0.55 },
+        ]
+      },
+      {
+        name: "Project Management",
+        items: [
+          { id: "pm_daily", name: "Project Management (per day)", unit: "day", basePrice: 650, laborPct: 1.00 },
+          { id: "permit_pull", name: "Permit Pulling & Filing", unit: "ls", basePrice: 450, laborPct: 0.80 },
+          { id: "inspection", name: "Inspection Coordination", unit: "ls", basePrice: 300, laborPct: 1.00 },
+          { id: "cleanup", name: "Final Cleanup", unit: "ls", basePrice: 550, laborPct: 0.85 },
+        ]
+      }
+    ]
+  },
+
+  electrical: {
+    label: "Electrical",
+    icon: "⚡",
+    description: "Wiring, panels, outlets, lighting, EV chargers",
+    categories: [
+      {
+        name: "Panel & Service",
+        items: [
+          { id: "panel_100", name: "100A Panel Upgrade", unit: "ls", basePrice: 1800, laborPct: 0.55 },
+          { id: "panel_200", name: "200A Panel Upgrade", unit: "ls", basePrice: 2800, laborPct: 0.50 },
+          { id: "panel_400", name: "400A Panel Upgrade", unit: "ls", basePrice: 4500, laborPct: 0.50 },
+          { id: "subpanel", name: "Subpanel Installation (60A)", unit: "ls", basePrice: 1400, laborPct: 0.55 },
+          { id: "meter_socket", name: "Meter Socket Replacement", unit: "ls", basePrice: 750, laborPct: 0.60 },
+          { id: "grounding", name: "Grounding System", unit: "ls", basePrice: 650, laborPct: 0.60 },
+        ]
+      },
+      {
+        name: "Wiring & Circuits",
+        items: [
+          { id: "circuit_20a", name: "New 20A Circuit", unit: "ea", basePrice: 320, laborPct: 0.60 },
+          { id: "circuit_15a", name: "New 15A Circuit", unit: "ea", basePrice: 275, laborPct: 0.60 },
+          { id: "circuit_240", name: "240V Circuit (dryer/range)", unit: "ea", basePrice: 480, laborPct: 0.58 },
+          { id: "rewire_room", name: "Room Rewire", unit: "room", basePrice: 900, laborPct: 0.65 },
+          { id: "rewire_house", name: "Whole House Rewire (per sqft)", unit: "sqft", basePrice: 8.50, laborPct: 0.65 },
+          { id: "conduit_run", name: "Conduit Run (per LF)", unit: "lf", basePrice: 18, laborPct: 0.60 },
+        ]
+      },
+      {
+        name: "Devices & Fixtures",
+        items: [
+          { id: "outlet_install", name: "Outlet Installation", unit: "ea", basePrice: 185, laborPct: 0.65 },
+          { id: "gfci_outlet", name: "GFCI Outlet Installation", unit: "ea", basePrice: 220, laborPct: 0.65 },
+          { id: "switch_install", name: "Switch Installation", unit: "ea", basePrice: 175, laborPct: 0.65 },
+          { id: "light_fixture", name: "Light Fixture Install", unit: "ea", basePrice: 195, laborPct: 0.60 },
+          { id: "recessed_light", name: "Recessed Lighting (per can)", unit: "ea", basePrice: 280, laborPct: 0.60 },
+          { id: "ceiling_fan", name: "Ceiling Fan Installation", unit: "ea", basePrice: 310, laborPct: 0.65 },
+          { id: "ev_charger", name: "EV Charger (Level 2)", unit: "ls", basePrice: 1200, laborPct: 0.55 },
+          { id: "smoke_detector", name: "Smoke/CO Detector", unit: "ea", basePrice: 145, laborPct: 0.65 },
+        ]
+      }
+    ]
+  },
+
+  plumbing: {
+    label: "Plumbing",
+    icon: "🔧",
+    description: "Pipes, fixtures, water heaters, drains",
+    categories: [
+      {
+        name: "Pipe Work",
+        items: [
+          { id: "pipe_copper", name: "Copper Pipe (per LF)", unit: "lf", basePrice: 22, laborPct: 0.60 },
+          { id: "pipe_pex", name: "PEX Pipe (per LF)", unit: "lf", basePrice: 14, laborPct: 0.55 },
+          { id: "pipe_pvc", name: "PVC Drain Pipe (per LF)", unit: "lf", basePrice: 16, laborPct: 0.58 },
+          { id: "pipe_cast", name: "Cast Iron Replacement (per LF)", unit: "lf", basePrice: 55, laborPct: 0.65 },
+          { id: "repipe_bath", name: "Bathroom Repipe", unit: "ls", basePrice: 1800, laborPct: 0.62 },
+          { id: "repipe_house", name: "Whole House Repipe (per sqft)", unit: "sqft", basePrice: 6.50, laborPct: 0.62 },
+          { id: "shutoff_valve", name: "Shutoff Valve Installation", unit: "ea", basePrice: 225, laborPct: 0.65 },
+        ]
+      },
+      {
+        name: "Fixtures",
+        items: [
+          { id: "toilet_install", name: "Toilet Installation", unit: "ea", basePrice: 380, laborPct: 0.60 },
+          { id: "sink_bath", name: "Bathroom Sink Install", unit: "ea", basePrice: 320, laborPct: 0.60 },
+          { id: "sink_kitchen", name: "Kitchen Sink Install", unit: "ea", basePrice: 420, laborPct: 0.58 },
+          { id: "faucet_install", name: "Faucet Installation", unit: "ea", basePrice: 280, laborPct: 0.65 },
+          { id: "shower_install", name: "Shower Installation", unit: "ls", basePrice: 2200, laborPct: 0.60 },
+          { id: "tub_install", name: "Bathtub Installation", unit: "ls", basePrice: 1800, laborPct: 0.58 },
+          { id: "dishwasher_install", name: "Dishwasher Hook-up", unit: "ls", basePrice: 350, laborPct: 0.70 },
+          { id: "garbage_disposal", name: "Garbage Disposal Install", unit: "ls", basePrice: 320, laborPct: 0.70 },
+        ]
+      },
+      {
+        name: "Water Heaters & Drains",
+        items: [
+          { id: "wh_tank", name: "Tank Water Heater (40 gal)", unit: "ls", basePrice: 1350, laborPct: 0.48 },
+          { id: "wh_tankless", name: "Tankless Water Heater", unit: "ls", basePrice: 2800, laborPct: 0.42 },
+          { id: "wh_hybrid", name: "Hybrid Heat Pump WH", unit: "ls", basePrice: 3200, laborPct: 0.42 },
+          { id: "drain_clean", name: "Drain Cleaning (per drain)", unit: "ea", basePrice: 225, laborPct: 0.85 },
+          { id: "sewer_camera", name: "Sewer Camera Inspection", unit: "ls", basePrice: 380, laborPct: 0.75 },
+          { id: "sewer_line", name: "Sewer Line Repair (per LF)", unit: "lf", basePrice: 95, laborPct: 0.65 },
+        ]
+      }
+    ]
+  },
+
+  hvac: {
+    label: "HVAC",
+    icon: "❄️",
+    description: "Heating, cooling, ventilation, ductwork",
+    categories: [
+      {
+        name: "AC & Cooling",
+        items: [
+          { id: "ac_2ton", name: "2-Ton AC System (split)", unit: "ls", basePrice: 4200, laborPct: 0.45 },
+          { id: "ac_3ton", name: "3-Ton AC System (split)", unit: "ls", basePrice: 5200, laborPct: 0.43 },
+          { id: "ac_4ton", name: "4-Ton AC System (split)", unit: "ls", basePrice: 6400, laborPct: 0.42 },
+          { id: "ac_5ton", name: "5-Ton AC System (split)", unit: "ls", basePrice: 7800, laborPct: 0.42 },
+          { id: "minisplit_1z", name: "Mini-Split 1 Zone", unit: "ls", basePrice: 3200, laborPct: 0.50 },
+          { id: "minisplit_2z", name: "Mini-Split 2 Zone", unit: "ls", basePrice: 5400, laborPct: 0.48 },
+          { id: "minisplit_4z", name: "Mini-Split 4 Zone", unit: "ls", basePrice: 8800, laborPct: 0.46 },
+          { id: "condenser_only", name: "Condenser Replacement Only", unit: "ls", basePrice: 2800, laborPct: 0.50 },
+          { id: "airhandler_only", name: "Air Handler Replacement Only", unit: "ls", basePrice: 1800, laborPct: 0.55 },
+        ]
+      },
+      {
+        name: "Heating",
+        items: [
+          { id: "furnace_gas", name: "Gas Furnace (80K BTU)", unit: "ls", basePrice: 3200, laborPct: 0.48 },
+          { id: "furnace_elec", name: "Electric Furnace", unit: "ls", basePrice: 2200, laborPct: 0.50 },
+          { id: "heatpump", name: "Heat Pump System (3 ton)", unit: "ls", basePrice: 5800, laborPct: 0.45 },
+          { id: "boiler_gas", name: "Gas Boiler Replacement", unit: "ls", basePrice: 5500, laborPct: 0.50 },
+          { id: "baseboard_elec", name: "Electric Baseboard (per LF)", unit: "lf", basePrice: 85, laborPct: 0.55 },
+          { id: "radiant_floor", name: "Radiant Floor Heat (sqft)", unit: "sqft", basePrice: 22, laborPct: 0.55 },
+        ]
+      },
+      {
+        name: "Ductwork & Ventilation",
+        items: [
+          { id: "duct_new", name: "New Ductwork (per LF)", unit: "lf", basePrice: 28, laborPct: 0.60 },
+          { id: "duct_seal", name: "Duct Sealing (per house)", unit: "ls", basePrice: 1200, laborPct: 0.80 },
+          { id: "duct_clean", name: "Duct Cleaning", unit: "ls", basePrice: 550, laborPct: 0.75 },
+          { id: "exhaust_fan", name: "Bathroom Exhaust Fan", unit: "ea", basePrice: 380, laborPct: 0.65 },
+          { id: "range_hood", name: "Range Hood Install", unit: "ls", basePrice: 520, laborPct: 0.62 },
+          { id: "erv_hrv", name: "ERV/HRV System", unit: "ls", basePrice: 2800, laborPct: 0.52 },
+          { id: "register_install", name: "Register/Grille Install", unit: "ea", basePrice: 120, laborPct: 0.65 },
+          { id: "thermostat_smart", name: "Smart Thermostat Install", unit: "ea", basePrice: 280, laborPct: 0.65 },
+        ]
+      }
+    ]
+  },
+
+  roofing: {
+    label: "Roofing",
+    icon: "🏠",
+    description: "Shingles, flat roofs, gutters, flashing",
+    categories: [
+      {
+        name: "Roof Installation",
+        items: [
+          { id: "shingle_3tab", name: "3-Tab Shingles (per sq)", unit: "sq", basePrice: 380, laborPct: 0.55 },
+          { id: "shingle_arch", name: "Architectural Shingles (per sq)", unit: "sq", basePrice: 480, laborPct: 0.53 },
+          { id: "shingle_premium", name: "Premium Shingles (per sq)", unit: "sq", basePrice: 680, laborPct: 0.50 },
+          { id: "metal_standing", name: "Standing Seam Metal (per sq)", unit: "sq", basePrice: 1100, laborPct: 0.50 },
+          { id: "metal_corrugated", name: "Corrugated Metal (per sq)", unit: "sq", basePrice: 750, laborPct: 0.52 },
+          { id: "flat_tpo", name: "TPO Flat Roof (per sq)", unit: "sq", basePrice: 580, laborPct: 0.55 },
+          { id: "flat_epdm", name: "EPDM Flat Roof (per sq)", unit: "sq", basePrice: 520, laborPct: 0.55 },
+          { id: "cedar_shake", name: "Cedar Shake (per sq)", unit: "sq", basePrice: 850, laborPct: 0.55 },
+          { id: "tile_clay", name: "Clay Tile (per sq)", unit: "sq", basePrice: 1200, laborPct: 0.52 },
+          { id: "tile_concrete", name: "Concrete Tile (per sq)", unit: "sq", basePrice: 900, laborPct: 0.52 },
+        ]
+      },
+      {
+        name: "Decking & Underlayment",
+        items: [
+          { id: "decking_osb", name: "Roof Decking/Sheathing (per sq)", unit: "sq", basePrice: 220, laborPct: 0.55 },
+          { id: "underlayment", name: "Felt/Synthetic Underlayment", unit: "sq", basePrice: 45, laborPct: 0.60 },
+          { id: "ice_water", name: "Ice & Water Shield (per sq)", unit: "sq", basePrice: 95, laborPct: 0.55 },
+          { id: "ridge_vent", name: "Ridge Vent (per LF)", unit: "lf", basePrice: 22, laborPct: 0.60 },
+          { id: "soffit_vent", name: "Soffit Vent (per ea)", unit: "ea", basePrice: 65, laborPct: 0.65 },
+        ]
+      },
+      {
+        name: "Gutters & Flashing",
+        items: [
+          { id: "gutter_alum", name: "Aluminum Gutters (per LF)", unit: "lf", basePrice: 14, laborPct: 0.60 },
+          { id: "gutter_copper", name: "Copper Gutters (per LF)", unit: "lf", basePrice: 42, laborPct: 0.58 },
+          { id: "gutter_guard", name: "Gutter Guards (per LF)", unit: "lf", basePrice: 18, laborPct: 0.55 },
+          { id: "downspout", name: "Downspout (per LF)", unit: "lf", basePrice: 10, laborPct: 0.65 },
+          { id: "flashing_chimney", name: "Chimney Flashing", unit: "ls", basePrice: 850, laborPct: 0.65 },
+          { id: "flashing_skylight", name: "Skylight Flashing", unit: "ea", basePrice: 480, laborPct: 0.65 },
+          { id: "drip_edge", name: "Drip Edge (per LF)", unit: "lf", basePrice: 5.50, laborPct: 0.65 },
+        ]
+      }
+    ]
+  },
+
+  flooring: {
+    label: "Flooring",
+    icon: "🏢",
+    description: "Hardwood, tile, LVP, carpet installation",
+    categories: [
+      {
+        name: "Hardwood & Engineered",
+        items: [
+          { id: "hw_solid", name: "Solid Hardwood (per sqft)", unit: "sqft", basePrice: 12, laborPct: 0.48 },
+          { id: "hw_engineered", name: "Engineered Hardwood (per sqft)", unit: "sqft", basePrice: 9.50, laborPct: 0.48 },
+          { id: "hw_refinish", name: "Hardwood Refinish (per sqft)", unit: "sqft", basePrice: 4.50, laborPct: 0.80 },
+          { id: "hw_sand_stain", name: "Sand, Stain & Poly (per sqft)", unit: "sqft", basePrice: 6.50, laborPct: 0.78 },
+        ]
+      },
+      {
+        name: "Tile & Stone",
+        items: [
+          { id: "tile_ceramic", name: "Ceramic Tile (per sqft)", unit: "sqft", basePrice: 8.50, laborPct: 0.55 },
+          { id: "tile_porcelain", name: "Porcelain Tile (per sqft)", unit: "sqft", basePrice: 12, laborPct: 0.52 },
+          { id: "tile_natural", name: "Natural Stone Tile (per sqft)", unit: "sqft", basePrice: 18, laborPct: 0.50 },
+          { id: "tile_large", name: "Large Format Tile 24x24+ (sqft)", unit: "sqft", basePrice: 22, laborPct: 0.50 },
+          { id: "tile_mosaic", name: "Mosaic/Backsplash Tile (sqft)", unit: "sqft", basePrice: 28, laborPct: 0.58 },
+          { id: "tile_grout", name: "Grout Only (per sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.82 },
+        ]
+      },
+      {
+        name: "LVP, Laminate & Carpet",
+        items: [
+          { id: "lvp", name: "Luxury Vinyl Plank (per sqft)", unit: "sqft", basePrice: 7.50, laborPct: 0.48 },
+          { id: "lvt", name: "Luxury Vinyl Tile (per sqft)", unit: "sqft", basePrice: 7.00, laborPct: 0.48 },
+          { id: "laminate", name: "Laminate Flooring (per sqft)", unit: "sqft", basePrice: 6.00, laborPct: 0.50 },
+          { id: "carpet", name: "Carpet Installation (per sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.45 },
+          { id: "carpet_pad", name: "Carpet Padding (per sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.65 },
+          { id: "floor_remove", name: "Old Flooring Removal (sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.80 },
+        ]
+      }
+    ]
+  },
+
+  painting: {
+    label: "Painting",
+    icon: "🎨",
+    description: "Interior, exterior, cabinets, specialty coatings",
+    categories: [
+      {
+        name: "Interior Painting",
+        items: [
+          { id: "int_wall", name: "Interior Walls (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.72 },
+          { id: "int_ceiling", name: "Interior Ceiling (per sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.74 },
+          { id: "int_room", name: "Room Paint (walls + ceiling)", unit: "room", basePrice: 650, laborPct: 0.70 },
+          { id: "int_trim", name: "Trim & Baseboard (per LF)", unit: "lf", basePrice: 4.50, laborPct: 0.75 },
+          { id: "int_door", name: "Interior Door Paint", unit: "ea", basePrice: 180, laborPct: 0.75 },
+          { id: "int_cabinet", name: "Cabinet Painting (per door/drawer)", unit: "ea", basePrice: 95, laborPct: 0.75 },
+          { id: "int_full_house", name: "Full House Interior (sqft)", unit: "sqft", basePrice: 3.20, laborPct: 0.70 },
+        ]
+      },
+      {
+        name: "Exterior Painting",
+        items: [
+          { id: "ext_siding", name: "Exterior Siding (per sqft)", unit: "sqft", basePrice: 3.50, laborPct: 0.68 },
+          { id: "ext_trim", name: "Exterior Trim (per LF)", unit: "lf", basePrice: 6.00, laborPct: 0.72 },
+          { id: "ext_door", name: "Exterior Door Paint", unit: "ea", basePrice: 280, laborPct: 0.72 },
+          { id: "ext_full_house", name: "Full Exterior House (sqft)", unit: "sqft", basePrice: 4.20, laborPct: 0.66 },
+          { id: "deck_stain", name: "Deck Stain (per sqft)", unit: "sqft", basePrice: 3.00, laborPct: 0.70 },
+          { id: "power_wash", name: "Power Washing (per sqft)", unit: "sqft", basePrice: 0.50, laborPct: 0.80 },
+        ]
+      },
+      {
+        name: "Specialty Coatings",
+        items: [
+          { id: "drywall_prime", name: "Drywall Prime Coat (sqft)", unit: "sqft", basePrice: 1.20, laborPct: 0.72 },
+          { id: "epoxy_floor", name: "Epoxy Floor Coating (sqft)", unit: "sqft", basePrice: 6.50, laborPct: 0.60 },
+          { id: "texture_wall", name: "Wall Texture (sqft)", unit: "sqft", basePrice: 3.80, laborPct: 0.75 },
+          { id: "popcorn_remove", name: "Popcorn Ceiling Removal (sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.82 },
+          { id: "faux_finish", name: "Faux/Decorative Finish (sqft)", unit: "sqft", basePrice: 12, laborPct: 0.75 },
+        ]
+      }
+    ]
+  },
+
+  carpentry: {
+    label: "Carpentry & Millwork",
+    icon: "🪚",
+    description: "Trim, cabinets, doors, custom woodwork",
+    categories: [
+      {
+        name: "Trim & Moldings",
+        items: [
+          { id: "baseboard", name: "Baseboard Install (per LF)", unit: "lf", basePrice: 8.50, laborPct: 0.65 },
+          { id: "crown_molding", name: "Crown Molding (per LF)", unit: "lf", basePrice: 14, laborPct: 0.68 },
+          { id: "casing_door", name: "Door Casing (per door)", unit: "ea", basePrice: 220, laborPct: 0.65 },
+          { id: "casing_window", name: "Window Casing (per window)", unit: "ea", basePrice: 195, laborPct: 0.65 },
+          { id: "wainscoting", name: "Wainscoting (per sqft)", unit: "sqft", basePrice: 22, laborPct: 0.65 },
+          { id: "chair_rail", name: "Chair Rail (per LF)", unit: "lf", basePrice: 10, laborPct: 0.68 },
+        ]
+      },
+      {
+        name: "Doors & Windows",
+        items: [
+          { id: "door_interior", name: "Interior Door Install", unit: "ea", basePrice: 380, laborPct: 0.60 },
+          { id: "door_exterior", name: "Exterior Door Install", unit: "ea", basePrice: 650, laborPct: 0.55 },
+          { id: "door_prehung", name: "Pre-hung Door Install", unit: "ea", basePrice: 480, laborPct: 0.58 },
+          { id: "door_barn", name: "Barn Door Install", unit: "ea", basePrice: 850, laborPct: 0.55 },
+          { id: "window_install", name: "Window Installation", unit: "ea", basePrice: 750, laborPct: 0.55 },
+          { id: "window_replace", name: "Window Replacement", unit: "ea", basePrice: 950, laborPct: 0.52 },
+          { id: "skylight_install", name: "Skylight Installation", unit: "ea", basePrice: 1800, laborPct: 0.50 },
+        ]
+      },
+      {
+        name: "Cabinets & Built-ins",
+        items: [
+          { id: "cabinet_install", name: "Cabinet Install (per LF)", unit: "lf", basePrice: 280, laborPct: 0.55 },
+          { id: "shelving_custom", name: "Custom Shelving (per LF)", unit: "lf", basePrice: 180, laborPct: 0.62 },
+          { id: "closet_system", name: "Closet System Install", unit: "ls", basePrice: 1400, laborPct: 0.55 },
+          { id: "bookcase_built", name: "Built-in Bookcase (per LF)", unit: "lf", basePrice: 320, laborPct: 0.60 },
+          { id: "countertop_laminate", name: "Laminate Countertop (per LF)", unit: "lf", basePrice: 85, laborPct: 0.55 },
+          { id: "countertop_granite", name: "Granite Countertop (per sqft)", unit: "sqft", basePrice: 85, laborPct: 0.45 },
+          { id: "countertop_quartz", name: "Quartz Countertop (per sqft)", unit: "sqft", basePrice: 95, laborPct: 0.43 },
+          { id: "countertop_butcher", name: "Butcher Block (per sqft)", unit: "sqft", basePrice: 65, laborPct: 0.50 },
+        ]
+      }
+    ]
+  },
+
+  drywall: {
+    label: "Drywall & Plaster",
+    icon: "🧱",
+    description: "Hanging, taping, finishing, patching",
+    categories: [
+      {
+        name: "Drywall Installation",
+        items: [
+          { id: "dw_hang", name: "Drywall Hanging (per sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.60 },
+          { id: "dw_tape_mud", name: "Tape & Mud Only (per sqft)", unit: "sqft", basePrice: 2.20, laborPct: 0.78 },
+          { id: "dw_complete", name: "Full Install + Finish (sqft)", unit: "sqft", basePrice: 4.50, laborPct: 0.68 },
+          { id: "dw_ceiling", name: "Ceiling Drywall (per sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.68 },
+          { id: "dw_moisture", name: "Moisture Resistant DW (sqft)", unit: "sqft", basePrice: 5.80, laborPct: 0.65 },
+          { id: "dw_fire", name: "Fire-rated Drywall (per sqft)", unit: "sqft", basePrice: 6.20, laborPct: 0.65 },
+          { id: "dw_sound", name: "Soundproof Drywall (per sqft)", unit: "sqft", basePrice: 8.00, laborPct: 0.62 },
+        ]
+      },
+      {
+        name: "Patching & Repairs",
+        items: [
+          { id: "patch_small", name: "Small Hole Patch (<6\")", unit: "ea", basePrice: 180, laborPct: 0.82 },
+          { id: "patch_medium", name: "Medium Patch (6-12\")", unit: "ea", basePrice: 280, laborPct: 0.80 },
+          { id: "patch_large", name: "Large Area Patch (per sqft)", unit: "sqft", basePrice: 12, laborPct: 0.78 },
+          { id: "crack_repair", name: "Crack Repair (per LF)", unit: "lf", basePrice: 18, laborPct: 0.82 },
+          { id: "water_damage", name: "Water Damage Repair (sqft)", unit: "sqft", basePrice: 18, laborPct: 0.75 },
+        ]
+      }
+    ]
+  },
+
+  concrete: {
+    label: "Concrete & Masonry",
+    icon: "⚙️",
+    description: "Foundations, flatwork, block, brick, stone",
+    categories: [
+      {
+        name: "Flatwork",
+        items: [
+          { id: "concrete_slab", name: "Concrete Slab (per sqft, 4\")", unit: "sqft", basePrice: 8.50, laborPct: 0.55 },
+          { id: "concrete_driveway", name: "Concrete Driveway (per sqft)", unit: "sqft", basePrice: 9.50, laborPct: 0.52 },
+          { id: "concrete_sidewalk", name: "Sidewalk (per sqft)", unit: "sqft", basePrice: 8.00, laborPct: 0.55 },
+          { id: "concrete_patio", name: "Patio/Pad (per sqft)", unit: "sqft", basePrice: 8.50, laborPct: 0.53 },
+          { id: "stamped_concrete", name: "Stamped Concrete (per sqft)", unit: "sqft", basePrice: 18, laborPct: 0.55 },
+          { id: "concrete_stain", name: "Concrete Stain/Seal (sqft)", unit: "sqft", basePrice: 3.80, laborPct: 0.68 },
+          { id: "concrete_break", name: "Concrete Removal (per sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.72 },
+        ]
+      },
+      {
+        name: "Foundation & Structure",
+        items: [
+          { id: "foundation_pour", name: "Foundation Pour (per cy)", unit: "cy", basePrice: 320, laborPct: 0.52 },
+          { id: "footer_install", name: "Footer Installation (per LF)", unit: "lf", basePrice: 65, laborPct: 0.55 },
+          { id: "wall_block", name: "Block Wall (per sqft face)", unit: "sqft", basePrice: 22, laborPct: 0.60 },
+          { id: "retaining_wall", name: "Retaining Wall (per sqft face)", unit: "sqft", basePrice: 32, laborPct: 0.58 },
+          { id: "crack_inject", name: "Foundation Crack Injection", unit: "ea", basePrice: 550, laborPct: 0.70 },
+          { id: "waterproofing", name: "Foundation Waterproofing (sqft)", unit: "sqft", basePrice: 18, laborPct: 0.62 },
+        ]
+      },
+      {
+        name: "Brick & Stone",
+        items: [
+          { id: "brick_lay", name: "Brick Laying (per sqft)", unit: "sqft", basePrice: 28, laborPct: 0.62 },
+          { id: "tuckpointing", name: "Tuckpointing (per sqft)", unit: "sqft", basePrice: 14, laborPct: 0.80 },
+          { id: "stone_veneer", name: "Stone Veneer (per sqft)", unit: "sqft", basePrice: 32, laborPct: 0.55 },
+          { id: "chimney_repair", name: "Chimney Repair (per ea)", unit: "ls", basePrice: 1800, laborPct: 0.65 },
+          { id: "chimney_rebuild", name: "Chimney Rebuild (per LF)", unit: "lf", basePrice: 380, laborPct: 0.62 },
+          { id: "fireplace_install", name: "Fireplace Installation", unit: "ls", basePrice: 4500, laborPct: 0.55 },
+        ]
+      }
+    ]
+  },
+
+  landscaping: {
+    label: "Landscaping",
+    icon: "🌿",
+    description: "Grading, irrigation, sod, hardscaping, drainage",
+    categories: [
+      {
+        name: "Lawn & Planting",
+        items: [
+          { id: "sod_install", name: "Sod Installation (per sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.55 },
+          { id: "seed_hydro", name: "Hydroseeding (per sqft)", unit: "sqft", basePrice: 0.45, laborPct: 0.60 },
+          { id: "mulch_install", name: "Mulch Install (per sqyd)", unit: "sqyd", basePrice: 12, laborPct: 0.65 },
+          { id: "shrub_plant", name: "Shrub Planting (per ea)", unit: "ea", basePrice: 120, laborPct: 0.55 },
+          { id: "tree_plant", name: "Tree Planting (per ea)", unit: "ea", basePrice: 380, laborPct: 0.50 },
+          { id: "tree_remove", name: "Tree Removal (per ea)", unit: "ea", basePrice: 950, laborPct: 0.70 },
+          { id: "stump_grind", name: "Stump Grinding (per ea)", unit: "ea", basePrice: 280, laborPct: 0.72 },
+          { id: "garden_bed", name: "Garden Bed Creation (sqft)", unit: "sqft", basePrice: 8.50, laborPct: 0.62 },
+        ]
+      },
+      {
+        name: "Irrigation & Drainage",
+        items: [
+          { id: "irrigation_zone", name: "Irrigation Zone (per zone)", unit: "ea", basePrice: 680, laborPct: 0.58 },
+          { id: "irrigation_full", name: "Full Irrigation System (sqft)", unit: "sqft", basePrice: 0.95, laborPct: 0.60 },
+          { id: "french_drain", name: "French Drain (per LF)", unit: "lf", basePrice: 28, laborPct: 0.65 },
+          { id: "dry_creek", name: "Dry Creek Bed (per LF)", unit: "lf", basePrice: 38, laborPct: 0.60 },
+          { id: "catch_basin", name: "Catch Basin Install", unit: "ea", basePrice: 520, laborPct: 0.62 },
+          { id: "downspout_ext", name: "Downspout Extension (per LF)", unit: "lf", basePrice: 18, laborPct: 0.65 },
+        ]
+      },
+      {
+        name: "Hardscaping",
+        items: [
+          { id: "paver_patio", name: "Paver Patio (per sqft)", unit: "sqft", basePrice: 22, laborPct: 0.58 },
+          { id: "paver_walk", name: "Paver Walkway (per sqft)", unit: "sqft", basePrice: 20, laborPct: 0.60 },
+          { id: "gravel_drive", name: "Gravel Driveway (per sqft)", unit: "sqft", basePrice: 3.50, laborPct: 0.60 },
+          { id: "deck_wood", name: "Wood Deck (per sqft)", unit: "sqft", basePrice: 32, laborPct: 0.55 },
+          { id: "deck_composite", name: "Composite Deck (per sqft)", unit: "sqft", basePrice: 45, laborPct: 0.52 },
+          { id: "fence_wood", name: "Wood Fence (per LF)", unit: "lf", basePrice: 28, laborPct: 0.58 },
+          { id: "fence_vinyl", name: "Vinyl Fence (per LF)", unit: "lf", basePrice: 32, laborPct: 0.55 },
+          { id: "fence_chain", name: "Chain Link Fence (per LF)", unit: "lf", basePrice: 22, laborPct: 0.55 },
+          { id: "pergola", name: "Pergola Installation", unit: "ls", basePrice: 4800, laborPct: 0.52 },
+          { id: "retaining_landscape", name: "Landscape Retaining Wall (LF)", unit: "lf", basePrice: 85, laborPct: 0.60 },
+        ]
+      }
+    ]
+  },
+
+  insulation: {
+    label: "Insulation",
+    icon: "🏚️",
+    description: "Blown-in, batt, spray foam, radiant barrier",
+    categories: [
+      {
+        name: "Insulation Types",
+        items: [
+          { id: "batt_fiberglass", name: "Fiberglass Batt (per sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.60 },
+          { id: "batt_mineral", name: "Mineral Wool Batt (sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.60 },
+          { id: "blown_attic", name: "Blown Attic Insulation (sqft)", unit: "sqft", basePrice: 1.50, laborPct: 0.65 },
+          { id: "blown_wall", name: "Dense Pack Wall (per sqft)", unit: "sqft", basePrice: 2.20, laborPct: 0.68 },
+          { id: "spray_open", name: "Open Cell Spray Foam (sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.55 },
+          { id: "spray_closed", name: "Closed Cell Spray Foam (sqft)", unit: "sqft", basePrice: 3.50, laborPct: 0.52 },
+          { id: "rigid_foam", name: "Rigid Foam Board (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.58 },
+          { id: "radiant_barrier", name: "Radiant Barrier (per sqft)", unit: "sqft", basePrice: 1.20, laborPct: 0.65 },
+          { id: "crawl_encap", name: "Crawl Space Encapsulation (sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.60 },
+        ]
+      }
+    ]
+  },
+
+  windows_doors: {
+    label: "Windows & Doors",
+    icon: "🪟",
+    description: "Replacement windows, entry doors, patio doors, garage doors",
+    categories: [
+      {
+        name: "Windows",
+        items: [
+          { id: "window_dh", name: "Double Hung Window Replace", unit: "ea", basePrice: 850, laborPct: 0.45 },
+          { id: "window_casement", name: "Casement Window Replace", unit: "ea", basePrice: 950, laborPct: 0.45 },
+          { id: "window_picture", name: "Picture Window Replace", unit: "ea", basePrice: 1100, laborPct: 0.42 },
+          { id: "window_bay", name: "Bay Window Replace", unit: "ea", basePrice: 3200, laborPct: 0.40 },
+          { id: "window_egress", name: "Egress Window Install", unit: "ea", basePrice: 2800, laborPct: 0.45 },
+          { id: "window_storm", name: "Storm Window Install", unit: "ea", basePrice: 380, laborPct: 0.55 },
+        ]
+      },
+      {
+        name: "Doors",
+        items: [
+          { id: "entry_door", name: "Entry Door Replace (incl. frame)", unit: "ea", basePrice: 1800, laborPct: 0.42 },
+          { id: "storm_door", name: "Storm Door Install", unit: "ea", basePrice: 650, laborPct: 0.55 },
+          { id: "sliding_patio", name: "Sliding Patio Door", unit: "ea", basePrice: 2200, laborPct: 0.42 },
+          { id: "french_door", name: "French Patio Door", unit: "ea", basePrice: 2800, laborPct: 0.40 },
+          { id: "garage_door_single", name: "Garage Door (Single)", unit: "ea", basePrice: 1400, laborPct: 0.50 },
+          { id: "garage_door_double", name: "Garage Door (Double)", unit: "ea", basePrice: 2200, laborPct: 0.48 },
+          { id: "garage_opener", name: "Garage Door Opener", unit: "ea", basePrice: 580, laborPct: 0.55 },
+        ]
+      }
+    ]
+  },
+
+  siding: {
+    label: "Siding & Exterior",
+    icon: "🏘️",
+    description: "Vinyl, fiber cement, wood, stucco siding",
+    categories: [
+      {
+        name: "Siding Materials",
+        items: [
+          { id: "siding_vinyl", name: "Vinyl Siding (per sqft)", unit: "sqft", basePrice: 6.50, laborPct: 0.55 },
+          { id: "siding_hardie", name: "Fiber Cement (per sqft)", unit: "sqft", basePrice: 11, laborPct: 0.52 },
+          { id: "siding_wood", name: "Wood Clapboard (per sqft)", unit: "sqft", basePrice: 14, laborPct: 0.52 },
+          { id: "siding_cedar", name: "Cedar Shake Siding (sqft)", unit: "sqft", basePrice: 16, laborPct: 0.50 },
+          { id: "stucco_apply", name: "Stucco Application (sqft)", unit: "sqft", basePrice: 12, laborPct: 0.55 },
+          { id: "eifs_apply", name: "EIFS System (per sqft)", unit: "sqft", basePrice: 14, laborPct: 0.52 },
+          { id: "siding_remove", name: "Old Siding Removal (sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.78 },
+          { id: "house_wrap", name: "House Wrap (per sqft)", unit: "sqft", basePrice: 1.50, laborPct: 0.62 },
+          { id: "soffit_fascia", name: "Soffit & Fascia (per LF)", unit: "lf", basePrice: 18, laborPct: 0.60 },
+        ]
+      }
+    ]
   }
-</script>
+};
 
+// Unit labels for display
+const UNIT_LABELS = {
+  sqft: "sq ft", lf: "lin ft", ea: "each", ls: "lump sum",
+  cy: "cu yd", sq: "square (100 sqft)", room: "room",
+  day: "day", load: "load", sqyd: "sq yd"
+};
+
+// Overhead & profit defaults
+const DEFAULT_OVERHEAD = 15; // %
+const DEFAULT_PROFIT = 10;   // %
+const DEFAULT_TAX_RATE = 8.5; // % (materials only)
+
+
+const UNITS = {sqft:'sq ft',lf:'lin ft',ea:'each',ls:'lump sum',cy:'cu yd',sq:'square',room:'room',day:'day',load:'load',sqyd:'sq yd'};
+const DEF = {overhead:15,profit:10,tax:8.5,deposit:30};
+const STRIPE = 'https://buy.stripe.com/cNicN5c1Cb1AbVF54H0000c';
+
+const DB = {
+  get(k)   { try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;} },
+  set(k,v) { try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+};
+
+let state = { view:'dashboard', currentInvoiceId:null, aiItems:null };
+
+// ═══════════════════════════════════════════
+// THE WORKBENCH
+// One single object holds whatever estimate is being edited.
+// This is the ONLY thing pgBuilder() ever reads from.
+// Opening an estimate = copy it into the workbench.
+// Saving = copy the workbench back into the estimates array.
+// Nothing else touches storage during editing.
+// ═══════════════════════════════════════════
+let workbench = null;          // the estimate currently being edited (or null)
+let workbenchIsNew = true;     // true = brand new estimate, false = editing existing
+
+function openNewEstimate() {
+  workbench = blankEst();
+  workbenchIsNew = true;
+}
+
+function openEstimateInWorkbench(id) {
+  const src = getEsts().find(function(x){ return x.id === id; });
+  if (!src) return false;
+  // Deep copy so editing the workbench never touches the saved array until Save is clicked
+  workbench = JSON.parse(JSON.stringify(src));
+  workbenchIsNew = false;
+  return true;
+}
+
+function saveWorkbenchToStorage() {
+  if (!workbench) return false;
+  const ests = getEsts();
+  const c = calc(workbench);
+  workbench.total = c.total;
+  workbench.lastMod = Date.now();
+  const idx = ests.findIndex(function(x){ return x.id === workbench.id; });
+  if (idx >= 0) ests[idx] = workbench;
+  else ests.push(workbench);
+  saveEsts(ests);
+  workbenchIsNew = false;
+  return true;
+}
+
+
+function getEsts()  { return DB.get('dep_e')||[]; }
+function getInvs()  { return DB.get('dep_i')||[]; }
+function getCo()    { return DB.get('dep_c')||{}; }
+function getSub()   { return DB.get('dep_s'); }
+
+// ── LICENSE KEY SYSTEM ────────────────────────
+function getDeviceId() {
+  let id = DB.get('dep_device_id');
+  if (!id) {
+    id = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+    DB.set('dep_device_id', id);
+  }
+  return id;
+}
+
+function getLicense() { return DB.get('dep_license'); }
+function saveLicense(obj) { DB.set('dep_license', obj); }
+function hasValidLicense() {
+  const lic = getLicense();
+  return lic && lic.valid === true;
+}
+
+async function submitLicenseKey(key) {
+  const deviceId = getDeviceId();
+  try {
+    const res = await fetch('/api/validate-license', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: key, deviceId: deviceId })
+    });
+    const data = await res.json();
+    if (data.valid) {
+      saveLicense({ valid: true, key: key.trim().toUpperCase(), verifiedAt: Date.now() });
+      return { ok: true };
+    }
+    return { ok: false, error: data.error || 'Invalid license key.' };
+  } catch (e) {
+    return { ok: false, error: 'Could not reach the server. Check your connection.' };
+  }
+}
+function saveEsts(a){ DB.set('dep_e',a); }
+function saveInvs(a){ DB.set('dep_i',a); }
+function saveCoDB(o){ DB.set('dep_c',o); }
+
+function hasSub()   { return hasValidLicense() || (getSub() && getSub().active); }
+function trialLeft(){ return getEsts().length<1?1:0; }
+function canUse()   { return hasSub()||trialLeft()>0||getEsts().length>0||getInvs().length>0; }
+
+
+
+function toast(msg, type) {
+  type = type||'ok';
+  var t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg; t.className = 'toast '+type;
+  clearTimeout(t._t); t._t = setTimeout(function(){t.classList.add('hidden');},3000);
+}
+
+function render() {
+  var root = document.getElementById('app');
+  if (!root) return;
+  if (!canUse() && state.view!=='subscribe' && state.view!=='settings') state.view='subscribe';
+  root.innerHTML = buildShell();
+  var sp = document.getElementById('splash');
+  if (sp) { sp.style.opacity='0'; setTimeout(function(){if(sp.parentNode)sp.parentNode.removeChild(sp);},400); }
+}
+
+function go(v) {
+  if (v === 'new_estimate' && workbenchIsNew && !hasSub() && getEsts().length >= 1) {
+    state.view = 'subscribe';
+    render();
+    window.scrollTo(0,0);
+    return;
+  }
+  state.view = v;
+  render();
+  window.scrollTo(0,0);
+}
+
+function goBack() {
+  var map = {new_estimate:'dashboard',estimates:'dashboard',invoices:'dashboard',settings:'dashboard',subscribe:'dashboard',estimate_detail:'estimates',invoice_detail:'invoices'};
+  state.currentInvoiceId = null;
+  go(map[state.view] || 'dashboard');
+}
+
+function startNew() { openNewEstimate(); go('new_estimate'); }
+function startWithTrade(k) { openNewEstimate(); workbench.tradeType=k; go('new_estimate'); }
+
+function buildShell() {
+  return '<div class="shell">'+buildTopBar()+'<div class="content">'+buildPage()+'</div>'+buildNav()+'</div>';
+}
+
+function buildTopBar() {
+  var titles = {dashboard:'Dashboard',new_estimate:(!workbenchIsNew?'Edit Estimate':'New Estimate'),estimates:'My Estimates',invoices:'My Invoices',settings:'Settings',subscribe:'Subscription',estimate_detail:'Estimate',invoice_detail:'Invoice'};
+  var back = state.view!=='dashboard'
+    ? '<button class="btn-back" onclick="goBack()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg></button>'
+    : '<div style="width:38px"></div>';
+  var right = !hasSub()&&state.view!=='subscribe' ? '<span class="badge">Free Trial</span>' : '<div style="width:40px"></div>';
+  return '<header class="topbar"><div class="topbar-left">'+back+'</div><h1 class="topbar-title">'+(titles[state.view]||'')+'</h1><div class="topbar-right">'+right+'</div></header>';
+}
+
+function buildNav() {
+  var navs = [
+    {v:'dashboard',l:'Home',i:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>'},
+    {v:'estimates',l:'Estimates',i:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'},
+    {v:'new_estimate',l:'New',fab:true,i:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>'},
+    {v:'invoices',l:'Invoices',i:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'},
+    {v:'settings',l:'Settings',i:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'}
+  ];
+  return '<nav class="bottomnav">'+navs.map(function(it){
+    return '<button class="nav-btn'+(it.fab?' nav-fab':'')+(state.view===it.v?' active':'')+'" onclick="'+(it.v==='new_estimate'?'startNew()':'go(\''+it.v+'\')')+'">'
+      +'<span class="'+(it.fab?'nav-icon-wrap':'')+'">'+it.i+'</span>'
+      +'<span class="nav-lbl">'+it.l+'</span></button>';
+  }).join('')+'</nav>';
+}
+
+function buildPage() {
+  switch(state.view) {
+    case 'dashboard':       return pgDash();
+    case 'new_estimate':    return pgBuilder();
+    case 'estimates':       return pgEstimates();
+    case 'invoices':        return pgInvoices();
+    case 'settings':        return pgSettings();
+    case 'subscribe':       return pgSubscribe();
+    case 'estimate_detail': return pgEstDetail();
+    case 'invoice_detail':  return pgInvDetail();
+    default: return pgDash();
+  }
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────
+function pgDash() {
+  var ests=getEsts(), invs=getInvs();
+  var tE=ests.reduce(function(s,e){return s+(e.total||0);},0);
+  var tI=invs.reduce(function(s,i){return s+(i.total||0);},0);
+  var tP=invs.filter(function(i){return i.status==='paid';}).reduce(function(s,i){return s+(i.total||0);},0);
+  var co=esc(getCo().name||'Your Company');
+  var rec=[].concat(ests).sort(function(a,b){return b.date-a.date;}).slice(0,3);
+  var html='<div class="dash-hero">';
+  html+='<div><div class="hero-sub">Welcome back</div><div class="hero-name">'+co+'</div></div>';
+  html+='<button class="btn-new" onclick="startNew()">+ New</button></div>';
+  html+='<div class="stats">';
+  html+='<div class="stat s-orange"><div class="stat-lbl">Estimated</div><div class="stat-val">'+fmt(tE)+'</div><div class="stat-sub">'+ests.length+' estimates</div></div>';
+  html+='<div class="stat s-blue"><div class="stat-lbl">Invoiced</div><div class="stat-val">'+fmt(tI)+'</div><div class="stat-sub">'+invs.length+' invoices</div></div>';
+  html+='<div class="stat s-green"><div class="stat-lbl">Collected</div><div class="stat-val">'+fmt(tP)+'</div><div class="stat-sub">'+invs.filter(function(i){return i.status==='paid';}).length+' paid</div></div>';
+  html+='<div class="stat s-purple"><div class="stat-lbl">Outstanding</div><div class="stat-val">'+fmt(tI-tP)+'</div><div class="stat-sub">'+invs.filter(function(i){return i.status!=='paid';}).length+' pending</div></div>';
+  html+='</div>';
+  if (rec.length) {
+    html+='<div class="section"><div class="section-hdr"><h3>Recent Estimates</h3><button class="link-btn" onclick="go(\'estimates\')">See all</button></div>';
+    rec.forEach(function(e){html+=estCard(e,false);});
+    html+='</div>';
+  } else {
+    html+='<div class="empty"><div class="empty-icon">&#x1F4CB;</div><h3>No estimates yet</h3><p>Tap New to get started</p></div>';
+  }
+  html+='<div class="section"><h3 style="font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--concrete);margin-bottom:12px">Quick Start</h3><div class="trade-pills">';
+  Object.entries(TRADES).forEach(function(kv){html+='<button class="trade-pill" onclick="startWithTrade(\''+kv[0]+'\')">'+kv[1].icon+' '+kv[1].label+'</button>';});
+  html+='</div></div>';
+  return html;
+}
+
+// ── ESTIMATE BUILDER ──────────────────────────────────────────────
+// THE KEY: always load fresh from storage by ID - never use a stale copy
+function pgBuilder() {
+  if (!workbench) openNewEstimate();
+  var e = workbench;
+
+  var mult=getMultiplier(e.projectZip||'');
+  var tr=e.tradeType?TRADES[e.tradeType]:null;
+
+  var html='';
+
+  // AI BOX
+  html+='<div class="form-sec"><div class="ai-box">';
+  html+='<div class="ai-hdr"><div class="ai-badge">&#9889; AI</div><div class="ai-title">Describe the Job &#8212; AI Builds Line Items</div></div>';
+  html+='<div class="ai-body">';
+  html+='<textarea class="ai-textarea" id="ai-in" placeholder="e.g. Replace master bath 10x8 full gut &#8212; demo tile, new shower pan, retile walls, replace toilet and vanity, paint ceiling..."></textarea>';
+  html+='<div class="ai-actions"><button class="btn-ai" id="ai-btn" onclick="genScope()">&#9889; Generate Line Items</button><button class="btn-ai-clear" onclick="clearScope()">Clear</button></div>';
+  html+='<div class="ai-hint">Plain English &#8212; AI picks the right items, quantities, and pricing.</div>';
+  html+='<div id="ai-out"></div></div></div></div>';
+
+  // CLIENT INFO
+  html+='<div class="form-sec"><div class="form-sec-title">Client Information</div>';
+  html+='<div class="form-row"><input class="inp" placeholder="Client Name *" value="'+esc(e.clientName||'')+'" oninput="setF(\'clientName\',this.value)"></div>';
+  html+='<div class="form-row"><input class="inp" type="email" placeholder="Email" value="'+esc(e.clientEmail||'')+'" oninput="setF(\'clientEmail\',this.value)"></div>';
+  html+='<div class="form-row"><input class="inp" type="tel" placeholder="Phone" value="'+esc(e.clientPhone||'')+'" oninput="setF(\'clientPhone\',this.value)"></div>';
+  html+='<div class="form-row"><input class="inp" placeholder="Project Address" value="'+esc(e.projectAddress||'')+'" oninput="setF(\'projectAddress\',this.value)"></div>';
+  html+='<div class="form-split"><input class="inp" placeholder="City" value="'+esc(e.projectCity||'')+'" oninput="setF(\'projectCity\',this.value)">';
+  html+='<input class="inp zip-field" placeholder="ZIP" maxlength="5" value="'+esc(e.projectZip||'')+'" oninput="setF(\'projectZip\',this.value)" onblur="render()"></div>';
+  if (e.projectZip) html+='<div class="zip-note">&#x1F4CD; Regional rate: <strong>'+(mult*100).toFixed(0)+'%</strong> of national average</div>';
+  html+='</div>';
+
+  // PROJECT
+  html+='<div class="form-sec"><div class="form-sec-title">Project Details</div>';
+  html+='<div class="form-row"><input class="inp" placeholder="Project Name *" value="'+esc(e.projectName||'')+'" oninput="setF(\'projectName\',this.value)"></div>';
+  html+='<div class="form-split"><select class="inp" onchange="setF(\'tradeType\',this.value);render()"><option value="">Select Trade</option>';
+  Object.entries(TRADES).forEach(function(kv){html+='<option value="'+kv[0]+'"'+(e.tradeType===kv[0]?' selected':'')+'>'+kv[1].icon+' '+kv[1].label+'</option>';});
+  html+='</select><select class="inp" onchange="setF(\'status\',this.value)">';
+  ['draft','sent','approved','declined'].forEach(function(s){html+='<option value="'+s+'"'+((e.status||'draft')===s?' selected':'')+'>'+(s.charAt(0).toUpperCase()+s.slice(1))+'</option>';});
+  html+='</select></div>';
+  html+='<div class="form-row"><textarea class="inp" placeholder="Project notes..." oninput="setF(\'notes\',this.value)">'+esc(e.notes||'')+'</textarea></div>';
+  html+='<div class="form-split"><div><label class="lbl">Valid Until</label><input class="inp" type="date" value="'+(e.validUntil||'')+'" oninput="setF(\'validUntil\',this.value)"></div>';
+  html+='<div><label class="lbl">Start Date</label><input class="inp" type="date" value="'+(e.startDate||'')+'" oninput="setF(\'startDate\',this.value)"></div></div></div>';
+
+  // LINE ITEMS
+  html+='<div class="form-sec"><div class="section-hdr" style="margin-bottom:12px"><div class="form-sec-title" style="margin-bottom:0">Line Items</div><button class="act-btn" onclick="showPicker()">+ Add Item</button></div>';
+  if (tr) {
+    html+='<div style="background:var(--navy-light);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px"><div style="font-size:12px;color:var(--steel);margin-bottom:8px">Quick add from '+tr.label+':</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    tr.categories.forEach(function(c){html+='<button class="act-btn" onclick="showPickerTrade(\''+e.tradeType+'\')">'+c.name+'</button>';});
+    html+='</div></div>';
+  }
+  html+='<div id="li-list">'+buildLineItems(e)+'</div>';
+  html+='<button class="btn-add-item" onclick="addBlankItem()">+ Add Custom Item</button></div>';
+
+  // PRICING
+  html+='<div class="form-sec"><div class="form-sec-title">Pricing Settings</div><div class="form-split">';
+  html+='<div><label class="lbl">Overhead %</label><input class="inp" type="number" min="0" max="50" value="'+(e.overhead!=null?e.overhead:DEF.overhead)+'" oninput="setF(\'overhead\',parseFloat(this.value))"></div>';
+  html+='<div><label class="lbl">Profit %</label><input class="inp" type="number" min="0" max="50" value="'+(e.profit!=null?e.profit:DEF.profit)+'" oninput="setF(\'profit\',parseFloat(this.value))"></div></div><div class="form-split">';
+  html+='<div><label class="lbl">Tax % (materials)</label><input class="inp" type="number" min="0" max="15" step="0.1" value="'+(e.taxRate!=null?e.taxRate:DEF.tax)+'" oninput="setF(\'taxRate\',parseFloat(this.value))"></div>';
+  html+='<div><label class="lbl">Deposit %</label><input class="inp" type="number" min="0" max="100" value="'+(e.depositPct!=null?e.depositPct:DEF.deposit)+'" oninput="setF(\'depositPct\',parseFloat(this.value))"></div></div></div>';
+
+  // TOTALS
+  html+='<div class="totals" id="totals-wrap">'+buildTotals(e)+'</div>';
+
+  // TERMS
+  html+='<div class="form-sec"><div class="form-sec-title">Terms &amp; Conditions</div><textarea class="inp" oninput="setF(\'terms\',this.value)">'+esc(e.terms||defTerms())+'</textarea></div>';
+
+  // ACTIONS
+  html+='<div class="action-btns">';
+  html+='<button class="btn-primary" onclick="saveEst(false)">&#x1F4BE; Save Estimate</button>';
+  html+='<button class="btn-secondary" onclick="saveEst(true)">&#x1F50D; Preview</button>';
+  html+='<button class="btn-secondary" onclick="toInvoice(null)">&#x1F4C4; Convert to Invoice</button>';
+  html+='</div>';
+
+  // PICKER MODAL
+  html+='<div id="picker" class="modal hidden"><div class="modal-bg" onclick="closePicker()"></div><div class="modal-sheet" id="picker-body"></div></div>';
+
+  return html;
+}
+
+function buildLineItems(e) {
+  var items=e.lineItems||[];
+  if (!items.length) return '<div style="padding:20px;text-align:center;background:var(--navy-light);border-radius:var(--r-sm);font-size:13px;color:var(--steel)">No items yet. Describe the job above or add manually.</div>';
+  return items.map(function(item,i){
+    var sub=(item.qty||0)*(item.unitPrice||0);
+    var html='<div class="li-row"><div class="li-top"><div class="li-name-wrap">';
+    html+='<input class="li-name" value="'+esc(item.name||'')+'" placeholder="Item name" oninput="setLI('+i+',\'name\',this.value)">';
+    html+='<span class="li-trade">'+esc(item.tradeLabel||'')+'</span></div>';
+    html+='<button class="li-del" onclick="delLI('+i+')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>';
+    html+='<div class="li-grid">';
+    html+='<div class="li-field"><label>Qty</label><input type="number" min="0" step="0.01" value="'+(item.qty||1)+'" oninput="setLI('+i+',\'qty\',parseFloat(this.value));refreshTotals()"></div>';
+    html+='<div class="li-field"><label>Unit</label><select oninput="setLI('+i+',\'unit\',this.value)">';
+    Object.entries(UNITS).forEach(function(kv){html+='<option value="'+kv[0]+'"'+(item.unit===kv[0]?' selected':'')+'>'+(kv[1])+'</option>';});
+    html+='</select></div>';
+    html+='<div class="li-field"><label>Unit $</label><div class="li-price"><span>$</span><input type="number" min="0" step="0.01" value="'+(item.unitPrice||0)+'" oninput="setLI('+i+',\'unitPrice\',parseFloat(this.value));refreshTotals()"></div></div>';
+    html+='<div class="li-field"><label>Subtotal</label><span class="li-sub" id="ls'+i+'">'+fmt(sub)+'</span></div></div>';
+    html+='<div style="display:flex;align-items:center;gap:12px"><span style="font-size:12px;color:var(--steel)">Labor %</span>';
+    html+='<input type="number" min="0" max="100" value="'+Math.round((item.laborPct||.6)*100)+'" style="width:60px;padding:5px 8px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:#fff;font-size:13px" oninput="setLI('+i+',\'laborPct\',this.value/100);refreshTotals()"></div>';
+    html+='</div>';
+    return html;
+  }).join('');
+}
+
+function buildTotals(e) {
+  var c=calc(e);
+  var oh=e.overhead!=null?e.overhead:DEF.overhead;
+  var pr=e.profit!=null?e.profit:DEF.profit;
+  var tx=e.taxRate!=null?e.taxRate:DEF.tax;
+  var dp=e.depositPct!=null?e.depositPct:DEF.deposit;
+  var html='';
+  html+='<div class="tot-row"><span>Labor</span><span>'+fmt(c.labor)+'</span></div>';
+  html+='<div class="tot-row"><span>Materials</span><span>'+fmt(c.mat)+'</span></div>';
+  html+='<div class="tot-divider"></div>';
+  html+='<div class="tot-row muted"><span>Overhead ('+oh+'%)</span><span>'+fmt(c.oh)+'</span></div>';
+  html+='<div class="tot-row muted"><span>Profit ('+pr+'%)</span><span>'+fmt(c.pr)+'</span></div>';
+  html+='<div class="tot-row muted"><span>Tax ('+tx+'%)</span><span>'+fmt(c.tx)+'</span></div>';
+  html+='<div class="tot-divider"></div>';
+  html+='<div class="tot-row tot-total"><span>TOTAL</span><span>'+fmt(c.total)+'</span></div>';
+  html+='<div class="tot-row tot-dep"><span>Deposit ('+dp+'%)</span><span>'+fmt(c.dep)+'</span></div>';
+  html+='<div class="tot-row"><span>Balance Due</span><span>'+fmt(c.bal)+'</span></div>';
+  if (e.projectZip) html+='<div class="tot-note">&#x1F4CD; Adjusted for ZIP '+e.projectZip+' ('+(getMultiplier(e.projectZip)*100).toFixed(0)+'% regional rate)</div>';
+  return html;
+}
+
+function calc(e) {
+  var mult=getMultiplier(e.projectZip||'');
+  var labor=0,mat=0;
+  (e.lineItems||[]).forEach(function(it){
+    var t=(it.qty||0)*(it.unitPrice||0);
+    var lp=it.laborPct!=null?it.laborPct:.6;
+    labor+=t*lp; mat+=t*(1-lp);
+  });
+  labor*=mult; mat*=mult;
+  var base=labor+mat;
+  var oh=base*((e.overhead!=null?e.overhead:DEF.overhead)/100);
+  var pr=(base+oh)*((e.profit!=null?e.profit:DEF.profit)/100);
+  var tx=mat*((e.taxRate!=null?e.taxRate:DEF.tax)/100);
+  var total=base+oh+pr+tx;
+  var dep=total*((e.depositPct!=null?e.depositPct:DEF.deposit)/100);
+  return {labor:labor,mat:mat,oh:oh,pr:pr,tx:tx,total:total,dep:dep,bal:total-dep};
+}
+
+function refreshTotals() {
+  if (!workbench) return;
+  var tw = document.getElementById('totals-wrap');
+  if (tw) tw.innerHTML = buildTotals(workbench);
+}
+
+// KEY FIELD SETTERS - write through to storage immediately
+function setF(field, value) {
+  if (!workbench) openNewEstimate();
+  workbench[field] = value;
+}
+
+function setLI(i, field, value) {
+  if (!workbench || !workbench.lineItems || !workbench.lineItems[i]) return;
+  workbench.lineItems[i][field] = value;
+}
+
+function delLI(i) {
+  if (!workbench || !workbench.lineItems) return;
+  workbench.lineItems.splice(i, 1);
+  render();
+}
+
+function addBlankItem() {
+  if (!workbench) openNewEstimate();
+  workbench.lineItems = workbench.lineItems || [];
+  workbench.lineItems.push({id:'c_'+Date.now(), name:'Custom Item', qty:1, unit:'ls', unitPrice:0, laborPct:.6, tradeLabel:'Custom'});
+  render();
+}
+
+// SAVE ESTIMATE
+function saveEst(andPreview) {
+  if (!workbench) { alert('Nothing to save.'); return; }
+  if (!workbench.clientName || !workbench.projectName) { alert('Please fill in Client Name and Project Name.'); return; }
+
+  // Paywall check only applies to brand new estimates
+  if (workbenchIsNew && !hasSub() && getEsts().length >= 1) {
+    go('subscribe');
+    return;
+  }
+
+  saveWorkbenchToStorage();
+
+  if (andPreview) {
+    state.view = 'estimate_detail';
+    state.detailEstimateId = workbench.id;
+    render();
+  } else {
+    toast('Estimate saved!');
+  }
+}
+
+function previewEst(){saveEst(true);}
+
+// EDIT ESTIMATE - the simple correct way
+// Just set the ID. pgBuilder reads fresh from storage every time.
+function editEst(id) {
+  var ok = openEstimateInWorkbench(id);
+  if (!ok) { alert('Estimate not found'); return; }
+  state.view = 'new_estimate';
+  render();
+  window.scrollTo(0,0);
+}
+
+
+function openEst(id) {
+  state.detailEstimateId = id;
+  state.view = 'estimate_detail';
+  render();
+  window.scrollTo(0,0);
+}
+
+function dupEst(id) {
+  var ests=getEsts();var e=ests.find(function(x){return x.id===id;});
+  if(!e)return;
+  var d=JSON.parse(JSON.stringify(e));
+  d.id='est_'+Date.now();d.date=Date.now();d.status='draft';d.projectName+=' (Copy)';
+  ests.push(d);saveEsts(ests);toast('Duplicated!');render();
+}
+
+function delEst(id) {
+  if(!confirm('Delete this estimate?'))return;
+  saveEsts(getEsts().filter(function(x){return x.id!==id;}));
+  toast('Deleted','err');render();
+}
+
+// ESTIMATES LIST
+function pgEstimates() {
+  var ests=[].concat(getEsts()).sort(function(a,b){return b.date-a.date;});
+  var html='<div class="filter-bar"><input class="search-inp" placeholder="Search..." oninput="filterEsts(this.value)">';
+  html+='<select class="filter-sel" onchange="filterEstsStatus(this.value)"><option value="">All</option><option value="draft">Draft</option><option value="sent">Sent</option><option value="approved">Approved</option><option value="declined">Declined</option></select></div>';
+  html+='<div id="ests-list" style="padding:0 16px">';
+  if (ests.length) ests.forEach(function(e){html+=estCard(e,true);}); 
+  else html='<div class="empty"><div class="empty-icon">&#x1F4CB;</div><h3>No estimates</h3></div>';
+  html+='</div>';
+  return html;
+}
+
+function estCard(e,actions) {
+  var sc={draft:'#888',sent:'#2196F3',approved:'#4CAF50',declined:'#F44336'};
+  var c=calc(e);var tr=TRADES[e.tradeType];
+  var html='<div class="card">';
+  html+='<div class="card-top" onclick="openEst(\''+e.id+'\')"><div class="card-info">';
+  html+='<div class="card-title">'+esc(e.projectName||'Untitled')+'</div>';
+  html+='<div class="card-sub">'+esc(e.clientName||'No client')+(e.projectZip?' &middot; '+e.projectZip:'')+'</div>';
+  html+='<div class="card-meta">'+fmtDate(e.date)+(tr?' &middot; '+tr.icon+' '+tr.label:'')+'</div>';
+  html+='</div><div class="card-right"><div class="card-amt">'+fmt(c.total)+'</div>';
+  html+='<span class="status-pill" style="background:'+(sc[e.status]||'#888')+'20;color:'+(sc[e.status]||'#888')+'">'+(e.status||'draft')+'</span></div></div>';
+  if (actions) {
+    html+='<div class="card-actions">';
+    html+='<button class="act-btn" onclick="event.stopPropagation();editEst(\''+e.id+'\')">Edit</button>';
+    html+='<button class="act-btn" onclick="event.stopPropagation();dupEst(\''+e.id+'\')">Duplicate</button>';
+    html+='<button class="act-btn" onclick="event.stopPropagation();toInvoice(\''+e.id+'\')">&#8594; Invoice</button>';
+    html+='<button class="act-btn danger" onclick="event.stopPropagation();delEst(\''+e.id+'\')">Delete</button>';
+    html+='</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function filterEsts(q) {
+  var c=document.getElementById('ests-list');if(!c)return;
+  var f=getEsts().filter(function(e){return(e.projectName||'').toLowerCase().includes(q.toLowerCase())||(e.clientName||'').toLowerCase().includes(q.toLowerCase());}).sort(function(a,b){return b.date-a.date;});
+  c.innerHTML=f.length?f.map(function(e){return estCard(e,true);}).join(''):'<div class="empty"><p>No results</p></div>';
+}
+function filterEstsStatus(s) {
+  var c=document.getElementById('ests-list');if(!c)return;
+  var f=(s?getEsts().filter(function(e){return e.status===s;}):getEsts()).sort(function(a,b){return b.date-a.date;});
+  c.innerHTML=f.length?f.map(function(e){return estCard(e,true);}).join(''):'<div class="empty"><p>No results</p></div>';
+}
+
+// INVOICE CONVERSION
+function toInvoice(id) {
+  var e = id ? getEsts().find(function(x){ return x.id === id; }) : workbench;
+  if (!e) { alert('Save the estimate first.'); return; }
+  if (!e.clientName || !e.projectName) { alert('Please fill in Client Name and Project Name.'); return; }
+
+  // If converting from workbench (unsaved), save it first
+  if (!id) {
+    if (workbenchIsNew && !hasSub() && getEsts().length >= 1) { go('subscribe'); return; }
+    saveWorkbenchToStorage();
+    e = workbench;
+  }
+
+  var c = calc(e);
+  var due = new Date(); due.setDate(due.getDate()+30);
+  var invs = getInvs();
+  var inv = {
+    id:'inv_'+Date.now(), number:invs.length+1001, date:Date.now(),
+    dueDate:due.toISOString().split('T')[0], estimateId:e.id, status:'unpaid',
+    clientName:e.clientName, clientEmail:e.clientEmail||'', clientPhone:e.clientPhone||'',
+    projectName:e.projectName, projectAddress:e.projectAddress||'',
+    projectCity:e.projectCity||'', projectZip:e.projectZip||'',
+    lineItems:JSON.parse(JSON.stringify(e.lineItems||[])),
+    overhead:e.overhead, profit:e.profit, taxRate:e.taxRate, depositPct:e.depositPct,
+    total:c.total, laborAmt:c.labor, matAmt:c.mat, ohAmt:c.oh, prAmt:c.pr,
+    txAmt:c.tx, depAmt:c.dep, balAmt:c.bal,
+    terms:e.terms||'', payInfo:getCo().payInfo||''
+  };
+  invs.push(inv); saveInvs(invs);
+
+  var ests = getEsts();
+  var eidx = ests.findIndex(function(x){ return x.id === e.id; });
+  if (eidx >= 0) { ests[eidx].status = 'approved'; saveEsts(ests); }
+
+  state.currentInvoiceId = inv.id;
+  toast('Invoice created!');
+  state.view = 'invoice_detail';
+  render();
+}
+
+
+// INVOICES
+function pgInvoices() {
+  var invs=[].concat(getInvs()).sort(function(a,b){return b.date-a.date;});
+  var html='<div class="filter-bar"><input class="search-inp" placeholder="Search...">';
+  html+='<select class="filter-sel" onchange="filterInvStatus(this.value)"><option value="">All</option><option value="unpaid">Unpaid</option><option value="paid">Paid</option></select></div>';
+  html+='<div id="invs-list" style="padding:0 16px">';
+  if (invs.length) invs.forEach(function(i){html+=invCard(i);}); 
+  else html+='<div class="empty"><div class="empty-icon">&#x1F4C4;</div><h3>No invoices</h3><p>Convert an estimate to create one</p></div>';
+  html+='</div>';
+  return html;
+}
+
+function invCard(inv) {
+  var sc={unpaid:'#FF6B35',paid:'#4CAF50',overdue:'#F44336'};
+  var past=inv.dueDate&&new Date(inv.dueDate)<new Date()&&inv.status!=='paid';
+  var st=past?'overdue':(inv.status||'unpaid');
+  var html='<div class="card"><div class="card-top" onclick="openInv(\''+inv.id+'\')">';
+  html+='<div class="card-info"><div class="card-title">Invoice #'+(inv.number||inv.id.slice(-6).toUpperCase())+'</div>';
+  html+='<div class="card-sub">'+esc(inv.clientName||'')+' &middot; '+esc(inv.projectName||'')+'</div>';
+  html+='<div class="card-meta">Issued: '+fmtDate(inv.date)+(inv.dueDate?' &middot; Due: '+inv.dueDate:'')+'</div></div>';
+  html+='<div class="card-right"><div class="card-amt">'+fmt(inv.total||0)+'</div>';
+  html+='<span class="status-pill" style="background:'+(sc[st]||'#888')+'20;color:'+(sc[st]||'#888')+'">'+st+'</span></div></div>';
+  html+='<div class="card-actions">';
+  html+='<button class="act-btn" onclick="markPaid(\''+inv.id+'\')">Mark Paid</button>';
+  html+='<button class="act-btn" onclick="openInv(\''+inv.id+'\');setTimeout(function(){window.print();},400)">Print/PDF</button>';
+  html+='<button class="act-btn danger" onclick="delInv(\''+inv.id+'\')">Delete</button>';
+  html+='</div></div>';
+  return html;
+}
+
+function openInv(id){state.currentInvoiceId=id;state.view='invoice_detail';render();}
+function markPaid(id){var invs=getInvs();var i=invs.find(function(x){return x.id===id;});if(i){i.status='paid';i.paidDate=new Date().toISOString().split('T')[0];saveInvs(invs);toast('Marked as paid!');render();}}
+function delInv(id){if(!confirm('Delete?'))return;saveInvs(getInvs().filter(function(x){return x.id!==id;}));toast('Deleted','err');render();}
+function filterInvStatus(s){var c=document.getElementById('invs-list');if(!c)return;var f=(s?getInvs().filter(function(i){return i.status===s;}):getInvs()).sort(function(a,b){return b.date-a.date;});c.innerHTML=f.length?f.map(function(i){return invCard(i);}).join(''):'<div class="empty"><p>No results</p></div>';}
+
+// ESTIMATE DETAIL
+function pgEstDetail() {
+  var e = getEsts().find(function(x){ return x.id === state.detailEstimateId; });
+  if (!e) return '<div class="empty"><p>Not found</p></div>';
+  var c=calc(e);var tr=TRADES[e.tradeType];var mult=getMultiplier(e.projectZip||'');var co=getCo();
+  var html='<div class="detail">';
+  html+='<div class="det-hdr"><div class="det-num">EST #'+e.id.slice(-6).toUpperCase()+'</div><div class="det-date">'+fmtDate(e.date)+'</div></div>';
+  if (co.name) {
+    html+='<div class="co-hdr"><div style="font-size:36px">&#x1F3D7;</div><div><div class="co-name">'+esc(co.name)+'</div>';
+    if (co.address) html+='<div class="co-meta">'+esc(co.address)+'</div>';
+    if (co.phone) html+='<div class="co-meta">'+esc(co.phone)+'</div>';
+    if (co.license) html+='<div class="co-meta">Lic #'+esc(co.license)+'</div>';
+    html+='</div></div>';
+  } else html+='<div class="co-empty">Add company info in Settings</div>';
+  html+='<div class="parties"><div class="party"><div class="party-lbl">Bill To</div><div class="party-name">'+esc(e.clientName||'')+'</div>';
+  if (e.projectAddress) html+='<div class="party-meta">'+esc(e.projectAddress)+'</div>';
+  if (e.clientEmail) html+='<div class="party-meta">'+esc(e.clientEmail)+'</div>';
+  html+='</div><div class="party"><div class="party-lbl">Project</div><div class="party-name">'+esc(e.projectName||'')+'</div>';
+  if (tr) html+='<div class="party-meta">'+tr.icon+' '+tr.label+'</div>';
+  if (e.validUntil) html+='<div class="party-meta">Valid: '+e.validUntil+'</div>';
+  html+='</div></div>';
+  html+='<table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead><tbody>';
+  (e.lineItems||[]).forEach(function(it){
+    var ap=(it.unitPrice||0)*mult;var tot=(it.qty||0)*ap;
+    html+='<tr><td class="iname">'+esc(it.name)+'<span class="itag">'+esc(it.tradeLabel||'')+'</span></td><td>'+(it.qty||0)+' '+(UNITS[it.unit]||it.unit||'')+'</td><td class="r">'+fmt(ap)+'</td><td class="r">'+fmt(tot)+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  html+='<div class="det-totals">';
+  html+='<div class="dt-row"><span>Labor</span><span>'+fmt(c.labor)+'</span></div>';
+  html+='<div class="dt-row"><span>Materials</span><span>'+fmt(c.mat)+'</span></div>';
+  html+='<div class="dt-row"><span>Overhead</span><span>'+fmt(c.oh)+'</span></div>';
+  html+='<div class="dt-row"><span>Profit</span><span>'+fmt(c.pr)+'</span></div>';
+  html+='<div class="dt-row"><span>Tax</span><span>'+fmt(c.tx)+'</span></div>';
+  html+='<div class="dt-row dt-total"><span>TOTAL</span><span>'+fmt(c.total)+'</span></div>';
+  html+='<div class="dt-row dt-dep"><span>Deposit Required</span><span>'+fmt(c.dep)+'</span></div>';
+  html+='<div class="dt-row"><span>Balance Due</span><span>'+fmt(c.bal)+'</span></div></div>';
+  if (e.terms) html+='<div class="det-terms"><h4>Terms &amp; Conditions</h4><p>'+esc(e.terms)+'</p></div>';
+  html+='<div class="action-btns">';
+  html+='<button class="btn-primary" onclick="editEst(\''+e.id+'\')">&#x270F; Edit Estimate</button>';
+  html+='<button class="btn-secondary" onclick="window.print()">&#x1F5A8; Print / PDF</button>';
+  html+='<button class="btn-secondary" onclick="toInvoice(\''+e.id+'\')">&#x1F4C4; Convert to Invoice</button>';
+  html+='</div></div>';
+  return html;
+}
+
+// INVOICE DETAIL
+function pgInvDetail() {
+  var inv=state.currentInvoiceId?getInvs().find(function(x){return x.id===state.currentInvoiceId;}):null;
+  if (!inv) return '<div class="empty"><p>Not found</p></div>';
+  var co=getCo();
+  var html='<div class="detail">';
+  html+='<div class="det-hdr"><div class="det-num">INVOICE #'+(inv.number||inv.id.slice(-6).toUpperCase())+'</div><div class="det-date">'+fmtDate(inv.date)+'</div></div>';
+  if (co.name) html+='<div class="co-hdr"><div style="font-size:36px">&#x1F3D7;</div><div><div class="co-name">'+esc(co.name)+'</div>'+(co.address?'<div class="co-meta">'+esc(co.address)+'</div>':'')+(co.phone?'<div class="co-meta">'+esc(co.phone)+'</div>':'')+'</div></div>';
+  html+='<div class="parties"><div class="party"><div class="party-lbl">Bill To</div><div class="party-name">'+esc(inv.clientName||'')+'</div>'+(inv.projectAddress?'<div class="party-meta">'+esc(inv.projectAddress)+'</div>':'')+(inv.clientEmail?'<div class="party-meta">'+esc(inv.clientEmail)+'</div>':'')+'</div>';
+  html+='<div class="party"><div class="party-lbl">Project</div><div class="party-name">'+esc(inv.projectName||'')+'</div>'+(inv.dueDate?'<div class="party-meta">Due: '+inv.dueDate+'</div>':'')+'</div></div>';
+  html+='<table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead><tbody>';
+  (inv.lineItems||[]).forEach(function(it){var ap=(it.unitPrice||0)*getMultiplier(inv.projectZip||'');var tot=(it.qty||0)*ap;html+='<tr><td class="iname">'+esc(it.name)+'</td><td>'+(it.qty||0)+' '+(UNITS[it.unit]||it.unit||'')+'</td><td class="r">'+fmt(ap)+'</td><td class="r">'+fmt(tot)+'</td></tr>';});
+  html+='</tbody></table>';
+  html+='<div class="det-totals"><div class="dt-row dt-total"><span>TOTAL DUE</span><span>'+fmt(inv.total||0)+'</span></div>';
+  if (inv.depAmt) html+='<div class="dt-row"><span>Deposit</span><span>'+fmt(inv.depAmt)+'</span></div><div class="dt-row dt-dep"><span>BALANCE DUE</span><span>'+fmt(inv.balAmt||0)+'</span></div>';
+  html+='</div>';
+  if (inv.payInfo||co.payInfo) html+='<div class="det-terms"><h4>Payment Instructions</h4><p>'+esc(inv.payInfo||co.payInfo||'')+'</p></div>';
+  html+='<div class="action-btns"><button class="btn-primary" onclick="markPaid(\''+inv.id+'\');render()">&#x2705; Mark as Paid</button><button class="btn-secondary" onclick="window.print()">&#x1F5A8; Print / PDF</button></div></div>';
+  return html;
+}
+
+// SETTINGS
+function pgSettings() {
+  var c=getCo();
+  var html='<div class="settings-page">';
+  html+='<div class="form-sec"><div class="form-sec-title">Company Profile</div>';
+  html+='<div class="form-row"><input class="inp" placeholder="Company Name *" value="'+esc(c.name||'')+'" oninput="setCo(\'name\',this.value)"></div>';
+  html+='<div class="form-row"><input class="inp" placeholder="Address" value="'+esc(c.address||'')+'" oninput="setCo(\'address\',this.value)"></div>';
+  html+='<div class="form-split"><input class="inp" placeholder="City" value="'+esc(c.city||'')+'" oninput="setCo(\'city\',this.value)"><input class="inp" placeholder="State" value="'+esc(c.state||'')+'" oninput="setCo(\'state\',this.value)"><input class="inp zip-field" placeholder="ZIP" value="'+esc(c.zip||'')+'" oninput="setCo(\'zip\',this.value)"></div>';
+  html+='<div class="form-row"><input class="inp" type="tel" placeholder="Phone" value="'+esc(c.phone||'')+'" oninput="setCo(\'phone\',this.value)"></div>';
+  html+='<div class="form-row"><input class="inp" type="email" placeholder="Email" value="'+esc(c.email||'')+'" oninput="setCo(\'email\',this.value)"></div>';
+  html+='<div class="form-row"><input class="inp" placeholder="License #" value="'+esc(c.license||'')+'" oninput="setCo(\'license\',this.value)"></div>';
+  html+='<div class="form-row"><textarea class="inp" placeholder="Payment instructions..." oninput="setCo(\'payInfo\',this.value)">'+esc(c.payInfo||'')+'</textarea></div>';
+  html+='<button class="btn-primary" onclick="saveCoInfo()">Save Company Info</button></div>';
+  html+='<div class="form-sec"><div class="form-sec-title">Subscription</div>';
+  if (hasSub()) html+='<div class="sub-active"><div class="sub-ok">&#x2705; Active Subscription</div><p style="font-size:13px;color:var(--steel)">Full access &#8212; thank you!</p></div>';
+  else html+='<div class="sub-trial"><p style="font-size:13px;color:var(--steel);margin-bottom:8px">'+(trialLeft()>0?'1 free estimate to try out the app.':'Trial used &#8212; subscribe for full access.')+'</p><button class="btn-primary" onclick="go(\'subscribe\')">Subscribe $5.99/month</button></div>';
+  html+='</div>';
+  html+='<div class="form-sec"><div class="form-sec-title">Data</div>';
+  html+='<button class="btn-secondary" style="margin-bottom:8px" onclick="exportData()">Export Data (JSON)</button>';
+  html+='<button class="btn-secondary" style="color:var(--red);border-color:var(--red-dim)" onclick="clearAll()">Clear All Data</button></div>';
+  html+='<div class="form-sec"><div class="form-sec-title">About</div><div class="about"><p><strong>Driftocity Estimate Pro</strong></p><p>Version 2.0.0</p><p>Professional contractor estimates &amp; invoices with ZIP-code regional pricing for 14 trade types.</p></div></div></div>';
+  return html;
+}
+
+function setCo(f,v){var c=getCo();c[f]=v;saveCoDB(c);}
+function saveCoInfo(){toast('Company info saved!');}
+function exportData(){var d={estimates:getEsts(),invoices:getInvs(),company:getCo(),exported:new Date().toISOString()};var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='driftocity-data.json';a.click();URL.revokeObjectURL(u);}
+function clearAll(){if(!confirm('Delete ALL data? Cannot be undone.'))return;localStorage.clear();location.reload();}
+
+// SUBSCRIBE
+function pgSubscribe() {
+  var html='<div class="sub-page">';
+  html+='<div class="sub-hero"><div class="sub-logo">&#x1F3D7;</div><h2>Driftocity Estimate Pro</h2><p class="sub-tagline">Professional estimates &amp; invoices<br>for every trade</p></div>';
+  html+='<div class="price-card"><div class="price-amt">$5.99<span>/month</span></div><div class="price-lbl">Everything you need to win more jobs</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:4px">Try free with 1 estimate</div></div>';
+  html+='<div class="features"><div class="feat">&#x2705; Unlimited estimates &amp; invoices</div><div class="feat">&#x2705; 14 contractor trade types</div><div class="feat">&#x2705; ZIP code regional pricing</div><div class="feat">&#x2705; AI job scope builder</div><div class="feat">&#x2705; Convert estimates to invoices</div><div class="feat">&#x2705; Print / Save to PDF</div><div class="feat">&#x2705; Works offline on iOS &amp; Android</div></div>';
+  html+='<button class="btn-subscribe" onclick="window.open(\''+STRIPE+'\',\'_blank\')">Subscribe for $5.99/month</button>';
+  if (trialLeft()>0) html+='<button class="btn-secondary" onclick="go(\'dashboard\')" style="text-align:center">Continue Free Trial (1 estimate)</button>';
+  html+='<p class="sub-note">Powered by Stripe secure payments. Cancel anytime.</p>';
+  html+='<div style="border-top:1px solid var(--navy-light);padding-top:20px;margin-top:8px">';
+  html+='<div class="lbl" style="margin-bottom:8px">Already subscribed? Enter your license key:</div>';
+  html+='<input class="inp" id="license-input" placeholder="DRFT-XXXX-XXXX-XXXX" style="text-transform:uppercase;margin-bottom:10px" maxlength="19">';
+  html+='<button class="btn-secondary" onclick="handleLicenseSubmit()">Activate License</button>';
+  html+='<div id="license-msg" style="margin-top:10px;font-size:13px"></div>';
+  html+='</div></div>';
+  return html;
+}
+
+async function handleLicenseSubmit() {
+  var inp = document.getElementById('license-input');
+  var msg = document.getElementById('license-msg');
+  if (!inp || !msg) return;
+  var key = inp.value.trim();
+  if (!key) { msg.innerHTML = '<span style="color:var(--red)">Please enter a license key.</span>'; return; }
+  msg.innerHTML = '<span style="color:var(--steel)">Checking...</span>';
+  var result = await submitLicenseKey(key);
+  if (result.ok) {
+    msg.innerHTML = '<span style="color:var(--green)">License activated! Loading app...</span>';
+    setTimeout(function(){ go('dashboard'); }, 800);
+  } else {
+    msg.innerHTML = '<span style="color:var(--red)">' + esc(result.error) + '</span>';
+  }
+}
+
+// ITEM PICKER
+function showPicker(){var m=document.getElementById('picker');var b=document.getElementById('picker-body');if(!m||!b)return;b.innerHTML=pickerHome();m.classList.remove('hidden');}
+function showPickerTrade(k){var m=document.getElementById('picker');var b=document.getElementById('picker-body');if(!m||!b)return;b.innerHTML=pickerTrade(k);m.classList.remove('hidden');}
+
+function pickerHome() {
+  var html='<div class="modal-handle"></div><div class="modal-title">Add Line Item</div><div class="trade-grid">';
+  Object.entries(TRADES).forEach(function(kv){html+='<button class="trade-tile" onclick="document.getElementById(\'picker-body\').innerHTML=pickerTrade(\''+kv[0]+'\')"><div class="trade-tile-icon">'+kv[1].icon+'</div><div class="trade-tile-lbl">'+kv[1].label+'</div></button>';});
+  html+='</div>';return html;
+}
+
+function pickerTrade(k) {
+  var t=TRADES[k];if(!t)return'';
+  var mult=getMultiplier(workbench?(workbench.projectZip||''):'');
+  var html='<div class="modal-handle"></div><button class="modal-back" onclick="document.getElementById(\'picker-body\').innerHTML=pickerHome()">&#x2190; All Trades</button><div class="modal-title">'+t.icon+' '+t.label+'</div>';
+  t.categories.forEach(function(cat){
+    html+='<div class="cat-name">'+cat.name+'</div>';
+    cat.items.forEach(function(item){
+      html+='<div class="picker-item" onclick="addCatalogItem(\''+k+'\',\''+item.id+'\');closePicker()">';
+      html+='<div><div class="pi-name">'+item.name+'</div><div class="pi-unit">'+(UNITS[item.unit]||item.unit)+'</div></div>';
+      html+='<div style="text-align:right"><div class="pi-price">'+fmt(item.basePrice*mult)+'</div><div class="pi-per">per '+(UNITS[item.unit]||item.unit)+'</div></div></div>';
+    });
+  });
+  return html;
+}
+
+function addCatalogItem(tradeKey, itemId) {
+  var t=TRADES[tradeKey]; if(!t) return;
+  var found;
+  for (var ci=0; ci<t.categories.length; ci++) {
+    found = t.categories[ci].items.find(function(i){ return i.id === itemId; });
+    if (found) break;
+  }
+  if (!found) return;
+  if (!workbench) openNewEstimate();
+  workbench.lineItems = workbench.lineItems || [];
+  workbench.lineItems.push({id:found.id+'_'+Date.now(), name:found.name, qty:1, unit:found.unit, unitPrice:found.basePrice, laborPct:found.laborPct, tradeLabel:t.label});
+  toast('Item added');
+  render();
+}
+function closePicker(){var m=document.getElementById('picker');if(m)m.classList.add('hidden');}
+
+// AI SCOPE WRITER
+function genScope() {
+  var inp=document.getElementById('ai-in'),out=document.getElementById('ai-out'),btn=document.getElementById('ai-btn');
+  if(!inp||!out)return;
+  var text=inp.value.trim();
+  if(!text){out.innerHTML='<div class="ai-error">Please describe the job first.</div>';return;}
+  btn.disabled=true;
+  out.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Analyzing job scope...</div>';
+  var zip = workbench ? (workbench.projectZip||'') : '';
+  var mult = getMultiplier(zip);
+  var catalogLines=[];
+  Object.entries(TRADES).forEach(function(kv){
+    var items=kv[1].categories.reduce(function(a,c){return a.concat(c.items);},[]).slice(0,5);
+    items.forEach(function(i){catalogLines.push(i.id+','+i.name+','+i.basePrice+','+i.unit+','+kv[1].label);});
+  });
+  var prompt='Contractor estimator. Job: "'+text.replace(/"/g,"'")+'"\\n\\nCatalog (id,name,basePrice,unit,trade):\\n'+catalogLines.join('\\n')+'\\n\\nReturn a JSON array of up to 12 line items. Each: {"id":"string","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborPct":0.6,"tradeLabel":"string","notes":"string"}\\nReturn ONLY the raw JSON array starting with [ and ending with ]. No markdown.';
+  fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.error)throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
+    var raw=data.content.map(function(b){return b.text||'';}).join('');
+    var s=raw.indexOf('['),e2=raw.lastIndexOf(']');
+    if(s===-1||e2===-1)throw new Error('No JSON array found. Try again.');
+    var items;
+    try{items=JSON.parse(raw.slice(s,e2+1));}
+    catch(pe){var lc=raw.lastIndexOf('},');if(lc>s)try{items=JSON.parse(raw.slice(s,lc+1)+']');}catch(e3){throw new Error('Response cut off. Try again.');}else throw new Error('Could not parse. Try again.');}
+    if(!Array.isArray(items)||!items.length)throw new Error('No items returned. Add more detail.');
+    items=items.map(function(it){return{id:String(it.id||'ai'),name:String(it.name||'Item'),qty:Math.max(.01,parseFloat(it.qty)||1),unit:String(it.unit||'ls'),unitPrice:Math.max(0,parseFloat(it.unitPrice)||0),laborPct:Math.min(1,Math.max(0,parseFloat(it.laborPct)||.6)),tradeLabel:String(it.tradeLabel||'AI'),notes:String(it.notes||'')};});
+    state.aiItems=items;
+    var total=items.reduce(function(s,it){return s+it.unitPrice*mult*it.qty;},0);
+    var html='<div class="ai-results">';
+    items.forEach(function(it){html+='<div class="ai-item"><div><div class="ai-item-name">'+esc(it.name)+'</div><div class="ai-item-detail">'+it.qty+' '+it.unit+(it.tradeLabel?' &middot; '+esc(it.tradeLabel):'')+'</div></div><div class="ai-item-price">'+fmt(it.unitPrice*mult*it.qty)+'</div></div>';});
+    html+='</div><div class="ai-add-bar"><div class="ai-add-count">&#x2728; '+items.length+' items &middot; ~'+fmt(total)+'</div><button class="btn-add-all" onclick="addAiItems()">Add All</button></div>';
+    out.innerHTML=html;
+  })
+  .catch(function(err){out.innerHTML='<div class="ai-error">&#x26A0; '+esc(err.message||'Error')+'</div>';})
+  .finally(function(){btn.disabled=false;});
+}
+
+function addAiItems() {
+  var items = state.aiItems;
+  if (!items || !items.length) return;
+  if (!workbench) openNewEstimate();
+  workbench.lineItems = workbench.lineItems || [];
+  items.forEach(function(it) {
+    workbench.lineItems.push({
+      id: it.id+'_'+Date.now(), name: it.name, qty: it.qty, unit: it.unit,
+      unitPrice: it.unitPrice, laborPct: it.laborPct, tradeLabel: it.tradeLabel, notes: it.notes
+    });
+  });
+  state.aiItems = null;
+  toast(items.length + ' items added!');
+  render();
+}
+
+function clearScope(){var i=document.getElementById('ai-in');if(i)i.value='';var o=document.getElementById('ai-out');if(o)o.innerHTML='';state.aiItems=null;}
+
+// UTILS
+function blankEst(){return{id:'est_'+Date.now(),date:Date.now(),status:'draft',lineItems:[],overhead:DEF.overhead,profit:DEF.profit,taxRate:DEF.tax,depositPct:DEF.deposit,terms:defTerms()};}
+function defTerms(){return DEF.deposit+'% deposit required before work begins. Balance due upon completion. Estimate valid 30 days. Changes to scope must be agreed in writing.';}
+function fmt(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0);}
+function fmtDate(ts){if(!ts)return'';return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// BOOT
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function(){});
+
+// ── PWA INSTALL PROMPT ────────────────────────
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  showInstallBanner();
+});
+
+window.addEventListener('appinstalled', function() {
+  deferredInstallPrompt = null;
+  hideInstallBanner();
+  DB.set('dep_installed', true);
+});
+
+function showInstallBanner() {
+  if (DB.get('dep_install_dismissed')) return;
+  if (window.matchMedia('(display-mode: standalone)').matches) return; // already installed
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.classList.remove('hidden');
+}
+
+function hideInstallBanner() {
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.classList.add('hidden');
+}
+
+async function triggerInstall() {
+  if (!deferredInstallPrompt) {
+    // iOS Safari doesn't support beforeinstallprompt — show manual instructions
+    showIosInstallInstructions();
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  hideInstallBanner();
+}
+
+function dismissInstallBanner() {
+  DB.set('dep_install_dismissed', true);
+  hideInstallBanner();
+}
+
+function showIosInstallInstructions() {
+  alert('To install: tap the Share button in Safari, then "Add to Home Screen".');
+}
+document.addEventListener('DOMContentLoaded', function(){render();});
+
+</script>
 </body>
 </html>
