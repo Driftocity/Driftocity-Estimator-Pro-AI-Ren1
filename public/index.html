@@ -124,28 +124,30 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .ai-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid #2e3447}
 .ai-badge{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:99px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.06em}
 .ai-title{font-size:14px;font-weight:600;flex:1}
+.ai-chat-clear{font-size:11px;color:var(--steel);padding:4px 8px;border-radius:var(--r-sm);border:1px solid #3a4060}
+.ai-chat-clear:active{color:#fff;border-color:#6366f1}
 .ai-body{padding:16px}
-.ai-textarea{width:100%;padding:12px 14px;background:#1a1f2e;border:1px solid #3a4060;border-radius:var(--r-sm);color:#fff;font-size:14px;line-height:1.6;resize:vertical;min-height:90px;font-family:inherit}
-.ai-textarea:focus{outline:none;border-color:#6366f1}
-.ai-textarea::placeholder{color:#4a5270}
-.ai-actions{display:flex;gap:8px;margin-top:10px}
-.btn-ai{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:var(--r-md);font-size:14px;font-weight:600;box-shadow:0 4px 16px #6366f140}
-.btn-ai:disabled{opacity:.5;pointer-events:none}
-.btn-ai-clear{padding:12px 16px;background:var(--navy-light);color:var(--steel);border-radius:var(--r-md);font-size:13px;border:1px solid var(--navy-light)}
-.ai-hint{font-size:11px;color:#4a5270;margin-top:8px;line-height:1.5}
-.ai-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px;color:#8b8fff;font-size:13px}
-.ai-spinner{width:18px;height:18px;border:2px solid #3a3f6a;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.ai-results{background:#1a1f2e;border:1px solid #2e3447;border-radius:var(--r-sm)}
-.ai-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px;border-bottom:1px solid #2e3447;gap:8px}
-.ai-item:last-child{border-bottom:none}
-.ai-item-name{font-size:14px;font-weight:500;color:#fff}
-.ai-item-detail{font-size:12px;color:var(--steel);margin-top:2px}
-.ai-item-price{font-size:14px;font-weight:600;color:var(--orange);white-space:nowrap}
-.ai-add-bar{display:flex;align-items:center;gap:8px;margin-top:10px}
-.ai-add-count{font-size:12px;color:var(--steel);flex:1}
-.btn-add-all{padding:10px 16px;background:var(--orange);color:#fff;border-radius:var(--r-sm);font-size:13px;font-weight:600}
-.ai-error{padding:10px 14px;background:#2a1a1a;border:1px solid var(--red);border-radius:var(--r-sm);color:var(--red);font-size:13px;margin-top:10px;line-height:1.5}
+.ai-thread{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;padding-right:2px}
+.ai-empty{font-size:13px;color:#5a6280;line-height:1.6;padding:8px 0}
+.ai-msg{display:flex}
+.ai-msg-user{justify-content:flex-end}
+.ai-msg-ai{justify-content:flex-start}
+.ai-bubble{max-width:85%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.5}
+.ai-bubble-user{background:var(--orange);color:#fff;border-bottom-right-radius:4px}
+.ai-bubble-ai{background:#1a1f2e;border:1px solid #2e3447;color:#e4e6ec;border-bottom-left-radius:4px}
+.ai-action-tag{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;color:#8b8fff;background:#6366f120;padding:3px 8px;border-radius:99px}
+.ai-thinking{display:flex;gap:4px;padding:14px 16px;align-items:center}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:#6366f1;animation:aiDotPulse 1.2s ease-in-out infinite}
+.ai-dot:nth-child(2){animation-delay:.2s}
+.ai-dot:nth-child(3){animation-delay:.4s}
+@keyframes aiDotPulse{0%,60%,100%{opacity:.3;transform:scale(.8)}30%{opacity:1;transform:scale(1)}}
+.ai-input-row{display:flex;gap:8px;align-items:flex-end}
+.ai-chat-input{flex:1;padding:11px 14px;background:#1a1f2e;border:1px solid #3a4060;border-radius:18px;color:#fff;font-size:14px;line-height:1.4;resize:none;font-family:inherit;max-height:120px;overflow-y:auto}
+.ai-chat-input:focus{outline:none;border-color:#6366f1}
+.ai-chat-input::placeholder{color:#4a5270}
+.btn-ai-send{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px #6366f140}
+.btn-ai-send:disabled{opacity:.5;pointer-events:none}
+.ai-hint{font-size:11px;color:#4a5270;margin-top:10px;line-height:1.5}
 .modal{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;justify-content:flex-end}
 .modal.hidden{display:none}
 .modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.7)}
@@ -915,7 +917,7 @@ const DB = {
   set(k,v) { try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 };
 
-let state = { view:'dashboard', currentInvoiceId:null, aiItems:null };
+let state = { view:'dashboard', currentInvoiceId:null, aiChat:[] };
 
 // ═══════════════════════════════════════════
 // THE WORKBENCH
@@ -931,6 +933,7 @@ let workbenchIsNew = true;     // true = brand new estimate, false = editing exi
 function openNewEstimate() {
   workbench = blankEst();
   workbenchIsNew = true;
+  state.aiChat = [];
 }
 
 function openEstimateInWorkbench(id) {
@@ -939,6 +942,7 @@ function openEstimateInWorkbench(id) {
   // Deep copy so editing the workbench never touches the saved array until Save is clicked
   workbench = JSON.parse(JSON.stringify(src));
   workbenchIsNew = false;
+  state.aiChat = [];
   return true;
 }
 
@@ -1128,14 +1132,18 @@ function pgBuilder() {
 
   var html='';
 
-  // AI BOX
+  // AI CHAT
   html+='<div class="form-sec"><div class="ai-box">';
-  html+='<div class="ai-hdr"><div class="ai-badge">&#9889; AI</div><div class="ai-title">Describe the Job &#8212; AI Builds Line Items</div></div>';
+  html+='<div class="ai-hdr"><div class="ai-badge">&#9889; AI</div><div class="ai-title">Job Scope Assistant</div>'
+      + '<button class="ai-chat-clear" onclick="clearAiChat()" title="Start over">Reset</button></div>';
   html+='<div class="ai-body">';
-  html+='<textarea class="ai-textarea" id="ai-in" placeholder="e.g. Replace master bath 10x8 full gut &#8212; demo tile, new shower pan, retile walls, replace toilet and vanity, paint ceiling..."></textarea>';
-  html+='<div class="ai-actions"><button class="btn-ai" id="ai-btn" onclick="genScope()">&#9889; Generate Line Items</button><button class="btn-ai-clear" onclick="clearScope()">Clear</button></div>';
-  html+='<div class="ai-hint">Plain English &#8212; AI picks the right items, quantities, and pricing.</div>';
-  html+='<div id="ai-out"></div></div></div></div>';
+  html+='<div id="ai-thread" class="ai-thread">' + buildAiThread() + '</div>';
+  html+='<div class="ai-input-row">'
+      + '<textarea class="ai-chat-input" id="ai-in" placeholder="Describe the job, or ask me to add/remove/change items..." rows="1" oninput="autoGrowAiInput(this)"></textarea>'
+      + '<button class="btn-ai-send" id="ai-send-btn" onclick="sendAiChat()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>'
+      + '</div>';
+  html+='<div class="ai-hint">Try: "add a permit fee" &middot; "remove the tile item" &middot; "make the flooring 300 sqft instead"</div>';
+  html+='</div></div></div>';
 
   // CLIENT INFO
   html+='<div class="form-sec"><div class="form-sec-title">Client Information</div>';
@@ -1636,61 +1644,180 @@ function addCatalogItem(tradeKey, itemId) {
 function closePicker(){var m=document.getElementById('picker');if(m)m.classList.add('hidden');}
 
 // AI SCOPE WRITER
-function genScope() {
-  var inp=document.getElementById('ai-in'),out=document.getElementById('ai-out'),btn=document.getElementById('ai-btn');
-  if(!inp||!out)return;
-  var text=inp.value.trim();
-  if(!text){out.innerHTML='<div class="ai-error">Please describe the job first.</div>';return;}
-  btn.disabled=true;
-  out.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Analyzing job scope...</div>';
-  var zip = workbench ? (workbench.projectZip||'') : '';
-  var mult = getMultiplier(zip);
-  var catalogLines=[];
-  Object.entries(TRADES).forEach(function(kv){
-    var items=kv[1].categories.reduce(function(a,c){return a.concat(c.items);},[]).slice(0,5);
-    items.forEach(function(i){catalogLines.push(i.id+','+i.name+','+i.basePrice+','+i.unit+','+kv[1].label);});
+// ═══════════════════════════════════════════
+// AI JOB SCOPE ASSISTANT — conversational chat
+// state.aiChat = [{role:'user'|'assistant', content:'...', actions:[...]}]
+// Each assistant turn can include actions that mutate workbench.lineItems live.
+// ═══════════════════════════════════════════
+
+function buildAiThread() {
+  var chat = state.aiChat || [];
+  if (!chat.length) {
+    return '<div class="ai-empty">Tell me about the job and I\'ll build your line items. You can keep chatting to add, remove, or adjust items.</div>';
+  }
+  var html = '';
+  chat.forEach(function(msg) {
+    if (msg.role === 'user') {
+      html += '<div class="ai-msg ai-msg-user"><div class="ai-bubble ai-bubble-user">' + esc(msg.content) + '</div></div>';
+    } else {
+      html += '<div class="ai-msg ai-msg-ai"><div class="ai-bubble ai-bubble-ai">' + esc(msg.content) + '</div>';
+      if (msg.actionsSummary) {
+        html += '<div class="ai-actions-summary">' + msg.actionsSummary + '</div>';
+      }
+      html += '</div>';
+    }
   });
-  var prompt='Contractor estimator. Job: "'+text.replace(/"/g,"'")+'"\\n\\nCatalog (id,name,basePrice,unit,trade):\\n'+catalogLines.join('\\n')+'\\n\\nReturn a JSON array of up to 12 line items. Each: {"id":"string","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborPct":1.0,"tradeLabel":"string","notes":"string"}\\nReturn ONLY the raw JSON array starting with [ and ending with ]. No markdown.';
-  fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(data.error)throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
-    var raw=data.content.map(function(b){return b.text||'';}).join('');
-    var s=raw.indexOf('['),e2=raw.lastIndexOf(']');
-    if(s===-1||e2===-1)throw new Error('No JSON array found. Try again.');
-    var items;
-    try{items=JSON.parse(raw.slice(s,e2+1));}
-    catch(pe){var lc=raw.lastIndexOf('},');if(lc>s)try{items=JSON.parse(raw.slice(s,lc+1)+']');}catch(e3){throw new Error('Response cut off. Try again.');}else throw new Error('Could not parse. Try again.');}
-    if(!Array.isArray(items)||!items.length)throw new Error('No items returned. Add more detail.');
-    items=items.map(function(it){return{id:String(it.id||'ai'),name:String(it.name||'Item'),qty:Math.max(.01,parseFloat(it.qty)||1),unit:String(it.unit||'ls'),unitPrice:Math.max(0,parseFloat(it.unitPrice)||0),laborPct:Math.min(1,Math.max(0,parseFloat(it.laborPct!=null?it.laborPct:1))),tradeLabel:String(it.tradeLabel||'AI'),notes:String(it.notes||'')};});
-    state.aiItems=items;
-    var total=items.reduce(function(s,it){return s+it.unitPrice*mult*it.qty;},0);
-    var html='<div class="ai-results">';
-    items.forEach(function(it){html+='<div class="ai-item"><div><div class="ai-item-name">'+esc(it.name)+'</div><div class="ai-item-detail">'+it.qty+' '+it.unit+(it.tradeLabel?' &middot; '+esc(it.tradeLabel):'')+'</div></div><div class="ai-item-price">'+fmt(it.unitPrice*mult*it.qty)+'</div></div>';});
-    html+='</div><div class="ai-add-bar"><div class="ai-add-count">&#x2728; '+items.length+' items &middot; ~'+fmt(total)+'</div><button class="btn-add-all" onclick="addAiItems()">Add All</button></div>';
-    out.innerHTML=html;
-  })
-  .catch(function(err){out.innerHTML='<div class="ai-error">&#x26A0; '+esc(err.message||'Error')+'</div>';})
-  .finally(function(){btn.disabled=false;});
+  return html;
 }
 
-function addAiItems() {
-  var items = state.aiItems;
-  if (!items || !items.length) return;
+function scrollAiThreadToBottom() {
+  var t = document.getElementById('ai-thread');
+  if (t) t.scrollTop = t.scrollHeight;
+}
+
+function autoGrowAiInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function clearAiChat() {
+  state.aiChat = [];
+  var t = document.getElementById('ai-thread');
+  if (t) t.innerHTML = buildAiThread();
+  var i = document.getElementById('ai-in');
+  if (i) i.value = '';
+}
+
+async function sendAiChat() {
+  var inp = document.getElementById('ai-in');
+  var sendBtn = document.getElementById('ai-send-btn');
+  var thread = document.getElementById('ai-thread');
+  if (!inp || !thread) return;
+
+  var text = inp.value.trim();
+  if (!text) return;
+
   if (!workbench) openNewEstimate();
-  workbench.lineItems = workbench.lineItems || [];
-  items.forEach(function(it) {
-    workbench.lineItems.push({
-      id: it.id+'_'+Date.now(), name: it.name, qty: it.qty, unit: it.unit,
-      unitPrice: it.unitPrice, laborPct: it.laborPct, tradeLabel: it.tradeLabel, notes: it.notes
-    });
+  state.aiChat = state.aiChat || [];
+
+  // Add user message immediately
+  state.aiChat.push({ role: 'user', content: text });
+  inp.value = '';
+  inp.style.height = 'auto';
+  sendBtn.disabled = true;
+  thread.innerHTML = buildAiThread() + '<div class="ai-msg ai-msg-ai"><div class="ai-bubble ai-bubble-ai ai-thinking"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div></div>';
+  scrollAiThreadToBottom();
+
+  var zip = workbench.projectZip || '';
+  var mult = getMultiplier(zip);
+
+  // Compact catalog reference so the model can match known items when relevant
+  var catalogLines = [];
+  Object.entries(TRADES).forEach(function(kv) {
+    var items = kv[1].categories.reduce(function(a,c){ return a.concat(c.items); }, []).slice(0, 4);
+    items.forEach(function(i){ catalogLines.push(i.id+','+i.name+','+i.basePrice+','+i.unit+','+kv[1].label); });
   });
-  state.aiItems = null;
-  toast(items.length + ' items added!');
+
+  // Current line items so the model knows what's already there
+  var currentItems = (workbench.lineItems || []).map(function(it, idx) {
+    return idx + ': ' + it.name + ' (qty ' + it.qty + ' ' + it.unit + ' @ $' + it.unitPrice + ', labor ' + Math.round((it.laborPct||1)*100) + '%)';
+  }).join('\n') || '(none yet)';
+
+  var systemContext = 'You are a conversational contractor estimating assistant embedded in an app. '
+    + 'You help the contractor build a line-item estimate through natural conversation. '
+    + 'You can ADD items, REMOVE items (by index), or UPDATE items (by index) based on what the user says. '
+    + 'Current line items on the estimate:\n' + currentItems + '\n\n'
+    + 'Reference catalog for realistic pricing (id,name,basePrice,unit,trade):\n' + catalogLines.join('\n') + '\n\n'
+    + 'Respond ONLY with a single JSON object, no markdown, no other text. Format:\n'
+    + '{"reply":"short conversational reply to the user, 1-2 sentences","actions":[{"type":"add","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborPct":1.0,"tradeLabel":"string"},{"type":"remove","index":0},{"type":"update","index":0,"qty":200}]}\n'
+    + 'Rules: "actions" array can be empty if the user is just asking a question. For "update" actions, only include the fields being changed plus "index". '
+    + 'laborPct is always between 0 and 1 and defaults to 1.0 (100%) unless the user or context implies otherwise. '
+    + 'Keep "reply" brief and natural, like a helpful colleague — do not repeat the full item list back in the reply since the app already shows it visually.';
+
+  // Build the message history for the API: system context + chat turns
+  var apiMessages = [{ role: 'user', content: systemContext + '\n\nConversation so far:\n' + state.aiChat.map(function(m){ return (m.role==='user'?'Contractor':'Assistant') + ': ' + m.content; }).join('\n') + '\n\nRespond with the JSON object now.' }];
+
+  try {
+    var resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: apiMessages })
+    });
+    var data = await resp.json();
+    if (data.error) throw new Error(typeof data.error === 'string' ? data.error : JSON.stringify(data.error));
+
+    var raw = data.content.map(function(b){ return b.text || ''; }).join('');
+    var s = raw.indexOf('{'), e2 = raw.lastIndexOf('}');
+    if (s === -1 || e2 === -1) throw new Error('Unexpected response format. Try again.');
+
+    var parsed;
+    try { parsed = JSON.parse(raw.slice(s, e2+1)); }
+    catch(pe) { throw new Error('Could not parse response. Try again.'); }
+
+    var reply = String(parsed.reply || 'Done.');
+    var actions = Array.isArray(parsed.actions) ? parsed.actions : [];
+
+    var summary = applyAiActions(actions, mult);
+
+    state.aiChat.push({ role: 'assistant', content: reply, actionsSummary: summary });
+
+  } catch (err) {
+    state.aiChat.push({ role: 'assistant', content: '⚠️ ' + (err.message || 'Something went wrong. Please try again.'), actionsSummary: '' });
+  }
+
+  sendBtn.disabled = false;
   render();
+  setTimeout(scrollAiThreadToBottom, 50);
 }
 
-function clearScope(){var i=document.getElementById('ai-in');if(i)i.value='';var o=document.getElementById('ai-out');if(o)o.innerHTML='';state.aiItems=null;}
+// Apply add/remove/update actions to the workbench and return a short HTML summary
+function applyAiActions(actions, mult) {
+  if (!workbench.lineItems) workbench.lineItems = [];
+  var added = 0, removed = 0, updated = 0;
+
+  // Process removals first, by index, highest index first so earlier indices stay valid
+  var removeIndices = actions.filter(function(a){ return a.type === 'remove'; })
+    .map(function(a){ return parseInt(a.index); })
+    .filter(function(i){ return !isNaN(i); })
+    .sort(function(a,b){ return b - a; });
+  removeIndices.forEach(function(idx) {
+    if (idx >= 0 && idx < workbench.lineItems.length) {
+      workbench.lineItems.splice(idx, 1);
+      removed++;
+    }
+  });
+
+  actions.filter(function(a){ return a.type === 'update'; }).forEach(function(a) {
+    var idx = parseInt(a.index);
+    if (isNaN(idx) || idx < 0 || idx >= workbench.lineItems.length) return;
+    var item = workbench.lineItems[idx];
+    if (a.name != null) item.name = String(a.name);
+    if (a.qty != null) item.qty = Math.max(0.01, parseFloat(a.qty) || item.qty);
+    if (a.unit != null) item.unit = String(a.unit);
+    if (a.unitPrice != null) item.unitPrice = Math.max(0, parseFloat(a.unitPrice) || item.unitPrice);
+    if (a.laborPct != null) item.laborPct = Math.min(1, Math.max(0, parseFloat(a.laborPct)));
+    updated++;
+  });
+
+  actions.filter(function(a){ return a.type === 'add'; }).forEach(function(a) {
+    workbench.lineItems.push({
+      id: 'ai_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+      name: String(a.name || 'Item'),
+      qty: Math.max(0.01, parseFloat(a.qty) || 1),
+      unit: String(a.unit || 'ls'),
+      unitPrice: Math.max(0, parseFloat(a.unitPrice) || 0),
+      laborPct: Math.min(1, Math.max(0, parseFloat(a.laborPct != null ? a.laborPct : 1))),
+      tradeLabel: String(a.tradeLabel || 'AI')
+    });
+    added++;
+  });
+
+  var parts = [];
+  if (added)   parts.push('+' + added + ' added');
+  if (removed) parts.push('&minus;' + removed + ' removed');
+  if (updated) parts.push(updated + ' updated');
+  return parts.length ? '<span class="ai-action-tag">' + parts.join(' &middot; ') + '</span>' : '';
+}
 
 // UTILS
 function blankEst(){return{id:'est_'+Date.now(),date:Date.now(),status:'draft',lineItems:[],overhead:DEF.overhead,profit:DEF.profit,taxRate:DEF.tax,depositPct:DEF.deposit,terms:defTerms()};}
