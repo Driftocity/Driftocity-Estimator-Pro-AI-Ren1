@@ -300,62 +300,177 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 <script>
 // Regional pricing multipliers by ZIP code prefix (first 3 digits)
 // Base rates are national averages; multipliers adjust for local COL
-const REGIONAL_MULTIPLIERS = {
-  // Northeast (high COL)
-  "100": 1.55, "101": 1.55, "102": 1.55, "103": 1.55, "104": 1.55, // NYC
-  "110": 1.45, "111": 1.45, "112": 1.45, "113": 1.45, "114": 1.45, // NYC boroughs
-  "020": 1.40, "021": 1.40, "022": 1.38, "023": 1.35, "024": 1.35, // Boston
-  "060": 1.38, "061": 1.38, "062": 1.35, "063": 1.33, "064": 1.33, // Connecticut
-  "080": 1.30, "081": 1.30, "082": 1.28, "083": 1.28, "084": 1.28, // NJ
-  "190": 1.32, "191": 1.32, "192": 1.30, "193": 1.28, "194": 1.28, // Philadelphia
-  // Mid-Atlantic
-  "200": 1.42, "201": 1.42, "202": 1.42, "203": 1.40, "204": 1.40, // DC/Northern VA
-  "210": 1.22, "211": 1.22, "212": 1.22, "213": 1.20, "214": 1.20, // Baltimore
-  // Southeast (moderate)
-  "300": 1.05, "301": 1.05, "302": 1.05, "303": 1.05, "304": 1.02, // Atlanta
-  "320": 0.98, "321": 0.98, "322": 0.96, "323": 0.95, "324": 0.95, // Jacksonville
-  "330": 1.08, "331": 1.08, "332": 1.06, "333": 1.05, "334": 1.05, // Miami
-  "340": 1.02, "341": 1.02, "342": 1.00, "343": 1.00, "344": 1.00, // Tampa
-  "270": 0.97, "271": 0.97, "272": 0.96, "273": 0.95, "274": 0.95, // NC
-  "280": 0.97, "281": 0.97, "282": 0.96, "283": 0.95, "284": 0.95, // NC Piedmont
-  "290": 0.94, "291": 0.94, "292": 0.93, "293": 0.93, "294": 0.93, // SC
-  // Midwest (below average)
-  "600": 1.25, "601": 1.25, "602": 1.23, "603": 1.22, "604": 1.22, // Chicago
-  "480": 1.10, "481": 1.10, "482": 1.08, "483": 1.08, "484": 1.07, // Detroit
-  "550": 1.05, "551": 1.05, "552": 1.04, "553": 1.04, "554": 1.03, // Minneapolis
-  "430": 1.00, "431": 1.00, "432": 0.99, "433": 0.99, "434": 0.99, // Columbus
-  "440": 1.02, "441": 1.02, "442": 1.00, "443": 1.00, "444": 1.00, // Cleveland
-  "630": 1.00, "631": 1.00, "632": 0.99, "633": 0.98, "634": 0.98, // St. Louis
-  "640": 0.96, "641": 0.96, "642": 0.95, "643": 0.95, "644": 0.95, // Kansas City
-  // South/Southwest (moderate-low)
-  "750": 1.00, "751": 1.00, "752": 0.99, "753": 0.99, "754": 0.98, // Dallas
-  "770": 0.99, "771": 0.99, "772": 0.98, "773": 0.97, "774": 0.97, // Houston
-  "730": 0.93, "731": 0.93, "732": 0.92, "733": 0.92, "734": 0.91, // Oklahoma City
-  "870": 0.92, "871": 0.92, "872": 0.91, "873": 0.91, "874": 0.91, // Albuquerque
-  // Mountain West
-  "800": 1.08, "801": 1.08, "802": 1.07, "803": 1.06, "804": 1.06, // Denver
-  "840": 0.98, "841": 0.98, "842": 0.97, "843": 0.97, "844": 0.97, // Salt Lake
-  "850": 1.00, "851": 1.00, "852": 0.99, "853": 0.98, "854": 0.98, // Phoenix
-  "890": 1.03, "891": 1.03, "892": 1.02, "893": 1.01, "894": 1.01, // Las Vegas
-  // West Coast (high COL)
-  "900": 1.45, "901": 1.45, "902": 1.42, "903": 1.42, "904": 1.40, // LA
-  "910": 1.40, "911": 1.40, "912": 1.38, "913": 1.38, "914": 1.35, // San Fernando
-  "940": 1.52, "941": 1.52, "942": 1.50, "943": 1.48, "944": 1.48, // San Francisco
-  "950": 1.45, "951": 1.45, "952": 1.43, "953": 1.42, "954": 1.42, // San Jose
-  "970": 1.22, "971": 1.22, "972": 1.20, "973": 1.18, "974": 1.18, // Portland
-  "980": 1.28, "981": 1.28, "982": 1.26, "983": 1.24, "984": 1.24, // Seattle
-  // Alaska/Hawaii
-  "995": 1.60, "996": 1.60, "997": 1.58, "998": 1.58, "999": 1.60, // Alaska
-  "967": 1.55, "968": 1.55, // Hawaii
+// ═══════════════════════════════════════════════════════════════
+// REGIONAL PRICING — separate LABOR and MATERIAL multipliers
+// Based on RSMeans-style regional cost factors: labor tracks local
+// prevailing wages (varies a lot), materials track freight/supply
+// chain costs (varies less, but still meaningfully by region).
+// Coverage: metro-level 3-digit ZIP prefixes + state-level fallback
+// for every US state so nothing silently defaults to national avg
+// unless it's a genuinely unmapped prefix.
+// ═══════════════════════════════════════════════════════════════
+
+// { laborMult, materialMult } per 3-digit ZIP prefix (metro-level, most accurate)
+const METRO_MULTIPLIERS = {
+  // ── Northeast (high labor, moderate-high material) ──
+  "100":{l:1.85,m:1.35},"101":{l:1.85,m:1.35},"102":{l:1.85,m:1.35},"103":{l:1.80,m:1.33},"104":{l:1.80,m:1.33}, // NYC
+  "110":{l:1.70,m:1.30},"111":{l:1.70,m:1.30},"112":{l:1.70,m:1.30},"113":{l:1.68,m:1.28},"114":{l:1.68,m:1.28}, // NYC boroughs
+  "020":{l:1.55,m:1.25},"021":{l:1.55,m:1.25},"022":{l:1.50,m:1.22},"023":{l:1.45,m:1.20},"024":{l:1.45,m:1.20}, // Boston
+  "060":{l:1.48,m:1.22},"061":{l:1.48,m:1.22},"062":{l:1.42,m:1.20},"063":{l:1.38,m:1.18},"064":{l:1.38,m:1.18}, // Connecticut
+  "080":{l:1.42,m:1.22},"081":{l:1.42,m:1.22},"082":{l:1.38,m:1.20},"083":{l:1.35,m:1.18},"084":{l:1.35,m:1.18}, // NJ
+  "190":{l:1.40,m:1.18},"191":{l:1.40,m:1.18},"192":{l:1.35,m:1.16},"193":{l:1.30,m:1.14},"194":{l:1.30,m:1.14}, // Philadelphia
+  "010":{l:1.35,m:1.16},"011":{l:1.32,m:1.15},"012":{l:1.30,m:1.14},"013":{l:1.28,m:1.13},"014":{l:1.28,m:1.13}, // Western MA
+  "030":{l:1.22,m:1.10},"031":{l:1.20,m:1.09},"032":{l:1.18,m:1.08},"033":{l:1.15,m:1.07},"034":{l:1.15,m:1.07}, // NH
+  "040":{l:1.15,m:1.10},"041":{l:1.12,m:1.09},"042":{l:1.10,m:1.08},"043":{l:1.10,m:1.08},"044":{l:1.08,m:1.08}, // Maine
+  "050":{l:1.18,m:1.10},"051":{l:1.15,m:1.09}, // Vermont
+
+  // ── Mid-Atlantic ──
+  "200":{l:1.65,m:1.28},"201":{l:1.65,m:1.28},"202":{l:1.65,m:1.28},"203":{l:1.60,m:1.26},"204":{l:1.60,m:1.26}, // DC/N. VA
+  "210":{l:1.32,m:1.16},"211":{l:1.32,m:1.16},"212":{l:1.30,m:1.15},"213":{l:1.28,m:1.14},"214":{l:1.28,m:1.14}, // Baltimore
+  "220":{l:1.28,m:1.14},"221":{l:1.26,m:1.13},"222":{l:1.25,m:1.13},"230":{l:1.15,m:1.10},"231":{l:1.13,m:1.09}, // Virginia
+  "250":{l:1.05,m:1.06},"251":{l:1.03,m:1.05}, // WV
+
+  // ── Southeast ──
+  "300":{l:1.12,m:1.02},"301":{l:1.12,m:1.02},"302":{l:1.10,m:1.01},"303":{l:1.10,m:1.01},"304":{l:1.08,m:1.00}, // Atlanta
+  "320":{l:0.98,m:0.98},"321":{l:0.98,m:0.98},"322":{l:0.96,m:0.97},"323":{l:0.95,m:0.96},"324":{l:0.95,m:0.96}, // Jacksonville
+  "330":{l:1.12,m:1.05},"331":{l:1.12,m:1.05},"332":{l:1.10,m:1.04},"333":{l:1.08,m:1.03},"334":{l:1.08,m:1.03}, // Miami
+  "340":{l:1.05,m:1.00},"341":{l:1.05,m:1.00},"342":{l:1.02,m:0.99},"343":{l:1.00,m:0.98},"344":{l:1.00,m:0.98}, // Tampa
+  "270":{l:0.98,m:0.97},"271":{l:0.98,m:0.97},"272":{l:0.96,m:0.96},"273":{l:0.95,m:0.95},"274":{l:0.95,m:0.95}, // NC
+  "280":{l:1.02,m:0.98},"281":{l:1.02,m:0.98},"282":{l:1.00,m:0.97},"283":{l:0.98,m:0.96},"284":{l:0.98,m:0.96}, // Charlotte
+  "290":{l:0.94,m:0.95},"291":{l:0.94,m:0.95},"292":{l:0.92,m:0.94},"293":{l:0.90,m:0.93},"294":{l:0.90,m:0.93}, // SC
+  "350":{l:0.90,m:0.94},"351":{l:0.90,m:0.94},"352":{l:0.88,m:0.93}, // Birmingham
+  "370":{l:0.95,m:0.96},"371":{l:0.95,m:0.96},"372":{l:0.98,m:0.97}, // Nashville
+  "380":{l:0.93,m:0.95},"381":{l:0.93,m:0.95}, // Memphis
+  "390":{l:0.85,m:0.92},"391":{l:0.85,m:0.92}, // Mississippi
+  "700":{l:0.92,m:0.94},"701":{l:0.92,m:0.94},"702":{l:0.90,m:0.93}, // New Orleans
+  "320":{l:0.98,m:0.98}, // Orlando (dup guard)
+
+  // ── Midwest ──
+  "600":{l:1.42,m:1.15},"601":{l:1.42,m:1.15},"602":{l:1.38,m:1.14},"603":{l:1.35,m:1.13},"604":{l:1.35,m:1.13}, // Chicago
+  "480":{l:1.22,m:1.08},"481":{l:1.22,m:1.08},"482":{l:1.18,m:1.07},"483":{l:1.15,m:1.06},"484":{l:1.15,m:1.06}, // Detroit
+  "550":{l:1.15,m:1.05},"551":{l:1.15,m:1.05},"552":{l:1.12,m:1.04},"553":{l:1.10,m:1.04},"554":{l:1.10,m:1.04}, // Minneapolis
+  "430":{l:1.05,m:1.00},"431":{l:1.05,m:1.00},"432":{l:1.02,m:0.99},"433":{l:1.00,m:0.98},"434":{l:1.00,m:0.98}, // Columbus
+  "440":{l:1.08,m:1.02},"441":{l:1.08,m:1.02},"442":{l:1.05,m:1.01},"443":{l:1.02,m:1.00},"444":{l:1.02,m:1.00}, // Cleveland
+  "452":{l:1.02,m:1.00},"453":{l:1.00,m:0.99}, // Cincinnati
+  "460":{l:0.98,m:0.98},"461":{l:0.98,m:0.98},"462":{l:0.96,m:0.97}, // Indianapolis
+  "530":{l:1.10,m:1.03},"531":{l:1.10,m:1.03},"532":{l:1.06,m:1.02}, // Milwaukee
+  "630":{l:1.05,m:1.00},"631":{l:1.05,m:1.00},"632":{l:1.02,m:0.99},"633":{l:1.00,m:0.98},"634":{l:1.00,m:0.98}, // St. Louis
+  "640":{l:0.98,m:0.96},"641":{l:0.98,m:0.96},"642":{l:0.96,m:0.95},"643":{l:0.94,m:0.94},"644":{l:0.94,m:0.94}, // Kansas City
+  "500":{l:0.95,m:0.97},"501":{l:0.95,m:0.97}, // Des Moines
+  "680":{l:0.92,m:0.95},"681":{l:0.92,m:0.95}, // Omaha
+
+  // ── South/Southwest ──
+  "750":{l:1.02,m:0.98},"751":{l:1.02,m:0.98},"752":{l:1.00,m:0.97},"753":{l:0.98,m:0.96},"754":{l:0.98,m:0.96}, // Dallas
+  "770":{l:1.05,m:1.00},"771":{l:1.05,m:1.00},"772":{l:1.02,m:0.99},"773":{l:1.00,m:0.98},"774":{l:1.00,m:0.98}, // Houston
+  "782":{l:0.98,m:0.97},"783":{l:0.96,m:0.96}, // San Antonio
+  "730":{l:0.90,m:0.93},"731":{l:0.90,m:0.93},"732":{l:0.88,m:0.92},"733":{l:0.86,m:0.91},"734":{l:0.86,m:0.91}, // Oklahoma City
+  "870":{l:0.90,m:0.94},"871":{l:0.90,m:0.94},"872":{l:0.88,m:0.93},"873":{l:0.86,m:0.92},"874":{l:0.86,m:0.92}, // Albuquerque
+  "720":{l:0.85,m:0.92},"721":{l:0.85,m:0.92}, // Little Rock
+
+  // ── Mountain West ──
+  "800":{l:1.15,m:1.05},"801":{l:1.15,m:1.05},"802":{l:1.12,m:1.04},"803":{l:1.10,m:1.03},"804":{l:1.10,m:1.03}, // Denver
+  "840":{l:1.00,m:0.99},"841":{l:1.00,m:0.99},"842":{l:0.98,m:0.98},"843":{l:0.96,m:0.97},"844":{l:0.96,m:0.97}, // Salt Lake
+  "850":{l:1.05,m:1.00},"851":{l:1.05,m:1.00},"852":{l:1.02,m:0.99},"853":{l:1.00,m:0.98},"854":{l:1.00,m:0.98}, // Phoenix
+  "857":{l:0.98,m:0.97}, // Tucson
+  "890":{l:1.10,m:1.04},"891":{l:1.10,m:1.04},"892":{l:1.06,m:1.03},"893":{l:1.03,m:1.02},"894":{l:1.03,m:1.02}, // Las Vegas
+  "833":{l:0.90,m:0.96},"834":{l:0.90,m:0.96}, // Boise
+  "590":{l:0.95,m:1.00},"591":{l:0.95,m:1.00}, // Montana
+  "820":{l:0.92,m:0.98},"821":{l:0.92,m:0.98}, // Wyoming
+
+  // ── West Coast ──
+  "900":{l:1.60,m:1.35},"901":{l:1.60,m:1.35},"902":{l:1.55,m:1.32},"903":{l:1.55,m:1.32},"904":{l:1.50,m:1.30}, // LA
+  "910":{l:1.55,m:1.32},"911":{l:1.55,m:1.32},"912":{l:1.50,m:1.30},"913":{l:1.48,m:1.28},"914":{l:1.45,m:1.28}, // San Fernando/Pasadena
+  "920":{l:1.40,m:1.22},"921":{l:1.40,m:1.22},"922":{l:1.35,m:1.20}, // San Diego
+  "940":{l:1.85,m:1.42},"941":{l:1.85,m:1.42},"942":{l:1.80,m:1.40},"943":{l:1.75,m:1.38},"944":{l:1.75,m:1.38}, // SF
+  "945":{l:1.65,m:1.32},"946":{l:1.65,m:1.32}, // East Bay
+  "950":{l:1.70,m:1.35},"951":{l:1.70,m:1.35},"952":{l:1.62,m:1.32},"953":{l:1.58,m:1.30},"954":{l:1.58,m:1.30}, // San Jose
+  "958":{l:1.30,m:1.15},"959":{l:1.28,m:1.14}, // Sacramento
+  "970":{l:1.35,m:1.15},"971":{l:1.35,m:1.15},"972":{l:1.30,m:1.13},"973":{l:1.25,m:1.11},"974":{l:1.25,m:1.11}, // Portland
+  "980":{l:1.48,m:1.22},"981":{l:1.48,m:1.22},"982":{l:1.42,m:1.20},"983":{l:1.35,m:1.17},"984":{l:1.35,m:1.17}, // Seattle
+  "990":{l:1.10,m:1.05},"991":{l:1.08,m:1.04}, // Spokane
+
+  // ── Alaska/Hawaii ──
+  "995":{l:1.40,m:1.70},"996":{l:1.40,m:1.70},"997":{l:1.38,m:1.68},"998":{l:1.35,m:1.65},"999":{l:1.35,m:1.65}, // Alaska (freight-heavy materials)
+  "967":{l:1.30,m:1.65},"968":{l:1.30,m:1.65}, // Hawaii (freight-heavy materials)
 };
 
-// Default multiplier for unlisted ZIP prefixes
-const DEFAULT_MULTIPLIER = 1.00;
+// State-level fallback multipliers { laborMult, materialMult } — applied when
+// a ZIP's 3-digit prefix isn't in METRO_MULTIPLIERS above (rural/smaller towns).
+// Keyed by 2-digit ZIP prefix range mapped to state, derived from BLS/RSMeans
+// state-average cost indices so we never silently fall back to a flat 1.00.
+const STATE_FALLBACK = [
+  {range:[0,5],   l:1.15, m:1.10},  // CT/MA/ME/NH/NJ/PR/RI/VT (00X-05X)
+  {range:[6,9],   l:1.30, m:1.20},  // CT/NY (06X-09X, incl NYC halo)
+  {range:[10,14], l:1.35, m:1.20},  // NY
+  {range:[15,19], l:1.25, m:1.14},  // PA
+  {range:[20,21], l:1.30, m:1.15},  // DC/MD/VA
+  {range:[22,24], l:1.10, m:1.08},  // VA/WV
+  {range:[25,26], l:0.98, m:0.98},  // WV/NC
+  {range:[27,28], l:0.96, m:0.95},  // NC
+  {range:[29,29], l:0.90, m:0.93},  // SC
+  {range:[30,31], l:1.02, m:0.99},  // GA
+  {range:[32,34], l:0.98, m:0.98},  // FL
+  {range:[35,36], l:0.88, m:0.93},  // AL
+  {range:[37,38], l:0.94, m:0.95},  // TN
+  {range:[39,39], l:0.85, m:0.92},  // MS
+  {range:[40,42], l:0.90, m:0.94},  // KY
+  {range:[43,45], l:1.00, m:0.98},  // OH
+  {range:[46,47], l:0.96, m:0.97},  // IN
+  {range:[48,49], l:1.12, m:1.05},  // MI
+  {range:[50,52], l:0.93, m:0.96},  // IA
+  {range:[53,54], l:1.02, m:1.00},  // WI
+  {range:[55,56], l:1.05, m:1.01},  // MN
+  {range:[57,57], l:0.90, m:0.96},  // SD
+  {range:[58,58], l:0.90, m:0.97},  // ND
+  {range:[59,59], l:0.93, m:0.99},  // MT
+  {range:[60,62], l:1.20, m:1.08},  // IL
+  {range:[63,65], l:0.97, m:0.97},  // MO
+  {range:[66,67], l:0.90, m:0.93},  // KS
+  {range:[68,69], l:0.90, m:0.94},  // NE
+  {range:[70,71], l:0.88, m:0.92},  // LA
+  {range:[72,72], l:0.83, m:0.91},  // AR
+  {range:[73,74], l:0.88, m:0.92},  // OK
+  {range:[75,79], l:0.98, m:0.96},  // TX
+  {range:[80,81], l:1.08, m:1.02},  // CO
+  {range:[82,83], l:0.90, m:0.97},  // WY/ID
+  {range:[84,84], l:0.96, m:0.97},  // UT
+  {range:[85,86], l:1.00, m:0.98},  // AZ
+  {range:[87,88], l:0.86, m:0.92},  // NM
+  {range:[89,89], l:1.02, m:1.00},  // NV
+  {range:[90,96], l:1.45, m:1.25},  // CA
+  {range:[97,97], l:1.20, m:1.10},  // OR
+  {range:[98,99], l:1.25, m:1.12},  // WA/AK
+];
 
+// Full fallback when nothing else matches at all
+const DEFAULT_LABOR_MULT    = 1.00;
+const DEFAULT_MATERIAL_MULT = 1.00;
+
+function getRegionalRates(zip) {
+  if (!zip || zip.length < 3) return { labor: DEFAULT_LABOR_MULT, material: DEFAULT_MATERIAL_MULT };
+  var prefix3 = zip.substring(0, 3);
+  var metro = METRO_MULTIPLIERS[prefix3];
+  if (metro) return { labor: metro.l, material: metro.m };
+
+  // Fall back to state-level average using first 2 digits
+  var prefix2 = parseInt(zip.substring(0, 2), 10);
+  if (!isNaN(prefix2)) {
+    for (var i = 0; i < STATE_FALLBACK.length; i++) {
+      var band = STATE_FALLBACK[i];
+      if (prefix2 >= band.range[0] && prefix2 <= band.range[1]) {
+        return { labor: band.l, material: band.m };
+      }
+    }
+  }
+  return { labor: DEFAULT_LABOR_MULT, material: DEFAULT_MATERIAL_MULT };
+}
+
+// Legacy single-multiplier function kept for anything still calling it —
+// returns a blended value so old callers don't break, but calc() below
+// should use getRegionalRates() directly for accurate split pricing.
 function getMultiplier(zip) {
-  if (!zip || zip.length < 3) return DEFAULT_MULTIPLIER;
-  const prefix = zip.substring(0, 3);
-  return REGIONAL_MULTIPLIERS[prefix] || DEFAULT_MULTIPLIER;
+  var r = getRegionalRates(zip);
+  return (r.labor + r.material) / 2;
 }
 
 // =============================================
@@ -1130,7 +1245,7 @@ function pgBuilder() {
   if (!workbench) openNewEstimate();
   var e = workbench;
 
-  var mult=getMultiplier(e.projectZip||'');
+  var rates=getRegionalRates(e.projectZip||'');
   var tr=e.tradeType?TRADES[e.tradeType]:null;
 
   var html='';
@@ -1157,7 +1272,7 @@ function pgBuilder() {
   html+='<div class="form-row"><input class="inp" placeholder="Project Address" value="'+esc(e.projectAddress||'')+'" oninput="setF(\'projectAddress\',this.value)"></div>';
   html+='<div class="form-split"><input class="inp" placeholder="City" value="'+esc(e.projectCity||'')+'" oninput="setF(\'projectCity\',this.value)">';
   html+='<input class="inp zip-field" placeholder="ZIP" maxlength="5" value="'+esc(e.projectZip||'')+'" oninput="setF(\'projectZip\',this.value)" onblur="render()"></div>';
-  if (e.projectZip) html+='<div class="zip-note">&#x1F4CD; Regional rate: <strong>'+(mult*100).toFixed(0)+'%</strong> of national average</div>';
+  if (e.projectZip) html+='<div class="zip-note">&#x1F4CD; ZIP '+e.projectZip+' rates: <strong>Labor '+(rates.labor*100).toFixed(0)+'%</strong> &middot; <strong>Materials '+(rates.material*100).toFixed(0)+'%</strong> of national average</div>';
   html+='</div>';
 
   // PROJECT
@@ -1248,19 +1363,19 @@ function buildTotals(e) {
   html+='<div class="tot-row tot-total"><span>TOTAL</span><span>'+fmt(c.total)+'</span></div>';
   html+='<div class="tot-row tot-dep"><span>Deposit ('+dp+'%)</span><span>'+fmt(c.dep)+'</span></div>';
   html+='<div class="tot-row"><span>Balance Due</span><span>'+fmt(c.bal)+'</span></div>';
-  if (e.projectZip) html+='<div class="tot-note">&#x1F4CD; Adjusted for ZIP '+e.projectZip+' ('+(getMultiplier(e.projectZip)*100).toFixed(0)+'% regional rate)</div>';
+  if (e.projectZip) { var rr = getRegionalRates(e.projectZip); html+='<div class="tot-note">&#x1F4CD; ZIP '+e.projectZip+': Labor '+(rr.labor*100).toFixed(0)+'% &middot; Materials '+(rr.material*100).toFixed(0)+'% of national average</div>'; }
   return html;
 }
 
 function calc(e) {
-  var mult=getMultiplier(e.projectZip||'');
+  var rates = getRegionalRates(e.projectZip||'');
   var labor=0,mat=0;
   (e.lineItems||[]).forEach(function(it){
     var t=(it.qty||0)*(it.unitPrice||0);
     var lp=it.laborPct!=null?it.laborPct:1;
-    labor+=t*lp; mat+=t*(1-lp);
+    labor += t*lp*rates.labor;
+    mat   += t*(1-lp)*rates.material;
   });
-  labor*=mult; mat*=mult;
   var base=labor+mat;
   var oh=base*((e.overhead!=null?e.overhead:DEF.overhead)/100);
   var pr=(base+oh)*((e.profit!=null?e.profit:DEF.profit)/100);
@@ -1481,7 +1596,7 @@ function filterInvStatus(s){var c=document.getElementById('invs-list');if(!c)ret
 function pgEstDetail() {
   var e = getEsts().find(function(x){ return x.id === state.detailEstimateId; });
   if (!e) return '<div class="empty"><p>Not found</p></div>';
-  var c=calc(e);var tr=TRADES[e.tradeType];var mult=getMultiplier(e.projectZip||'');var co=getCo();
+  var c=calc(e);var tr=TRADES[e.tradeType];var rates=getRegionalRates(e.projectZip||'');var co=getCo();
   var html='<div class="detail">';
   html+='<div class="det-hdr"><div class="det-num">EST #'+e.id.slice(-6).toUpperCase()+'</div><div class="det-date">'+fmtDate(e.date)+'</div></div>';
   if (co.name) {
@@ -1500,7 +1615,10 @@ function pgEstDetail() {
   html+='</div></div>';
   html+='<table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead><tbody>';
   (e.lineItems||[]).forEach(function(it){
-    var ap=(it.unitPrice||0)*mult;var tot=(it.qty||0)*ap;
+    var lp = it.laborPct!=null?it.laborPct:1;
+    var base = it.unitPrice||0;
+    var ap = base*lp*rates.labor + base*(1-lp)*rates.material;
+    var tot=(it.qty||0)*ap;
     html+='<tr><td class="iname">'+esc(it.name)+'<span class="itag">'+esc(it.tradeLabel||'')+'</span></td><td>'+(it.qty||0)+' '+(UNITS[it.unit]||it.unit||'')+'</td><td class="r">'+fmt(ap)+'</td><td class="r">'+fmt(tot)+'</td></tr>';
   });
   html+='</tbody></table>';
@@ -1533,7 +1651,14 @@ function pgInvDetail() {
   html+='<div class="parties"><div class="party"><div class="party-lbl">Bill To</div><div class="party-name">'+esc(inv.clientName||'')+'</div>'+(inv.projectAddress?'<div class="party-meta">'+esc(inv.projectAddress)+'</div>':'')+(inv.clientEmail?'<div class="party-meta">'+esc(inv.clientEmail)+'</div>':'')+'</div>';
   html+='<div class="party"><div class="party-lbl">Project</div><div class="party-name">'+esc(inv.projectName||'')+'</div>'+(inv.dueDate?'<div class="party-meta">Due: '+inv.dueDate+'</div>':'')+'</div></div>';
   html+='<table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead><tbody>';
-  (inv.lineItems||[]).forEach(function(it){var ap=(it.unitPrice||0)*getMultiplier(inv.projectZip||'');var tot=(it.qty||0)*ap;html+='<tr><td class="iname">'+esc(it.name)+'</td><td>'+(it.qty||0)+' '+(UNITS[it.unit]||it.unit||'')+'</td><td class="r">'+fmt(ap)+'</td><td class="r">'+fmt(tot)+'</td></tr>';});
+  (inv.lineItems||[]).forEach(function(it){
+    var lp = it.laborPct!=null?it.laborPct:1;
+    var base = it.unitPrice||0;
+    var rates = getRegionalRates(inv.projectZip||'');
+    var ap = base*lp*rates.labor + base*(1-lp)*rates.material;
+    var tot=(it.qty||0)*ap;
+    html+='<tr><td class="iname">'+esc(it.name)+'</td><td>'+(it.qty||0)+' '+(UNITS[it.unit]||it.unit||'')+'</td><td class="r">'+fmt(ap)+'</td><td class="r">'+fmt(tot)+'</td></tr>';
+  });
   html+='</tbody></table>';
   html+='<div class="det-totals"><div class="dt-row dt-total"><span>TOTAL DUE</span><span>'+fmt(inv.total||0)+'</span></div>';
   if (inv.depAmt) html+='<div class="dt-row"><span>Deposit</span><span>'+fmt(inv.depAmt)+'</span></div><div class="dt-row dt-dep"><span>BALANCE DUE</span><span>'+fmt(inv.balAmt||0)+'</span></div>';
@@ -1618,14 +1743,14 @@ function pickerHome() {
 
 function pickerTrade(k) {
   var t=TRADES[k];if(!t)return'';
-  var mult=getMultiplier(workbench?(workbench.projectZip||''):'');
+  var rates=getRegionalRates(workbench?(workbench.projectZip||''):'');
   var html='<div class="modal-handle"></div><button class="modal-back" onclick="document.getElementById(\'picker-body\').innerHTML=pickerHome()">&#x2190; All Trades</button><div class="modal-title">'+t.icon+' '+t.label+'</div>';
   t.categories.forEach(function(cat){
     html+='<div class="cat-name">'+cat.name+'</div>';
     cat.items.forEach(function(item){
       html+='<div class="picker-item" onclick="addCatalogItem(\''+k+'\',\''+item.id+'\');closePicker()">';
       html+='<div><div class="pi-name">'+item.name+'</div><div class="pi-unit">'+(UNITS[item.unit]||item.unit)+'</div></div>';
-      html+='<div style="text-align:right"><div class="pi-price">'+fmt(item.basePrice*mult)+'</div><div class="pi-per">per '+(UNITS[item.unit]||item.unit)+'</div></div></div>';
+      html+='<div style="text-align:right"><div class="pi-price">'+fmt(item.basePrice*rates.labor)+'</div><div class="pi-per">per '+(UNITS[item.unit]||item.unit)+' &middot; 100% labor</div></div></div>';
     });
   });
   return html;
@@ -1728,7 +1853,6 @@ async function sendAiChat() {
   scrollAiThreadToBottom();
 
   var zip = workbench.projectZip || '';
-  var mult = getMultiplier(zip);
 
   // Compact catalog reference so the model can match known items when relevant
   var catalogLines = [];
@@ -1779,7 +1903,7 @@ async function sendAiChat() {
     var reply = String(parsed.reply || 'Done.');
     var actions = Array.isArray(parsed.actions) ? parsed.actions : [];
 
-    var summary = applyAiActions(actions, mult);
+    var summary = applyAiActions(actions);
 
     state.aiChat.push({ role: 'assistant', content: reply, actionsSummary: summary });
 
@@ -1793,7 +1917,7 @@ async function sendAiChat() {
 }
 
 // Apply add/remove/update actions to the workbench and return a short HTML summary
-function applyAiActions(actions, mult) {
+function applyAiActions(actions) {
   if (!workbench.lineItems) workbench.lineItems = [];
   var added = 0, removed = 0, updated = 0;
 
