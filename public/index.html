@@ -147,6 +147,9 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .ai-chat-input::placeholder{color:#4a5270}
 .btn-ai-send{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px #6366f140}
 .btn-ai-send:disabled{opacity:.5;pointer-events:none}
+.btn-ai-gapcheck{width:100%;margin-top:10px;padding:10px;background:#1a1f2e;border:1px dashed #3a4060;border-radius:var(--r-sm);color:#8b8fff;font-size:12.5px;font-weight:500}
+.btn-ai-gapcheck:active{border-color:#6366f1;background:#6366f115}
+.btn-ai-gapcheck:disabled{opacity:.5;pointer-events:none}
 .ai-hint{font-size:11px;color:#4a5270;margin-top:10px;line-height:1.5}
 .modal{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;justify-content:flex-end}
 .modal.hidden{display:none}
@@ -1142,6 +1145,7 @@ function pgBuilder() {
       + '<textarea class="ai-chat-input" id="ai-in" placeholder="Describe the job, or ask me to add/remove/change items..." rows="1" oninput="autoGrowAiInput(this)"></textarea>'
       + '<button class="btn-ai-send" id="ai-send-btn" onclick="sendAiChat()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>'
       + '</div>';
+  html+='<button class="btn-ai-gapcheck" id="ai-gapcheck-btn" onclick="checkForGaps()">&#128269; Check for anything I might have missed</button>';
   html+='<div class="ai-hint">Try: "add a permit fee" &middot; "remove the tile item" &middot; "make the flooring 300 sqft instead"</div>';
   html+='</div></div></div>';
 
@@ -1688,6 +1692,19 @@ function clearAiChat() {
   if (i) i.value = '';
 }
 
+async function checkForGaps() {
+  if (!workbench) openNewEstimate();
+  if (!workbench.lineItems || !workbench.lineItems.length) {
+    toast('Add a few items first, then I can check for gaps.', 'err');
+    return;
+  }
+  var inp = document.getElementById('ai-in');
+  if (inp) {
+    inp.value = 'Look at everything on this estimate so far and tell me if anything commonly needed for this type of job looks missing.';
+  }
+  await sendAiChat();
+}
+
 async function sendAiChat() {
   var inp = document.getElementById('ai-in');
   var sendBtn = document.getElementById('ai-send-btn');
@@ -1705,6 +1722,8 @@ async function sendAiChat() {
   inp.value = '';
   inp.style.height = 'auto';
   sendBtn.disabled = true;
+  var gapBtn = document.getElementById('ai-gapcheck-btn');
+  if (gapBtn) gapBtn.disabled = true;
   thread.innerHTML = buildAiThread() + '<div class="ai-msg ai-msg-ai"><div class="ai-bubble ai-bubble-ai ai-thinking"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div></div>';
   scrollAiThreadToBottom();
 
@@ -1727,12 +1746,15 @@ async function sendAiChat() {
     + 'You help the contractor build a line-item estimate through natural conversation. '
     + 'You can ADD items, REMOVE items (by index), or UPDATE items (by index) based on what the user says. '
     + 'Current line items on the estimate:\n' + currentItems + '\n\n'
+    + (workbench.tradeType && TRADES[workbench.tradeType] ? 'This job is tagged as trade: ' + TRADES[workbench.tradeType].label + '.\n' : '')
     + 'Reference catalog for realistic pricing (id,name,basePrice,unit,trade):\n' + catalogLines.join('\n') + '\n\n'
     + 'Respond ONLY with a single JSON object, no markdown, no other text. Format:\n'
     + '{"reply":"short conversational reply to the user, 1-2 sentences","actions":[{"type":"add","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborPct":1.0,"tradeLabel":"string"},{"type":"remove","index":0},{"type":"update","index":0,"qty":200}]}\n'
     + 'Rules: "actions" array can be empty if the user is just asking a question. For "update" actions, only include the fields being changed plus "index". '
     + 'laborPct is always between 0 and 1 and defaults to 1.0 (100%) unless the user or context implies otherwise. '
-    + 'Keep "reply" brief and natural, like a helpful colleague — do not repeat the full item list back in the reply since the app already shows it visually.';
+    + 'Keep "reply" brief and natural, like a helpful colleague — do not repeat the full item list back in the reply since the app already shows it visually. '
+    + 'IMPORTANT: Whenever the current line items suggest a common gap for this type of job (e.g. a bathroom remodel with no permit fee or no demo/haul-away line, a roofing job with no flashing or underlayment, an electrical panel job with no permit or grounding), '
+    + 'proactively mention ONE specific thing that seems commonly forgotten in your reply — phrase it as a quick question like "Want me to add a permit fee too?" rather than assuming and adding it yourself. Only do this if something genuinely looks missing; do not force it every turn.';
 
   // Build the message history for the API: system context + chat turns
   var apiMessages = [{ role: 'user', content: systemContext + '\n\nConversation so far:\n' + state.aiChat.map(function(m){ return (m.role==='user'?'Contractor':'Assistant') + ': ' + m.content; }).join('\n') + '\n\nRespond with the JSON object now.' }];

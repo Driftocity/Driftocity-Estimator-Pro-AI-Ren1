@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dep-v2.0.0';
+const CACHE_NAME = 'dep-v2.1.0';
 const PRECACHE = ['/', '/index.html', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', event => {
@@ -16,17 +16,31 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Network-first for the HTML shell so updates are picked up immediately,
+// falling back to cache only if offline.
 self.addEventListener('fetch', event => {
   const req = event.request;
   const url = new URL(req.url);
   if (url.pathname.startsWith('/api/')) return;
   if (req.method !== 'GET') return;
-  if (url.origin === location.origin) {
+  if (url.origin !== location.origin) return;
+
+  const isHTML = req.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html';
+
+  if (isHTML) {
     event.respondWith(
-      caches.match(req).then(cached => cached || fetch(req).then(res => {
+      fetch(req).then(res => {
         if (res && res.status === 200) caches.open(CACHE_NAME).then(c => c.put(req, res.clone()));
         return res;
-      }).catch(() => caches.match('/index.html')))
+      }).catch(() => caches.match(req).then(c => c || caches.match('/index.html')))
     );
+    return;
   }
+
+  event.respondWith(
+    caches.match(req).then(cached => cached || fetch(req).then(res => {
+      if (res && res.status === 200) caches.open(CACHE_NAME).then(c => c.put(req, res.clone()));
+      return res;
+    }))
+  );
 });
