@@ -512,6 +512,15 @@ const TRADES = {
           { id: "inspection", name: "Inspection Coordination", unit: "ls", basePrice: 300, laborPct: 1.00 },
           { id: "cleanup", name: "Final Cleanup", unit: "ls", basePrice: 550, laborPct: 0.85 },
         ]
+      },
+      {
+        name: "Site Logistics",
+        items: [
+          { id: "dumpster_rental", name: "Dumpster Rental (per week)", unit: "ls", basePrice: 480, laborPct: 0.20 },
+          { id: "temp_power", name: "Temporary Power/Fencing Setup", unit: "ls", basePrice: 650, laborPct: 0.55 },
+          { id: "porta_potty", name: "Portable Toilet Rental (per month)", unit: "ls", basePrice: 175, laborPct: 0.10 },
+          { id: "scaffolding_rental", name: "Scaffolding Rental (per week)", unit: "ls", basePrice: 380, laborPct: 0.30 },
+        ]
       }
     ]
   },
@@ -554,6 +563,20 @@ const TRADES = {
           { id: "ceiling_fan", name: "Ceiling Fan Installation", unit: "ea", basePrice: 310, laborPct: 0.65 },
           { id: "ev_charger", name: "EV Charger (Level 2)", unit: "ls", basePrice: 1200, laborPct: 0.55 },
           { id: "smoke_detector", name: "Smoke/CO Detector", unit: "ea", basePrice: 145, laborPct: 0.65 },
+        ]
+      },
+      {
+        name: "Specialty & Add-ons",
+        items: [
+          { id: "generator_transfer", name: "Generator Transfer Switch", unit: "ls", basePrice: 1650, laborPct: 0.50 },
+          { id: "generator_hookup", name: "Whole House Generator Hookup", unit: "ls", basePrice: 2800, laborPct: 0.48 },
+          { id: "surge_protector", name: "Whole House Surge Protector", unit: "ls", basePrice: 420, laborPct: 0.55 },
+          { id: "undercabinet_lighting", name: "Under-Cabinet Lighting (per LF)", unit: "lf", basePrice: 42, laborPct: 0.62 },
+          { id: "landscape_lighting", name: "Landscape Lighting Circuit", unit: "ls", basePrice: 850, laborPct: 0.58 },
+          { id: "hottub_circuit", name: "Hot Tub/Spa Circuit (240V)", unit: "ls", basePrice: 680, laborPct: 0.58 },
+          { id: "data_wiring", name: "Data/Ethernet Wiring (per run)", unit: "ea", basePrice: 165, laborPct: 0.68 },
+          { id: "doorbell_wiring", name: "Doorbell/Chime Wiring", unit: "ls", basePrice: 220, laborPct: 0.65 },
+          { id: "atticfan_wiring", name: "Attic/Whole-House Fan Circuit", unit: "ls", basePrice: 380, laborPct: 0.60 },
         ]
       }
     ]
@@ -598,6 +621,20 @@ const TRADES = {
           { id: "drain_clean", name: "Drain Cleaning (per drain)", unit: "ea", basePrice: 225, laborPct: 0.85 },
           { id: "sewer_camera", name: "Sewer Camera Inspection", unit: "ls", basePrice: 380, laborPct: 0.75 },
           { id: "sewer_line", name: "Sewer Line Repair (per LF)", unit: "lf", basePrice: 95, laborPct: 0.65 },
+        ]
+      },
+      {
+        name: "Specialty Systems",
+        items: [
+          { id: "water_softener", name: "Water Softener Installation", unit: "ls", basePrice: 1450, laborPct: 0.40 },
+          { id: "whole_house_filter", name: "Whole-House Water Filtration", unit: "ls", basePrice: 1200, laborPct: 0.42 },
+          { id: "sump_pump", name: "Sump Pump Install/Replace", unit: "ls", basePrice: 850, laborPct: 0.55 },
+          { id: "backflow_preventer", name: "Backflow Preventer Install", unit: "ls", basePrice: 520, laborPct: 0.58 },
+          { id: "gas_line_run", name: "Gas Line Run (per LF)", unit: "lf", basePrice: 32, laborPct: 0.62 },
+          { id: "gas_hookup", name: "Gas Appliance Hookup", unit: "ea", basePrice: 280, laborPct: 0.65 },
+          { id: "bidet_install", name: "Bidet Installation", unit: "ea", basePrice: 340, laborPct: 0.60 },
+          { id: "utility_sink", name: "Utility Sink Installation", unit: "ea", basePrice: 380, laborPct: 0.55 },
+          { id: "washer_hookup", name: "Washer/Dryer Hookup", unit: "ls", basePrice: 320, laborPct: 0.68 },
         ]
       }
     ]
@@ -645,6 +682,18 @@ const TRADES = {
           { id: "register_install", name: "Register/Grille Install", unit: "ea", basePrice: 120, laborPct: 0.65 },
           { id: "thermostat_smart", name: "Smart Thermostat Install", unit: "ea", basePrice: 280, laborPct: 0.65 },
         ]
+      },
+      {
+        name: "Air Quality & Zoning",
+        items: [
+          { id: "humidifier_whole", name: "Whole-House Humidifier", unit: "ls", basePrice: 780, laborPct: 0.48 },
+          { id: "dehumidifier_whole", name: "Whole-House Dehumidifier", unit: "ls", basePrice: 1650, laborPct: 0.45 },
+          { id: "zoning_system", name: "Zoning System (dampers + panel)", unit: "ls", basePrice: 2400, laborPct: 0.50 },
+          { id: "refrigerant_recharge", name: "Refrigerant Recharge", unit: "ls", basePrice: 320, laborPct: 0.70 },
+          { id: "condensate_pump", name: "Condensate Pump Install", unit: "ea", basePrice: 280, laborPct: 0.60 },
+          { id: "attic_fan", name: "Attic Fan Installation", unit: "ea", basePrice: 620, laborPct: 0.55 },
+          { id: "uv_air_purifier", name: "UV Air Purifier/Scrubber", unit: "ls", basePrice: 850, laborPct: 0.48 },
+        ]
       }
     ]
   },
@@ -689,6 +738,16 @@ const TRADES = {
           { id: "flashing_chimney", name: "Chimney Flashing", unit: "ls", basePrice: 850, laborPct: 0.65 },
           { id: "flashing_skylight", name: "Skylight Flashing", unit: "ea", basePrice: 480, laborPct: 0.65 },
           { id: "drip_edge", name: "Drip Edge (per LF)", unit: "lf", basePrice: 5.50, laborPct: 0.65 },
+          { id: "gutter_cleaning", name: "Gutter Cleaning (maintenance)", unit: "ls", basePrice: 220, laborPct: 0.85 },
+        ]
+      },
+      {
+        name: "Roof Accessories & Repair",
+        items: [
+          { id: "roof_vent_turbine", name: "Turbine/Box Roof Vent", unit: "ea", basePrice: 220, laborPct: 0.60 },
+          { id: "pipe_boot", name: "Pipe Boot/Flashing Replace", unit: "ea", basePrice: 165, laborPct: 0.68 },
+          { id: "roof_wall_flashing", name: "Roof-to-Wall Flashing (per LF)", unit: "lf", basePrice: 24, laborPct: 0.62 },
+          { id: "snow_guards", name: "Snow Guards (per LF)", unit: "lf", basePrice: 28, laborPct: 0.58 },
         ]
       }
     ]
@@ -728,6 +787,16 @@ const TRADES = {
           { id: "carpet", name: "Carpet Installation (per sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.45 },
           { id: "carpet_pad", name: "Carpet Padding (per sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.65 },
           { id: "floor_remove", name: "Old Flooring Removal (sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.80 },
+        ]
+      },
+      {
+        name: "Prep & Finishing",
+        items: [
+          { id: "floor_underlayment", name: "Underlayment/Moisture Barrier (sqft)", unit: "sqft", basePrice: 1.20, laborPct: 0.55 },
+          { id: "floor_leveling", name: "Floor Leveling Compound (sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.65 },
+          { id: "stair_tread", name: "Stair Tread/Riser Install (per step)", unit: "ea", basePrice: 145, laborPct: 0.62 },
+          { id: "transition_strip", name: "Transition Strip/Threshold", unit: "ea", basePrice: 65, laborPct: 0.70 },
+          { id: "radiant_floor_mat", name: "Radiant Floor Heat Mat (sqft)", unit: "sqft", basePrice: 14, laborPct: 0.55 },
         ]
       }
     ]
@@ -769,6 +838,10 @@ const TRADES = {
           { id: "texture_wall", name: "Wall Texture (sqft)", unit: "sqft", basePrice: 3.80, laborPct: 0.75 },
           { id: "popcorn_remove", name: "Popcorn Ceiling Removal (sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.82 },
           { id: "faux_finish", name: "Faux/Decorative Finish (sqft)", unit: "sqft", basePrice: 12, laborPct: 0.75 },
+          { id: "wallpaper_removal", name: "Wallpaper Removal (sqft)", unit: "sqft", basePrice: 2.20, laborPct: 0.85 },
+          { id: "caulking", name: "Caulking (per LF)", unit: "lf", basePrice: 3.20, laborPct: 0.80 },
+          { id: "stain_block_primer", name: "Stain-Blocking Primer (sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.70 },
+          { id: "fence_staining", name: "Fence Staining (per LF)", unit: "lf", basePrice: 4.50, laborPct: 0.72 },
         ]
       }
     ]
@@ -814,6 +887,16 @@ const TRADES = {
           { id: "countertop_quartz", name: "Quartz Countertop (per sqft)", unit: "sqft", basePrice: 95, laborPct: 0.43 },
           { id: "countertop_butcher", name: "Butcher Block (per sqft)", unit: "sqft", basePrice: 65, laborPct: 0.50 },
         ]
+      },
+      {
+        name: "Decks & Structures",
+        items: [
+          { id: "deck_railing", name: "Deck Railing/Balusters (per LF)", unit: "lf", basePrice: 65, laborPct: 0.58 },
+          { id: "pergola_framing", name: "Pergola/Gazebo Framing", unit: "ls", basePrice: 3200, laborPct: 0.55 },
+          { id: "attic_ladder", name: "Attic Ladder/Stairs Install", unit: "ea", basePrice: 480, laborPct: 0.60 },
+          { id: "cabinet_crown", name: "Cabinet Crown Molding (per LF)", unit: "lf", basePrice: 16, laborPct: 0.70 },
+          { id: "mantel_install", name: "Mantel Installation", unit: "ea", basePrice: 650, laborPct: 0.55 },
+        ]
       }
     ]
   },
@@ -844,6 +927,14 @@ const TRADES = {
           { id: "crack_repair", name: "Crack Repair (per LF)", unit: "lf", basePrice: 18, laborPct: 0.82 },
           { id: "water_damage", name: "Water Damage Repair (sqft)", unit: "sqft", basePrice: 18, laborPct: 0.75 },
         ]
+      },
+      {
+        name: "Finishing Details",
+        items: [
+          { id: "corner_bead", name: "Corner Bead Installation (per LF)", unit: "lf", basePrice: 6.50, laborPct: 0.75 },
+          { id: "access_panel", name: "Access Panel Cutout/Install", unit: "ea", basePrice: 165, laborPct: 0.72 },
+          { id: "soundproof_insulation", name: "Soundproofing Insulation (sqft)", unit: "sqft", basePrice: 3.20, laborPct: 0.60 },
+        ]
       }
     ]
   },
@@ -863,6 +954,10 @@ const TRADES = {
           { id: "stamped_concrete", name: "Stamped Concrete (per sqft)", unit: "sqft", basePrice: 18, laborPct: 0.55 },
           { id: "concrete_stain", name: "Concrete Stain/Seal (sqft)", unit: "sqft", basePrice: 3.80, laborPct: 0.68 },
           { id: "concrete_break", name: "Concrete Removal (per sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.72 },
+          { id: "rebar_mesh", name: "Rebar/Wire Mesh Reinforcement (sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.60 },
+          { id: "expansion_joint", name: "Expansion Joint Installation (per LF)", unit: "lf", basePrice: 4.50, laborPct: 0.65 },
+          { id: "concrete_steps", name: "Concrete Steps (per step)", unit: "ea", basePrice: 320, laborPct: 0.58 },
+          { id: "epoxy_garage_floor", name: "Epoxy Garage Floor Coating (sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.55 },
         ]
       },
       {
@@ -933,6 +1028,16 @@ const TRADES = {
           { id: "pergola", name: "Pergola Installation", unit: "ls", basePrice: 4800, laborPct: 0.52 },
           { id: "retaining_landscape", name: "Landscape Retaining Wall (LF)", unit: "lf", basePrice: 85, laborPct: 0.60 },
         ]
+      },
+      {
+        name: "Outdoor Living & Grading",
+        items: [
+          { id: "drainage_swale", name: "Grading/Drainage Swale (per LF)", unit: "lf", basePrice: 22, laborPct: 0.65 },
+          { id: "boulder_placement", name: "Rock/Boulder Placement (per ea)", unit: "ea", basePrice: 280, laborPct: 0.55 },
+          { id: "artificial_turf", name: "Artificial Turf Installation (sqft)", unit: "sqft", basePrice: 12, laborPct: 0.52 },
+          { id: "outdoor_kitchen_roughin", name: "Outdoor Kitchen Rough-In", unit: "ls", basePrice: 3200, laborPct: 0.50 },
+          { id: "fire_pit", name: "Fire Pit Installation", unit: "ls", basePrice: 1650, laborPct: 0.55 },
+        ]
       }
     ]
   },
@@ -954,6 +1059,14 @@ const TRADES = {
           { id: "rigid_foam", name: "Rigid Foam Board (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.58 },
           { id: "radiant_barrier", name: "Radiant Barrier (per sqft)", unit: "sqft", basePrice: 1.20, laborPct: 0.65 },
           { id: "crawl_encap", name: "Crawl Space Encapsulation (sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.60 },
+        ]
+      },
+      {
+        name: "Removal & Air Sealing",
+        items: [
+          { id: "insulation_removal", name: "Insulation Removal (old/contaminated, sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.80 },
+          { id: "vapor_barrier", name: "Vapor Barrier Installation (sqft)", unit: "sqft", basePrice: 0.85, laborPct: 0.65 },
+          { id: "weatherstripping", name: "Weatherstripping/Air Sealing (per door/window)", unit: "ea", basePrice: 65, laborPct: 0.75 },
         ]
       }
     ]
@@ -985,6 +1098,15 @@ const TRADES = {
           { id: "garage_door_single", name: "Garage Door (Single)", unit: "ea", basePrice: 1400, laborPct: 0.50 },
           { id: "garage_door_double", name: "Garage Door (Double)", unit: "ea", basePrice: 2200, laborPct: 0.48 },
           { id: "garage_opener", name: "Garage Door Opener", unit: "ea", basePrice: 580, laborPct: 0.55 },
+          { id: "door_hardware", name: "Door Hardware/Lockset Replace", unit: "ea", basePrice: 145, laborPct: 0.68 },
+          { id: "closet_door_bifold", name: "Bifold/Bypass Closet Door", unit: "ea", basePrice: 320, laborPct: 0.60 },
+        ]
+      },
+      {
+        name: "Window & Door Add-ons",
+        items: [
+          { id: "window_well", name: "Window Well Installation (basement)", unit: "ea", basePrice: 480, laborPct: 0.55 },
+          { id: "pet_door", name: "Pet Door Installation", unit: "ea", basePrice: 280, laborPct: 0.65 },
         ]
       }
     ]
@@ -1007,6 +1129,13 @@ const TRADES = {
           { id: "siding_remove", name: "Old Siding Removal (sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.78 },
           { id: "house_wrap", name: "House Wrap (per sqft)", unit: "sqft", basePrice: 1.50, laborPct: 0.62 },
           { id: "soffit_fascia", name: "Soffit & Fascia (per LF)", unit: "lf", basePrice: 18, laborPct: 0.60 },
+        ]
+      },
+      {
+        name: "Trim & Accessories",
+        items: [
+          { id: "j_channel", name: "J-Channel/Trim Pieces (per LF)", unit: "lf", basePrice: 3.80, laborPct: 0.65 },
+          { id: "corner_posts", name: "Corner Posts (per LF)", unit: "lf", basePrice: 5.20, laborPct: 0.62 },
         ]
       }
     ]
