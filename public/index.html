@@ -1149,6 +1149,7 @@ function render() {
 function go(v) {
   if (v === 'new_estimate' && workbenchIsNew && !hasSub() && getEsts().length >= 1) {
     state.view = 'subscribe';
+    logEvent('paywall_hit');
     render();
     window.scrollTo(0,0);
     return;
@@ -1328,6 +1329,7 @@ function buildLineItems(e) {
   if (!items.length) return '<div style="padding:20px;text-align:center;background:var(--navy-light);border-radius:var(--r-sm);font-size:13px;color:var(--steel)">No items yet. Describe the job above or add manually.</div>';
   return items.map(function(item,i){
     var sub=(item.qty||0)*(item.unitPrice||0);
+    var laborAmt = item.laborAmt!=null ? item.laborAmt : Math.round(sub*0.45*100)/100;
     var html='<div class="li-row"><div class="li-top"><div class="li-name-wrap">';
     html+='<input class="li-name" value="'+esc(item.name||'')+'" placeholder="Item name" oninput="setLI('+i+',\'name\',this.value)">';
     html+='<span class="li-trade">'+esc(item.tradeLabel||'')+'</span></div>';
@@ -1339,8 +1341,8 @@ function buildLineItems(e) {
     html+='</select></div>';
     html+='<div class="li-field"><label>Unit $</label><div class="li-price"><span>$</span><input type="number" min="0" step="0.01" value="'+(item.unitPrice||0)+'" oninput="setLI('+i+',\'unitPrice\',parseFloat(this.value));refreshTotals()"></div></div>';
     html+='<div class="li-field"><label>Subtotal</label><span class="li-sub" id="ls'+i+'">'+fmt(sub)+'</span></div></div>';
-    html+='<div style="display:flex;align-items:center;gap:12px"><span style="font-size:12px;color:var(--steel)">Labor %</span>';
-    html+='<input type="number" min="0" max="100" value="'+Math.round((item.laborPct!=null?item.laborPct:1)*100)+'" style="width:60px;padding:5px 8px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:#fff;font-size:13px" oninput="setLI('+i+',\'laborPct\',this.value/100);refreshTotals()"></div>';
+    html+='<div style="display:flex;align-items:center;gap:12px"><span style="font-size:12px;color:var(--steel)">Labor $</span>';
+    html+='<div class="li-price" style="width:110px"><span>$</span><input type="number" min="0" step="0.01" value="'+laborAmt.toFixed(2)+'" style="flex:1;padding:5px 8px;background:var(--navy-mid);border:1px solid var(--navy-light);border-radius:var(--r-sm);color:#fff;font-size:13px" oninput="setLI('+i+',\'laborAmt\',parseFloat(this.value)||0);refreshTotals()"></div></div>';
     html+='</div>';
     return html;
   }).join('');
@@ -1371,10 +1373,12 @@ function calc(e) {
   var rates = getRegionalRates(e.projectZip||'');
   var labor=0,mat=0;
   (e.lineItems||[]).forEach(function(it){
-    var t=(it.qty||0)*(it.unitPrice||0);
-    var lp=it.laborPct!=null?it.laborPct:1;
-    labor += t*lp*rates.labor;
-    mat   += t*(1-lp)*rates.material;
+    var t = (it.qty||0)*(it.unitPrice||0);
+    var lAmt = it.laborAmt!=null ? it.laborAmt : t*0.45;
+    lAmt = Math.max(0, Math.min(lAmt, t)); // labor can't be negative or exceed the line total
+    var mAmt = t - lAmt;
+    labor += lAmt*rates.labor;
+    mat   += mAmt*rates.material;
   });
   var base=labor+mat;
   var oh=base*((e.overhead!=null?e.overhead:DEF.overhead)/100);
@@ -1411,7 +1415,7 @@ function delLI(i) {
 function addBlankItem() {
   if (!workbench) openNewEstimate();
   workbench.lineItems = workbench.lineItems || [];
-  workbench.lineItems.push({id:'c_'+Date.now(), name:'Custom Item', qty:1, unit:'ls', unitPrice:0, laborPct:1, tradeLabel:'Custom'});
+  workbench.lineItems.push({id:'c_'+Date.now(), name:'Custom Item', qty:1, unit:'ls', unitPrice:0, tradeLabel:'Custom'});
   render();
 }
 
@@ -1422,6 +1426,7 @@ function saveEst(andPreview) {
 
   // Paywall check only applies to brand new estimates
   if (workbenchIsNew && !hasSub() && getEsts().length >= 1) {
+    logEvent('paywall_hit');
     go('subscribe');
     return;
   }
@@ -1615,10 +1620,13 @@ function pgEstDetail() {
   html+='</div></div>';
   html+='<table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead><tbody>';
   (e.lineItems||[]).forEach(function(it){
-    var lp = it.laborPct!=null?it.laborPct:1;
     var base = it.unitPrice||0;
-    var ap = base*lp*rates.labor + base*(1-lp)*rates.material;
-    var tot=(it.qty||0)*ap;
+    var lineTotal = (it.qty||0)*base;
+    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*0.45;
+    lAmt = Math.max(0, Math.min(lAmt, lineTotal));
+    var mAmt = lineTotal - lAmt;
+    var tot = lAmt*rates.labor + mAmt*rates.material;
+    var ap = (it.qty||0) ? tot/(it.qty||1) : 0;
     html+='<tr><td class="iname">'+esc(it.name)+'<span class="itag">'+esc(it.tradeLabel||'')+'</span></td><td>'+(it.qty||0)+' '+(UNITS[it.unit]||it.unit||'')+'</td><td class="r">'+fmt(ap)+'</td><td class="r">'+fmt(tot)+'</td></tr>';
   });
   html+='</tbody></table>';
@@ -1652,11 +1660,14 @@ function pgInvDetail() {
   html+='<div class="party"><div class="party-lbl">Project</div><div class="party-name">'+esc(inv.projectName||'')+'</div>'+(inv.dueDate?'<div class="party-meta">Due: '+inv.dueDate+'</div>':'')+'</div></div>';
   html+='<table class="items-table"><thead><tr><th>Description</th><th>Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead><tbody>';
   (inv.lineItems||[]).forEach(function(it){
-    var lp = it.laborPct!=null?it.laborPct:1;
-    var base = it.unitPrice||0;
     var rates = getRegionalRates(inv.projectZip||'');
-    var ap = base*lp*rates.labor + base*(1-lp)*rates.material;
-    var tot=(it.qty||0)*ap;
+    var base = it.unitPrice||0;
+    var lineTotal = (it.qty||0)*base;
+    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*0.45;
+    lAmt = Math.max(0, Math.min(lAmt, lineTotal));
+    var mAmt = lineTotal - lAmt;
+    var tot = lAmt*rates.labor + mAmt*rates.material;
+    var ap = (it.qty||0) ? tot/(it.qty||1) : 0;
     html+='<tr><td class="iname">'+esc(it.name)+'</td><td>'+(it.qty||0)+' '+(UNITS[it.unit]||it.unit||'')+'</td><td class="r">'+fmt(ap)+'</td><td class="r">'+fmt(tot)+'</td></tr>';
   });
   html+='</tbody></table>';
@@ -1766,7 +1777,7 @@ function addCatalogItem(tradeKey, itemId) {
   if (!found) return;
   if (!workbench) openNewEstimate();
   workbench.lineItems = workbench.lineItems || [];
-  workbench.lineItems.push({id:found.id+'_'+Date.now(), name:found.name, qty:1, unit:found.unit, unitPrice:found.basePrice, laborPct:1, tradeLabel:t.label});
+  workbench.lineItems.push({id:found.id+'_'+Date.now(), name:found.name, qty:1, unit:found.unit, unitPrice:found.basePrice, tradeLabel:t.label});
   toast('Item added');
   render();
 }
@@ -1863,7 +1874,9 @@ async function sendAiChat() {
 
   // Current line items so the model knows what's already there
   var currentItems = (workbench.lineItems || []).map(function(it, idx) {
-    return idx + ': ' + it.name + ' (qty ' + it.qty + ' ' + it.unit + ' @ $' + it.unitPrice + ', labor ' + Math.round((it.laborPct||1)*100) + '%)';
+    var lineTotal = (it.qty||0)*(it.unitPrice||0);
+    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*0.45;
+    return idx + ': ' + it.name + ' (qty ' + it.qty + ' ' + it.unit + ' @ $' + it.unitPrice + ', labor $' + lAmt.toFixed(2) + ' of $' + lineTotal.toFixed(2) + ' total)';
   }).join('\n') || '(none yet)';
 
   var systemContext = 'You are a conversational contractor estimating assistant embedded in an app. '
@@ -1873,9 +1886,9 @@ async function sendAiChat() {
     + (workbench.tradeType && TRADES[workbench.tradeType] ? 'This job is tagged as trade: ' + TRADES[workbench.tradeType].label + '.\n' : '')
     + 'Reference catalog for realistic pricing (id,name,basePrice,unit,trade):\n' + catalogLines.join('\n') + '\n\n'
     + 'Respond ONLY with a single JSON object, no markdown, no other text. Format:\n'
-    + '{"reply":"short conversational reply to the user, 1-2 sentences","actions":[{"type":"add","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborPct":1.0,"tradeLabel":"string"},{"type":"remove","index":0},{"type":"update","index":0,"qty":200}]}\n'
+    + '{"reply":"short conversational reply to the user, 1-2 sentences","actions":[{"type":"add","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborAmt":45.00,"tradeLabel":"string"},{"type":"remove","index":0},{"type":"update","index":0,"qty":200}]}\n'
     + 'Rules: "actions" array can be empty if the user is just asking a question. For "update" actions, only include the fields being changed plus "index". '
-    + 'laborPct is always between 0 and 1 and defaults to 1.0 (100%) unless the user or context implies otherwise. '
+    + 'laborAmt is the total dollar amount of labor for that entire line item (qty x unitPrice), not per-unit — it defaults to 45% of the line total unless the user or context implies otherwise, and must never exceed qty x unitPrice. '
     + 'Keep "reply" brief and natural, like a helpful colleague — do not repeat the full item list back in the reply since the app already shows it visually. '
     + 'IMPORTANT: Whenever the current line items suggest a common gap for this type of job (e.g. a bathroom remodel with no permit fee or no demo/haul-away line, a roofing job with no flashing or underlayment, an electrical panel job with no permit or grounding), '
     + 'proactively mention ONE specific thing that seems commonly forgotten in your reply — phrase it as a quick question like "Want me to add a permit fee too?" rather than assuming and adding it yourself. Only do this if something genuinely looks missing; do not force it every turn.';
@@ -1941,18 +1954,26 @@ function applyAiActions(actions) {
     if (a.qty != null) item.qty = Math.max(0.01, parseFloat(a.qty) || item.qty);
     if (a.unit != null) item.unit = String(a.unit);
     if (a.unitPrice != null) item.unitPrice = Math.max(0, parseFloat(a.unitPrice) || item.unitPrice);
-    if (a.laborPct != null) item.laborPct = Math.min(1, Math.max(0, parseFloat(a.laborPct)));
+    if (a.laborAmt != null) item.laborAmt = Math.max(0, parseFloat(a.laborAmt));
+    // Re-clamp labor so it never exceeds the (possibly now-changed) line total
+    var newLineTotal = (item.qty||0) * (item.unitPrice||0);
+    if (item.laborAmt != null) item.laborAmt = Math.min(item.laborAmt, newLineTotal);
     updated++;
   });
 
   actions.filter(function(a){ return a.type === 'add'; }).forEach(function(a) {
+    var unitPrice = Math.max(0, parseFloat(a.unitPrice) || 0);
+    var qty = Math.max(0.01, parseFloat(a.qty) || 1);
+    var lineTotal = unitPrice * qty;
+    var laborAmt = a.laborAmt != null ? Math.max(0, parseFloat(a.laborAmt)) : lineTotal*0.45;
+    laborAmt = Math.min(laborAmt, lineTotal); // labor can't exceed the full line total
     workbench.lineItems.push({
       id: 'ai_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
       name: String(a.name || 'Item'),
-      qty: Math.max(0.01, parseFloat(a.qty) || 1),
+      qty: qty,
       unit: String(a.unit || 'ls'),
-      unitPrice: Math.max(0, parseFloat(a.unitPrice) || 0),
-      laborPct: Math.min(1, Math.max(0, parseFloat(a.laborPct != null ? a.laborPct : 1))),
+      unitPrice: unitPrice,
+      laborAmt: laborAmt,
       tradeLabel: String(a.tradeLabel || 'AI')
     });
     added++;
@@ -2041,7 +2062,18 @@ function dismissInstallBanner() {
 function showIosInstallInstructions() {
   alert('To install: tap the Share button in Safari, then "Add to Home Screen".');
 }
-document.addEventListener('DOMContentLoaded', function(){render();});
+// ── ANALYTICS (lightweight, anonymous) ────────
+function logEvent(eventType) {
+  try {
+    fetch('/api/log-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventType: eventType, deviceId: getDeviceId() })
+    }).catch(function(){ /* silent — never let analytics break the app */ });
+  } catch (e) { /* silent */ }
+}
+
+document.addEventListener('DOMContentLoaded', function(){ render(); logEvent('app_open'); });
 
 </script>
 </body>
