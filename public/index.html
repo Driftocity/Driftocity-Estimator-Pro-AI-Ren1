@@ -1252,6 +1252,7 @@ async function submitLicenseKey(key) {
     const data = await res.json();
     if (data.valid) {
       saveLicense({ valid: true, key: key.trim().toUpperCase(), verifiedAt: Date.now() });
+      logEvent('license_activated');
       return { ok: true };
     }
     return { ok: false, error: data.error || 'Invalid license key.' };
@@ -1576,7 +1577,12 @@ function saveEst(andPreview) {
     return;
   }
 
+  var wasNew = workbenchIsNew;
   saveWorkbenchToStorage();
+
+  if (wasNew) {
+    logEvent(hasSub() ? 'estimate_created_paid' : 'estimate_created_trial');
+  }
 
   if (andPreview) {
     state.view = 'estimate_detail';
@@ -2187,6 +2193,7 @@ window.addEventListener('appinstalled', function() {
   deferredInstallPrompt = null;
   hideInstallBanner();
   DB.set('dep_installed', true);
+  logEvent('pwa_installed');
 });
 
 function showInstallBanner() {
@@ -2232,7 +2239,11 @@ function logEvent(eventType) {
   } catch (e) { /* silent */ }
 }
 
-document.addEventListener('DOMContentLoaded', function(){ render(); logEvent('app_open'); });
+document.addEventListener('DOMContentLoaded', function(){
+  render();
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  logEvent(isStandalone ? 'app_open_installed' : 'app_open_browser');
+});
 
 </script>
 </body>

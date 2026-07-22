@@ -3,27 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Driftocity — License Admin</title>
+<title>Driftocity — Admin</title>
 <style>
-  body{font-family:system-ui,sans-serif;background:#1A1F2E;color:#fff;max-width:480px;margin:40px auto;padding:20px}
-  h1{font-size:20px;margin-bottom:20px}
+  body{font-family:system-ui,sans-serif;background:#1A1F2E;color:#fff;max-width:480px;margin:0 auto;padding:20px 20px 60px}
+  h1{font-size:20px;margin-bottom:6px}
+  h2{font-size:15px;margin-top:32px;margin-bottom:12px;color:#8B95A8;text-transform:uppercase;letter-spacing:.06em}
   label{display:block;font-size:13px;color:#8B95A8;margin-bottom:4px;margin-top:16px}
   input{width:100%;padding:12px;background:#242938;border:1px solid #2E3447;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box}
   button{width:100%;padding:14px;background:#FF6B35;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;margin-top:20px;cursor:pointer}
+  button.secondary{background:#242938;border:1px solid #2E3447}
   #result{margin-top:20px;padding:16px;background:#242938;border-radius:8px;font-size:14px;word-break:break-all;display:none}
   #result.show{display:block}
   .key{font-size:20px;font-weight:700;color:#FF6B35;letter-spacing:1px;margin:8px 0}
   .err{color:#EF4444}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .stat-card{background:#242938;border:1px solid #2E3447;border-radius:10px;padding:14px}
+  .stat-lbl{font-size:11px;color:#8B95A8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+  .stat-val{font-size:24px;font-weight:700}
+  .stat-sub{font-size:11px;color:#8B95A8;margin-top:4px}
+  .accent-orange{border-top:3px solid #FF6B35}
+  .accent-purple{border-top:3px solid #8B5CF6}
+  .stats-loading{font-size:13px;color:#8B95A8;padding:20px 0;text-align:center}
 </style>
 </head>
 <body>
-<h1>🔑 Generate License Key</h1>
-<p style="font-size:13px;color:#8B95A8">Use this after someone pays via Stripe. Send them the generated key by email.</p>
+<h1>🔧 Driftocity Admin</h1>
+<p style="font-size:13px;color:#8B95A8">Generate licenses and check app usage.</p>
 
 <label>Admin Secret</label>
 <input type="password" id="secret" placeholder="Your ADMIN_SECRET">
 
-<label>Customer Email (optional, for your records)</label>
+<h2>📊 Usage Stats</h2>
+<button class="secondary" onclick="loadStats()">Refresh Stats</button>
+<div id="stats-area"></div>
+
+<h2>🔑 Generate License Key</h2>
+<p style="font-size:12px;color:#8B95A8">Use this after someone pays via Stripe.</p>
+
+<label>Customer Email (optional)</label>
 <input type="text" id="email" placeholder="customer@example.com">
 
 <label>Customer Name (optional)</label>
@@ -34,13 +51,80 @@
 <div id="result"></div>
 
 <script>
+function getSecret() {
+  const s = document.getElementById('secret').value;
+  if (!s) alert('Enter the admin secret first');
+  return s;
+}
+
+async function loadStats() {
+  const secret = getSecret();
+  if (!secret) return;
+  const area = document.getElementById('stats-area');
+  area.innerHTML = '<div class="stats-loading">Loading...</div>';
+
+  try {
+    const res = await fetch('/api/get-stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      area.innerHTML = '<div class="err" style="margin-top:12px">' + (data.error || 'Unknown error') + '</div>';
+      return;
+    }
+
+    area.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card accent-orange">
+          <div class="stat-lbl">App Opens (all time)</div>
+          <div class="stat-val">${data.opens.all}</div>
+          <div class="stat-sub">${data.opens.last7d} in last 7 days &middot; ${data.opens.last24h} in last 24h</div>
+        </div>
+        <div class="stat-card accent-purple">
+          <div class="stat-lbl">Installed to Home Screen</div>
+          <div class="stat-val">${data.installs.all}</div>
+          <div class="stat-sub">${data.installs.last7d} in last 7 days</div>
+        </div>
+        <div class="stat-card accent-orange">
+          <div class="stat-lbl">Opens: Installed App</div>
+          <div class="stat-val">${data.opens.installedApp}</div>
+          <div class="stat-sub">vs ${data.opens.browserOnly} browser-only opens</div>
+        </div>
+        <div class="stat-card accent-purple">
+          <div class="stat-lbl">Paywall Hits (all time)</div>
+          <div class="stat-val">${data.paywallHits.all}</div>
+          <div class="stat-sub">${data.paywallHits.last7d} in last 7 days &middot; ${data.paywallHits.last24h} in last 24h</div>
+        </div>
+        <div class="stat-card accent-orange">
+          <div class="stat-lbl">Estimates Made on Trial</div>
+          <div class="stat-val">${data.trialUsage.estimatesCreatedOnTrial}</div>
+          <div class="stat-sub">${data.trialUsage.estimatesCreatedPaid} made by paying users</div>
+        </div>
+        <div class="stat-card accent-purple">
+          <div class="stat-lbl">Licenses Issued / Activated</div>
+          <div class="stat-val">${data.licenses.total} / ${data.licenses.activated}</div>
+          <div class="stat-sub">${data.licenses.activationEvents} activation events logged</div>
+        </div>
+        <div class="stat-card accent-orange" style="grid-column:1/-1">
+          <div class="stat-lbl">Trial &#8594; Paid Conversion Rate</div>
+          <div class="stat-val">${data.conversionRatePct}%</div>
+          <div class="stat-sub">licenses activated &divide; paywall hits</div>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    area.innerHTML = '<div class="err" style="margin-top:12px">Error: ' + e.message + '</div>';
+  }
+}
+
 async function generate() {
-  const secret = document.getElementById('secret').value;
+  const secret = getSecret();
+  if (!secret) return;
   const email = document.getElementById('email').value;
   const name = document.getElementById('name').value;
   const result = document.getElementById('result');
-
-  if (!secret) { alert('Enter the admin secret'); return; }
 
   result.className = 'show';
   result.innerHTML = 'Generating...';
