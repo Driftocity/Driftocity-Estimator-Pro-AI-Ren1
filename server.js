@@ -4,6 +4,8 @@ const path    = require('path');
 
 const validateLicense = require('./api/validate-license');
 const generateLicense  = require('./api/generate-license');
+const logEvent         = require('./api/log-event');
+const getStats         = require('./api/get-stats');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +15,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // License endpoints read raw body themselves (see api/ files) — mount before JSON parser
 app.post('/api/validate-license', validateLicense);
 app.post('/api/generate-license', generateLicense);
+app.post('/api/log-event', logEvent);
+app.post('/api/get-stats', getStats);
 
 app.use(express.json({ limit: '1mb' }));
 
