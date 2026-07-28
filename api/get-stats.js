@@ -31,12 +31,11 @@ module.exports = async function handler(req, res) {
         'Authorization': 'Bearer ' + SUPABASE_KEY,
       };
 
-      // Use Supabase's count header instead of pulling all rows
       async function countEvents(eventType, sinceISO) {
         let url = SUPABASE_URL + '/rest/v1/events?event_type=eq.' + encodeURIComponent(eventType) + '&select=id';
         if (sinceISO) url += '&created_at=gte.' + encodeURIComponent(sinceISO);
         const r = await fetch(url, { headers: { ...headers, 'Prefer': 'count=exact' } });
-        const range = r.headers.get('content-range'); // e.g. "0-9/42"
+        const range = r.headers.get('content-range');
         if (range && range.includes('/')) {
           const total = range.split('/')[1];
           return total === '*' ? 0 : parseInt(total, 10);
@@ -45,54 +44,87 @@ module.exports = async function handler(req, res) {
         return Array.isArray(rows) ? rows.length : 0;
       }
 
-      async function countDistinctDevices(eventType) {
-        // Pull device_ids for this event type and count uniques client-side.
-        // Fine at this scale; switch to a Postgres view/RPC if volume grows a lot.
-        const url = SUPABASE_URL + '/rest/v1/events?event_type=eq.' + encodeURIComponent(eventType) + '&select=device_id';
-        const r = await fetch(url, { headers });
-        const rows = await r.json();
-        if (!Array.isArray(rows)) return 0;
-        const uniques = new Set(rows.map(r => r.device_id).filter(Boolean));
-        return uniques.size;
-      }
+      // Pull ALL events at once — everything below is computed from this single dataset
+      // so every number is guaranteed consistent with every other number.
+      const allEventsRes = await fetch(
+        SUPABASE_URL + '/rest/v1/events?select=event_type,device_id,created_at&order=created_at.asc',
+        { headers }
+      );
+      const allEvents = await allEventsRes.json();
+      const events = Array.isArray(allEvents) ? allEvents : [];
 
-      const now = new Date();
-      const dayAgo = new Date(now.getTime() - 24*60*60*1000).toISOString();
-      const weekAgo = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
+      const now = Date.now();
+      const dayAgoMs = now - 24*60*60*1000;
+      const weekAgoMs = now - 7*24*60*60*1000;
 
-      const [
-        opensAll, opens24h, opens7d,
-        opensInstalledAll, opensBrowserAll,
-        installsAll, installs7d,
-        paywallAll, paywall24h, paywall7d,
-        trialEstAll, paidEstAll,
-        licenseActivatedAll,
-        uniqueDevicesAll,
-      ] = await Promise.all([
-        // Total opens across both legacy + new event names, so old cached clients still count
-        Promise.all([countEvents('app_open'), countEvents('app_open_browser'), countEvents('app_open_installed')])
-          .then(([a,b,c]) => a+b+c),
-        Promise.all([countEvents('app_open', dayAgo), countEvents('app_open_browser', dayAgo), countEvents('app_open_installed', dayAgo)])
-          .then(([a,b,c]) => a+b+c),
-        Promise.all([countEvents('app_open', weekAgo), countEvents('app_open_browser', weekAgo), countEvents('app_open_installed', weekAgo)])
-          .then(([a,b,c]) => a+b+c),
-        countEvents('app_open_installed'),
-        countEvents('app_open_browser'),
-        countEvents('pwa_installed'),
-        countEvents('pwa_installed', weekAgo),
-        countEvents('paywall_hit'),
-        countEvents('paywall_hit', dayAgo),
-        countEvents('paywall_hit', weekAgo),
-        countEvents('estimate_created_trial'),
-        countEvents('estimate_created_paid'),
-        countEvents('license_activated'),
-        countDistinctDevices('app_open_browser').then(async browserSet => {
-          const installedSet = await countDistinctDevices('app_open_installed');
-          return browserSet + installedSet; // rough unique-device estimate across both open types
-        }),
-      ]);
+      const OPEN_TYPES = ['app_open', 'app_open_browser', 'app_open_installed'];
 
-      // Licenses count too, since we're already here
+      function isOpen(e) { return OPEN_TYPES.includes(e.event_type); }
+      function ts(e) { return new Date(e.created_at).getTime(); }
+
+      // ── Unique devices — the real fix: union, not sum ──
+      const allDeviceIds = new Set(events.map(e => e.device_id).filter(Boolean));
+      const uniqueDevicesTotal = allDeviceIds.size;
+
+      // Devices seen only via browser vs only via installed app vs both
+      const browserDevices = new Set(events.filter(e => e.event_type === 'app_open_browser').map(e => e.device_id).filter(Boolean));
+      const installedDevices = new Set(events.filter(e => e.event_type === 'app_open_installed').map(e => e.device_id).filter(Boolean));
+      const bothDevices = [...browserDevices].filter(d => installedDevices.has(d));
+
+      // ── Per-device activity summary — literally "who did what" ──
+      const byDevice = {};
+      events.forEach(e => {
+        if (!e.device_id) return;
+        if (!byDevice[e.device_id]) {
+          byDevice[e.device_id] = {
+            deviceId: e.device_id,
+            firstSeen: e.created_at,
+            lastSeen: e.created_at,
+            opens: 0,
+            estimatesTrial: 0,
+            estimatesPaid: 0,
+            paywallHits: 0,
+            installed: false,
+            licenseActivated: false,
+          };
+        }
+        const d = byDevice[e.device_id];
+        if (e.created_at < d.firstSeen) d.firstSeen = e.created_at;
+        if (e.created_at > d.lastSeen) d.lastSeen = e.created_at;
+        if (isOpen(e)) d.opens++;
+        if (e.event_type === 'estimate_created_trial') d.estimatesTrial++;
+        if (e.event_type === 'estimate_created_paid') d.estimatesPaid++;
+        if (e.event_type === 'paywall_hit') d.paywallHits++;
+        if (e.event_type === 'pwa_installed') d.installed = true;
+        if (e.event_type === 'license_activated') d.licenseActivated = true;
+      });
+      const deviceList = Object.values(byDevice).sort((a,b) => new Date(b.lastSeen) - new Date(a.lastSeen));
+
+      // ── Engaged vs bounced devices ──
+      // "Engaged" = made at least 1 estimate. "Bounced" = opened but made 0 estimates ever.
+      const engagedDevices = deviceList.filter(d => d.estimatesTrial + d.estimatesPaid > 0);
+      const bouncedDevices = deviceList.filter(d => d.estimatesTrial + d.estimatesPaid === 0 && d.opens > 0);
+
+      // ── Opens breakdown ──
+      const opensAll = events.filter(isOpen).length;
+      const opens24h = events.filter(e => isOpen(e) && ts(e) >= dayAgoMs).length;
+      const opens7d  = events.filter(e => isOpen(e) && ts(e) >= weekAgoMs).length;
+      const opensInstalledAll = events.filter(e => e.event_type === 'app_open_installed').length;
+      const opensBrowserAll   = events.filter(e => e.event_type === 'app_open_browser').length;
+
+      const installsAll = events.filter(e => e.event_type === 'pwa_installed').length;
+      const installs7d  = events.filter(e => e.event_type === 'pwa_installed' && ts(e) >= weekAgoMs).length;
+
+      const paywallAll = events.filter(e => e.event_type === 'paywall_hit').length;
+      const paywall24h = events.filter(e => e.event_type === 'paywall_hit' && ts(e) >= dayAgoMs).length;
+      const paywall7d  = events.filter(e => e.event_type === 'paywall_hit' && ts(e) >= weekAgoMs).length;
+
+      const trialEstAll = events.filter(e => e.event_type === 'estimate_created_trial').length;
+      const paidEstAll  = events.filter(e => e.event_type === 'estimate_created_paid').length;
+
+      const licenseActivatedEvents = events.filter(e => e.event_type === 'license_activated').length;
+
+      // ── Licenses table (source of truth for actual license state) ──
       const licRes = await fetch(SUPABASE_URL + '/rest/v1/licenses?select=key', { headers: { ...headers, 'Prefer': 'count=exact' } });
       const licRange = licRes.headers.get('content-range');
       const totalLicenses = licRange && licRange.includes('/') ? parseInt(licRange.split('/')[1], 10) || 0 : 0;
@@ -101,16 +133,38 @@ module.exports = async function handler(req, res) {
       const activeRange = activeRes.headers.get('content-range');
       const activatedLicenses = activeRange && activeRange.includes('/') ? parseInt(activeRange.split('/')[1], 10) || 0 : 0;
 
-      const conversionRate = paywallAll > 0 ? Math.round((licenseActivatedAll / paywallAll) * 1000) / 10 : 0;
+      // Flag the mismatch you noticed, rather than hiding it
+      const licenseTrackingMismatch = activatedLicenses !== licenseActivatedEvents;
+
+      const conversionRate = paywallAll > 0 ? Math.round((licenseActivatedEvents / paywallAll) * 1000) / 10 : 0;
+      const engagementRate = uniqueDevicesTotal > 0 ? Math.round((engagedDevices.length / uniqueDevicesTotal) * 1000) / 10 : 0;
 
       return res.status(200).json({
+        // Headline "what's really going on" numbers
+        uniqueDevices: {
+          total: uniqueDevicesTotal,
+          browserOnly: browserDevices.size - bothDevices.length,
+          installedOnly: installedDevices.size - bothDevices.length,
+          both: bothDevices.length,
+        },
+        engagement: {
+          engagedDevices: engagedDevices.length,   // made >= 1 estimate
+          bouncedDevices: bouncedDevices.length,    // opened, never made an estimate
+          engagementRatePct: engagementRate,
+        },
         opens: { all: opensAll, last24h: opens24h, last7d: opens7d, installedApp: opensInstalledAll, browserOnly: opensBrowserAll },
         installs: { all: installsAll, last7d: installs7d },
         paywallHits: { all: paywallAll, last24h: paywall24h, last7d: paywall7d },
         trialUsage: { estimatesCreatedOnTrial: trialEstAll, estimatesCreatedPaid: paidEstAll },
-        licenses: { total: totalLicenses, activated: activatedLicenses, activationEvents: licenseActivatedAll },
+        licenses: {
+          total: totalLicenses,
+          activated: activatedLicenses,
+          activationEvents: licenseActivatedEvents,
+          mismatchWarning: licenseTrackingMismatch,
+        },
         conversionRatePct: conversionRate,
-        uniqueDevicesApprox: uniqueDevicesAll,
+        // Per-device breakdown — literally "who did what"
+        devices: deviceList.slice(0, 50), // cap to most recent 50 to keep payload reasonable
       });
 
     } catch (err) {
