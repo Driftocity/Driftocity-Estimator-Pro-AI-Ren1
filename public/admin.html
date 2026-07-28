@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Driftocity — Admin</title>
 <style>
-  body{font-family:system-ui,sans-serif;background:#1A1F2E;color:#fff;max-width:480px;margin:0 auto;padding:20px 20px 60px}
+  body{font-family:system-ui,sans-serif;background:#1A1F2E;color:#fff;max-width:680px;margin:0 auto;padding:20px 20px 60px}
   h1{font-size:20px;margin-bottom:6px}
   h2{font-size:15px;margin-top:32px;margin-bottom:12px;color:#8B95A8;text-transform:uppercase;letter-spacing:.06em}
+  h3{font-size:13px;margin-top:20px;margin-bottom:10px;color:#C8CDD8}
   label{display:block;font-size:13px;color:#8B95A8;margin-bottom:4px;margin-top:16px}
   input{width:100%;padding:12px;background:#242938;border:1px solid #2E3447;border-radius:8px;color:#fff;font-size:14px;box-sizing:border-box}
   button{width:100%;padding:14px;background:#FF6B35;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;margin-top:20px;cursor:pointer}
@@ -23,7 +24,23 @@
   .stat-sub{font-size:11px;color:#8B95A8;margin-top:4px}
   .accent-orange{border-top:3px solid #FF6B35}
   .accent-purple{border-top:3px solid #8B5CF6}
+  .accent-green{border-top:3px solid #2ECC71}
+  .accent-red{border-top:3px solid #EF4444}
   .stats-loading{font-size:13px;color:#8B95A8;padding:20px 0;text-align:center}
+  .headline-box{background:linear-gradient(135deg,#1e2538,#242938);border:1px solid #3a4060;border-radius:12px;padding:18px;margin-top:16px}
+  .headline-title{font-size:13px;color:#8b8fff;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+  .headline-text{font-size:15px;line-height:1.5;color:#e4e6ec}
+  .warn-box{background:#2a1a1a;border:1px solid #EF4444;border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13px;color:#EF4444;line-height:1.5}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+  th{text-align:left;padding:8px 6px;color:#8B95A8;font-weight:600;border-bottom:1px solid #2E3447;font-size:11px;text-transform:uppercase}
+  td{padding:8px 6px;border-bottom:1px solid #242938;color:#C8CDD8}
+  tr:last-child td{border-bottom:none}
+  .device-id{font-family:monospace;font-size:10px;color:#8B95A8}
+  .pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600}
+  .pill-engaged{background:#2ECC7120;color:#2ECC71}
+  .pill-bounced{background:#8B95A820;color:#8B95A8}
+  .pill-installed{background:#8B5CF620;color:#8B5CF6}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 </style>
 </head>
 <body>
@@ -57,6 +74,57 @@ function getSecret() {
   return s;
 }
 
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff/60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins+'m ago';
+  const hrs = Math.floor(mins/60);
+  if (hrs < 24) return hrs+'h ago';
+  const days = Math.floor(hrs/24);
+  return days+'d ago';
+}
+
+function buildHeadline(data) {
+  const uniq = data.uniqueDevices.total;
+  const engaged = data.engagement.engagedDevices;
+  const bounced = data.engagement.bouncedDevices;
+
+  let text;
+  if (uniq === 0) {
+    text = "No one has opened the app yet — nothing to report.";
+  } else if (engaged === 0) {
+    text = `<strong>${uniq} distinct ${uniq===1?'person has':'people have'}</strong> opened the app, but nobody has started an estimate yet. If you and people you know are the only ones opening it, that's expected — you're likely still waiting on real testers.`;
+  } else if (bounced > engaged) {
+    text = `<strong>${uniq} distinct people</strong> have opened the app. ${engaged} actually made an estimate, but ${bounced} opened it and left without starting one — worth watching if this grows.`;
+  } else {
+    text = `<strong>${uniq} distinct people</strong> have opened the app, and ${engaged} of them (${data.engagement.engagementRatePct}%) actually built an estimate. That's a solid engagement signal.`;
+  }
+  return text;
+}
+
+function buildDeviceTable(devices) {
+  if (!devices || !devices.length) return '<p style="font-size:12px;color:#8B95A8;margin-top:8px">No device activity yet.</p>';
+  let html = '<div class="table-wrap"><table><thead><tr><th>Device</th><th>Status</th><th>Opens</th><th>Estimates</th><th>Last Active</th></tr></thead><tbody>';
+  devices.forEach(d => {
+    const totalEst = d.estimatesTrial + d.estimatesPaid;
+    const status = totalEst > 0
+      ? '<span class="pill pill-engaged">Engaged</span>'
+      : '<span class="pill pill-bounced">Bounced</span>';
+    const installedTag = d.installed ? ' <span class="pill pill-installed">Installed</span>' : '';
+    const licTag = d.licenseActivated ? ' 🔑' : '';
+    html += `<tr>
+      <td><span class="device-id">${d.deviceId.slice(0,18)}...</span></td>
+      <td>${status}${installedTag}${licTag}</td>
+      <td>${d.opens}</td>
+      <td>${totalEst}${d.paywallHits ? ' <span style="color:#8B5CF6">('+d.paywallHits+' paywall)</span>' : ''}</td>
+      <td>${timeAgo(d.lastSeen)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+
 async function loadStats() {
   const secret = getSecret();
   if (!secret) return;
@@ -75,45 +143,75 @@ async function loadStats() {
       return;
     }
 
-    area.innerHTML = `
-      <div class="stats-grid">
-        <div class="stat-card accent-orange">
-          <div class="stat-lbl">App Opens (all time)</div>
-          <div class="stat-val">${data.opens.all}</div>
-          <div class="stat-sub">${data.opens.last7d} in last 7 days &middot; ${data.opens.last24h} in last 24h</div>
-        </div>
-        <div class="stat-card accent-purple">
-          <div class="stat-lbl">Installed to Home Screen</div>
-          <div class="stat-val">${data.installs.all}</div>
-          <div class="stat-sub">${data.installs.last7d} in last 7 days</div>
-        </div>
-        <div class="stat-card accent-orange">
-          <div class="stat-lbl">Opens: Installed App</div>
-          <div class="stat-val">${data.opens.installedApp}</div>
-          <div class="stat-sub">vs ${data.opens.browserOnly} browser-only opens</div>
-        </div>
-        <div class="stat-card accent-purple">
-          <div class="stat-lbl">Paywall Hits (all time)</div>
-          <div class="stat-val">${data.paywallHits.all}</div>
-          <div class="stat-sub">${data.paywallHits.last7d} in last 7 days &middot; ${data.paywallHits.last24h} in last 24h</div>
-        </div>
-        <div class="stat-card accent-orange">
-          <div class="stat-lbl">Estimates Made on Trial</div>
-          <div class="stat-val">${data.trialUsage.estimatesCreatedOnTrial}</div>
-          <div class="stat-sub">${data.trialUsage.estimatesCreatedPaid} made by paying users</div>
-        </div>
-        <div class="stat-card accent-purple">
-          <div class="stat-lbl">Licenses Issued / Activated</div>
-          <div class="stat-val">${data.licenses.total} / ${data.licenses.activated}</div>
-          <div class="stat-sub">${data.licenses.activationEvents} activation events logged</div>
-        </div>
-        <div class="stat-card accent-orange" style="grid-column:1/-1">
-          <div class="stat-lbl">Trial &#8594; Paid Conversion Rate</div>
-          <div class="stat-val">${data.conversionRatePct}%</div>
-          <div class="stat-sub">licenses activated &divide; paywall hits</div>
-        </div>
+    let html = '';
+
+    // Headline plain-English summary first
+    html += `<div class="headline-box">
+      <div class="headline-title">What's Actually Happening</div>
+      <div class="headline-text">${buildHeadline(data)}</div>
+    </div>`;
+
+    if (data.licenses.mismatchWarning) {
+      html += `<div class="warn-box">⚠️ Licenses activated (${data.licenses.activated}) doesn't match activation events logged (${data.licenses.activationEvents}). Someone may have activated a license through a path that skipped tracking — not urgent, but worth knowing your activation count may be slightly off.</div>`;
+    }
+
+    html += '<h3>People</h3>';
+    html += `<div class="stats-grid">
+      <div class="stat-card accent-orange">
+        <div class="stat-lbl">Unique People (approx)</div>
+        <div class="stat-val">${data.uniqueDevices.total}</div>
+        <div class="stat-sub">${data.uniqueDevices.installedOnly} installed-only &middot; ${data.uniqueDevices.browserOnly} browser-only &middot; ${data.uniqueDevices.both} both</div>
       </div>
-    `;
+      <div class="stat-card accent-green">
+        <div class="stat-lbl">Engaged vs Bounced</div>
+        <div class="stat-val">${data.engagement.engagedDevices} / ${data.engagement.bouncedDevices}</div>
+        <div class="stat-sub">${data.engagement.engagementRatePct}% made at least 1 estimate</div>
+      </div>
+    </div>`;
+
+    html += '<h3>Activity</h3>';
+    html += `<div class="stats-grid">
+      <div class="stat-card accent-orange">
+        <div class="stat-lbl">App Opens (all time)</div>
+        <div class="stat-val">${data.opens.all}</div>
+        <div class="stat-sub">${data.opens.last7d} in last 7 days &middot; ${data.opens.last24h} in last 24h</div>
+      </div>
+      <div class="stat-card accent-purple">
+        <div class="stat-lbl">Installed to Home Screen</div>
+        <div class="stat-val">${data.installs.all}</div>
+        <div class="stat-sub">${data.installs.last7d} in last 7 days</div>
+      </div>
+      <div class="stat-card accent-orange">
+        <div class="stat-lbl">Opens: Installed App</div>
+        <div class="stat-val">${data.opens.installedApp}</div>
+        <div class="stat-sub">vs ${data.opens.browserOnly} browser-only opens</div>
+      </div>
+      <div class="stat-card accent-purple">
+        <div class="stat-lbl">Paywall Hits (all time)</div>
+        <div class="stat-val">${data.paywallHits.all}</div>
+        <div class="stat-sub">${data.paywallHits.last7d} in last 7 days &middot; ${data.paywallHits.last24h} in last 24h</div>
+      </div>
+      <div class="stat-card accent-orange">
+        <div class="stat-lbl">Estimates Made on Trial</div>
+        <div class="stat-val">${data.trialUsage.estimatesCreatedOnTrial}</div>
+        <div class="stat-sub">${data.trialUsage.estimatesCreatedPaid} made by paying users</div>
+      </div>
+      <div class="stat-card accent-purple">
+        <div class="stat-lbl">Licenses Issued / Activated</div>
+        <div class="stat-val">${data.licenses.total} / ${data.licenses.activated}</div>
+        <div class="stat-sub">${data.licenses.activationEvents} activation events logged</div>
+      </div>
+      <div class="stat-card accent-orange" style="grid-column:1/-1">
+        <div class="stat-lbl">Trial &#8594; Paid Conversion Rate</div>
+        <div class="stat-val">${data.conversionRatePct}%</div>
+        <div class="stat-sub">licenses activated &divide; paywall hits</div>
+      </div>
+    </div>`;
+
+    html += '<h3>Per-Device Activity (most recent 50)</h3>';
+    html += buildDeviceTable(data.devices);
+
+    area.innerHTML = html;
   } catch (e) {
     area.innerHTML = '<div class="err" style="margin-top:12px">Error: ' + e.message + '</div>';
   }
