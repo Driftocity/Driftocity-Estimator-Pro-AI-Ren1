@@ -1,0 +1,2186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoClock | Driftocity</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a1128">
+<link rel="icon" href="/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GeoClock">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --navy-950:#050914; --navy-900:#0a1128; --navy-800:#0f1a3a; --navy-700:#16234d; --navy-600:#1e2f63;
+    --gold:#d4af37; --gold-bright:#f0cc5c; --text:#e8ecf7; --text-dim:#8b96b8;
+    --green:#3ddc84; --red:#ff5c5c; --border:rgba(212,175,55,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Space Grotesk',sans-serif;background:radial-gradient(circle at 15% 10%, rgba(212,175,55,0.06), transparent 40%),radial-gradient(circle at 85% 90%, rgba(30,47,99,0.4), transparent 50%),var(--navy-950);color:var(--text);min-height:100vh;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .wrap{max-width:520px;margin:0 auto;padding:20px 16px 60px;}
+  header{display:flex;align-items:center;gap:10px;padding:18px 4px 22px;}
+  .logo-mark{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#a37e1e);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--navy-950);font-size:16px;box-shadow:0 0 0 1px var(--border), 0 4px 14px rgba(212,175,55,0.15);flex-shrink:0;}
+  header h1{font-size:19px;margin:0;letter-spacing:0.2px;}
+  header p{margin:0;font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;text-transform:uppercase;}
+  .circuit-line{height:1px;background:linear-gradient(90deg, transparent, var(--gold), transparent);opacity:0.4;margin:6px 0 20px;}
+  .tabs{display:flex;gap:6px;background:var(--navy-900);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:20px;}
+  .pick-list{display:flex;flex-direction:column;gap:10px;}
+  .pick-btn{
+    width:100%;text-align:left;padding:18px 20px;border-radius:12px;
+    background:var(--navy-950);border:1.5px solid var(--border);color:var(--text);
+    font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;cursor:pointer;
+  }
+  .pick-btn.selected{border-color:var(--gold);background:rgba(212,175,55,0.10);color:var(--gold-bright);}
+  .big-status{text-align:center;padding:10px 6px 4px;}
+  .big-status .icon{font-size:44px;line-height:1;margin-bottom:10px;}
+  .big-status .headline{font-size:22px;font-weight:700;margin-bottom:6px;}
+  .big-status .sub{font-size:14px;color:var(--text-dim);}
+  .big-btn{padding:22px;font-size:19px;}
+  .install-banner{
+    display:flex;align-items:center;gap:12px;
+    background:linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.04));
+    border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;
+  }
+  .install-banner .icon{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,var(--gold-bright),var(--gold));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .install-banner .text{flex:1;font-size:13px;line-height:1.35;}
+  .install-banner .text strong{display:block;font-size:14px;margin-bottom:2px;}
+  .install-banner button{flex-shrink:0;padding:9px 14px;font-size:12px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:var(--navy-950);font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+  .install-banner .dismiss{background:none;border:none;color:var(--text-faint);font-size:18px;cursor:pointer;padding:4px 6px;flex-shrink:0;}
+
+  /* PIN pad */
+  .pin-display{display:flex;justify-content:center;gap:12px;margin:10px 0 22px;}
+  .pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .1s;}
+  .pin-dot.filled{background:var(--gold);border-color:var(--gold);}
+  .pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .pin-key{padding:20px 0;font-size:24px;font-weight:700;border-radius:12px;background:var(--navy-950);border:1px solid var(--border);color:var(--text);cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+  .pin-key:active{background:var(--navy-700);}
+  .pin-key.wide{grid-column:span 1;font-size:14px;color:var(--text-dim);}
+
+  /* Employee totals */
+  .totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+  .totals-box{background:var(--navy-950);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+  .totals-box .num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:var(--gold);}
+  .totals-box .lbl{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+
+  /* Map widget */
+  .site-map{height:220px;border-radius:12px;overflow:hidden;border:1px solid var(--border);margin-bottom:12px;position:relative;}
+  .map-view-toggle{position:absolute;top:8px;right:8px;z-index:1000;display:flex;background:rgba(5,9,20,0.85);border-radius:8px;overflow:hidden;border:1px solid rgba(212,175,55,0.3);}
+  .map-view-toggle button{border:none;background:transparent;color:#e8ecf7;font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+  .map-view-toggle button.active{background:var(--gold);color:var(--navy-950);}
+  .leaflet-container{background:var(--navy-900);font-family:'Space Grotesk',sans-serif;}
+
+  /* PIN display in employee list */
+  .emp-pin{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);background:var(--navy-950);border:1px solid var(--border);border-radius:6px;padding:3px 8px;letter-spacing:1px;}
+  .emp-card{border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;background:var(--navy-950);}
+  .emp-card:last-child{margin-bottom:0;}
+  .emp-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
+  .emp-card-name{font-size:15px;font-weight:700;}
+  .emp-card-contact{font-size:12px;color:var(--text-dim);margin-bottom:10px;line-height:1.7;}
+  .emp-card-contact .row-icon{display:inline-block;width:16px;color:var(--text-faint);}
+  .emp-card-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+  /* Toast for silent auto clock-in/out */
+  .toast-slot{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:200;width:calc(100% - 32px);max-width:488px;}
+  .toast{
+    background:linear-gradient(135deg,var(--navy-800),var(--navy-900));border:1px solid var(--gold);border-radius:12px;
+    padding:14px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    animation:toast-in .25s ease;
+  }
+  .toast .icon{font-size:20px;}
+  .toast .msg{font-size:13.5px;color:var(--text);font-weight:600;}
+  @keyframes toast-in{ from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+
+  /* Photo capture */
+  .photo-preview{width:100%;border-radius:12px;border:1px solid var(--border);margin-bottom:12px;display:block;max-height:220px;object-fit:cover;}
+  .photo-btn{width:100%;padding:14px;border-radius:10px;border:1px dashed var(--border);background:var(--navy-950);color:var(--text-dim);font-size:14px;cursor:pointer;margin-bottom:12px;font-family:'Space Grotesk',sans-serif;}
+
+  /* Clock mode radio cards (admin settings) */
+  .mode-options{display:flex;flex-direction:column;gap:8px;margin-bottom:6px;}
+  .mode-option{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;}
+  .mode-option.selected{border-color:var(--gold);background:rgba(212,175,55,0.08);}
+  .mode-option .title{font-size:14px;font-weight:700;margin-bottom:2px;}
+  .mode-option .desc{font-size:12px;color:var(--text-dim);}
+  .tab{flex:1;text-align:center;padding:10px 8px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-dim);transition:all .15s;user-select:none;}
+  .tab.active{background:linear-gradient(135deg,var(--gold),#b8933a);color:var(--navy-950);}
+  .card{background:linear-gradient(180deg, var(--navy-800), var(--navy-900));border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;position:relative;overflow:hidden;}
+  .card::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg, transparent, var(--gold), transparent);opacity:0.5;}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:0.8px;color:var(--gold);margin:0 0 14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
+  input[type=text], input[type=number], input[type=password], input[type=email], select{width:100%;background:var(--navy-950);border:1px solid var(--border);color:var(--text);padding:11px 12px;border-radius:9px;font-size:14px;font-family:'Space Grotesk',sans-serif;margin-bottom:14px;}
+  input:focus, select:focus{outline:none;border-color:var(--gold);}
+  .btn{width:100%;padding:14px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;letter-spacing:0.3px;transition:transform .1s, box-shadow .15s;}
+  .btn:active{transform:scale(0.98);}
+  .btn-gold{background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:var(--navy-950);box-shadow:0 4px 16px rgba(212,175,55,0.25);}
+  .btn-red{background:linear-gradient(135deg,#ff6b6b,#c73e3e);color:#fff;}
+  .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+  .btn-sm{padding:8px 12px;font-size:12px;width:auto;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;}
+  .pill-in{background:rgba(61,220,132,0.12);color:var(--green);border:1px solid rgba(61,220,132,0.3);}
+  .pill-out{background:rgba(139,150,184,0.12);color:var(--text-dim);border:1px solid var(--border);}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+  .distance-box{display:flex;justify-content:space-between;align-items:center;background:var(--navy-950);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;}
+  .distance-box .val{font-family:'JetBrains Mono',monospace;font-weight:600;}
+  .in-range{color:var(--green);}
+  .out-range{color:var(--red);}
+  .entry-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .entry-row:last-child{border-bottom:none;}
+  .entry-left{display:flex;flex-direction:column;gap:2px;}
+  .entry-name{font-weight:600;}
+  .entry-meta{color:var(--text-dim);font-size:11px;font-family:'JetBrains Mono',monospace;}
+  .entry-hours{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gold);font-size:13px;}
+  .empty-state{text-align:center;color:var(--text-dim);font-size:13px;padding:20px 10px;}
+  .site-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .site-row:last-child{border-bottom:none;}
+  .site-info{font-size:13px;}
+  .site-info .name{font-weight:600;}
+  .site-info .meta{font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+  .row2{display:flex;gap:10px;}
+  .row2 > div, .row2 > input, .row2 > button{flex:1;}
+  .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13px;}
+  .switch{position:relative;width:42px;height:24px;background:var(--navy-950);border:1px solid var(--border);border-radius:99px;cursor:pointer;flex-shrink:0;}
+  .switch.on{background:var(--gold);}
+  .switch .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--text);transition:left .15s;}
+  .switch.on .knob{left:20px;background:var(--navy-950);}
+  .msg{font-size:12px;padding:10px 12px;border-radius:9px;margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+  .msg-error{background:rgba(255,92,92,0.1);color:var(--red);border:1px solid rgba(255,92,92,0.25);}
+  .msg-success{background:rgba(61,220,132,0.1);color:var(--green);border:1px solid rgba(61,220,132,0.25);}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .summary-box{background:var(--navy-950);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+  .summary-box .num{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:var(--gold);}
+  .summary-box .lbl{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+  a.export-link, a.text-link{color:var(--gold);font-size:12px;text-decoration:none;font-family:'JetBrains Mono',monospace;cursor:pointer;}
+  .spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .link-box{display:flex;gap:8px;background:var(--navy-950);border:1px solid var(--border);border-radius:9px;padding:10px 12px;align-items:center;margin-bottom:8px;}
+  .link-box span{flex:1;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);word-break:break-all;}
+  .switch-link{text-align:center;font-size:12px;color:var(--text-dim);margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-mark">GC</div>
+    <div>
+      <h1>GeoClock</h1>
+      <p>Driftocity Timekeeping</p>
+    </div>
+  </header>
+  <div class="circuit-line"></div>
+
+  <div id="install-banner-slot"></div>
+  <div class="toast-slot" id="toast-slot"></div>
+
+  <div class="tabs" id="tab-bar">
+    <div class="tab active" data-tab="employee">Employee</div>
+    <div class="tab" data-tab="admin">Admin</div>
+  </div>
+
+  <div id="employee-view"></div>
+  <div id="admin-view" style="display:none;"></div>
+  <div id="super-admin-view" style="display:none;"></div>
+</div>
+
+<script>
+const TIER_INFO = {
+  starter: { name: 'Starter', price: '$19.99', limit: 3, link: 'https://buy.stripe.com/aFa3cv9Tu7PocZJcx90000g' },
+  team: { name: 'Team', price: '$39.99', limit: 10, link: 'https://buy.stripe.com/8x2bJ17Lm1r08Jt8gT0000h' },
+  crew: { name: 'Crew', price: '$59.99', limit: 15, link: 'https://buy.stripe.com/14AcN54zab1A9Nx8gT0000i' }
+};
+
+// Login is intentionally NOT persisted across page loads - every time the
+// app is opened, Admin requires a fresh email/password login. Clear out any
+// token that may have been saved before this behavior was added.
+localStorage.removeItem('gc_token');
+let token = null;
+let account = null;
+let companyCode = new URLSearchParams(location.search).get('company') || localStorage.getItem('gc_company') || null;
+if (companyCode) localStorage.setItem('gc_company', companyCode);
+
+let sites = [];
+let employees = [];
+let teamMembers = [];
+let entries = [];
+let settings = {};
+
+// Employee session - a real login now (4-digit PIN), never persisted, so
+// every fresh page load requires logging in again. This also means an
+// employee can only ever act as themselves, not pick any name off a list.
+let employeeToken = null;
+let employeeId = null;
+let employeeName = '';
+let pinEntry = '';
+let pinError = '';
+let privacyZone = null; // { lat, lng, radius } | null - employee's own no-track zone
+let capturedPhoto = null; // base64 data URL staged for the next clock-in
+
+// Live geofence watching - only active while the employee dashboard is
+// open in this tab. Tracks entry/exit transitions and, depending on the
+// business's Clock Mode setting, either asks the employee or clocks them
+// in/out silently (like ConstructionClock's auto clock-in, but optional).
+let geoWatchId = null;
+let wasInsideAnySite = false;
+let wasInsideActiveSite = true;
+let geoPromptShown = false;
+
+let selectedSiteId = null;
+let adminScreen = 'login'; // 'login' | 'signup' | 'dashboard'
+let editingSiteId = null;
+let editingEntryId = null;
+let editingEmployeeId = null;
+let myClockInSiteId = null;
+let myGeoWatchId = null;
+let myWasInsideAnySite = false;
+let myWasInsideActiveSite = true;
+let myGeoPromptShown = false;
+let siteMapInstance = null;
+let siteMapMarker = null;
+let siteMapCircle = null;
+
+// ---------- install to home screen ----------
+let deferredInstallPrompt = null;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+// Session-only, not saved to localStorage on purpose: this is often a
+// shared device with multiple people logging in, and each of them should
+// see the install prompt on their own login rather than it staying hidden
+// forever after the first person dismisses it once.
+let installDismissedThisSession = false;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  renderInstallBanner();
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
+function shouldShowInstallBanner(){
+  if(isStandalone || installDismissedThisSession) return false;
+  return isIOS || !!deferredInstallPrompt;
+}
+
+function renderInstallBanner(){
+  const slot = document.getElementById('install-banner-slot');
+  if(!slot) return;
+
+  if(!shouldShowInstallBanner()){
+    slot.innerHTML = '';
+    return;
+  }
+
+  slot.innerHTML = isIOS ? `
+    <div class="install-banner" id="install-banner">
+      <div class="icon">&#8593;</div>
+      <div class="text"><strong>Add GeoClock to your Home Screen</strong>Tap the Share icon below, then "Add to Home Screen."</div>
+      <button class="dismiss" id="dismiss-install">&times;</button>
+    </div>` : `
+    <div class="install-banner" id="install-banner">
+      <div class="icon">&#8595;</div>
+      <div class="text"><strong>Get GeoClock on your phone</strong>Install it for one-tap access, right from your home screen.</div>
+      <button id="do-install">Install</button>
+      <button class="dismiss" id="dismiss-install">&times;</button>
+    </div>`;
+
+  const dismissBtn = document.getElementById('dismiss-install');
+  if(dismissBtn){
+    dismissBtn.addEventListener('click', () => {
+      installDismissedThisSession = true;
+      slot.innerHTML = '';
+    });
+  }
+  const installBtn = document.getElementById('do-install');
+  if(installBtn){
+    installBtn.addEventListener('click', async () => {
+      if(!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      slot.innerHTML = '';
+    });
+  }
+}
+
+// ---------- API helper ----------
+async function api(path, opts = {}) {
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(path, Object.assign({}, opts, { headers }));
+  let data = null;
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    const err = new Error((data && data.error) || 'Request failed');
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+async function employeeApi(path, opts = {}) {
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+  if (employeeToken) headers['Authorization'] = 'Bearer ' + employeeToken;
+  const res = await fetch(path, Object.assign({}, opts, { headers }));
+  let data = null;
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    const err = new Error((data && data.error) || 'Request failed');
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+// ---------- utils ----------
+function metersToFeet(m){ return m * 3.28084; }
+function clientDistance(lat1, lon1, lat2, lon2){
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2-lat1);
+  const dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function feetToMeters(ft){ return ft / 3.28084; }
+function fmtDistance(m){
+  const ft = metersToFeet(m);
+  if(ft < 1000) return Math.round(ft) + " ft";
+  return (ft/5280).toFixed(2) + " mi";
+}
+function fmtTime(iso){ return new Date(iso).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+function fmtDate(iso){ return new Date(iso).toLocaleDateString([], {month:'short', day:'numeric'}); }
+function hoursBetween(a,b){ return (new Date(b) - new Date(a)) / 3600000; }
+function toLocalInputValue(iso){
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str || ""; return d.innerHTML; }
+
+function showToast(icon, message){
+  const slot = document.getElementById('toast-slot');
+  if(!slot) return;
+  slot.innerHTML = `<div class="toast"><div class="icon">${icon}</div><div class="msg">${escapeHtml(message)}</div></div>`;
+  setTimeout(() => {
+    if(slot.firstChild) slot.innerHTML = '';
+  }, 4500);
+}
+
+function compressPhoto(file, callback){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 480;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      callback(canvas.toDataURL('image/jpeg', 0.6));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function getPosition(){
+  return new Promise((resolve, reject) => {
+    if(!navigator.geolocation){ reject(new Error("Geolocation not supported on this device.")); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos.coords),
+      err => reject(new Error(err.message || "Location access denied.")),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+  });
+}
+
+// ================= EMPLOYEE VIEW =================
+function activeEntryForMe(){
+  return entries.find(e => !e.clockOut);
+}
+
+// Keeps a device "logged in" ONLY while actually clocked in, so reopening
+// the app (phone was locked, tab got closed) lands straight on the
+// dashboard instead of the PIN screen - which matters because that's what
+// lets auto-clock-out catch up immediately via the visibilitychange check.
+// The moment someone clocks out, this is cleared immediately, so the
+// device goes right back to requiring a PIN for whoever's next. This is
+// deliberately different from remembering a name indefinitely (the old
+// behavior we removed) - it only ever persists mid-shift.
+function syncSessionPersistence(){
+  if(!companyCode || !employeeToken) return;
+  if(activeEntryForMe()){
+    localStorage.setItem('gc_active_session', JSON.stringify({
+      companyCode, employeeToken, employeeId, employeeName
+    }));
+  } else {
+    localStorage.removeItem('gc_active_session');
+  }
+}
+
+function totalHours(list){
+  return list.reduce((sum, e) => e.clockOut ? sum + hoursBetween(e.clockIn, e.clockOut) : sum, 0);
+}
+
+function hoursThisWeek(list){
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  return totalHours(list.filter(e => new Date(e.clockIn).getTime() >= weekAgo));
+}
+
+async function renderEmployee(){
+  const el = document.getElementById('employee-view');
+
+  if(!companyCode){
+    el.innerHTML = `
+      <div class="card">
+        <h2>No Company Linked</h2>
+        <div class="msg msg-error">This link is missing a company code. Ask your employer for your GeoClock clock-in link (it looks like ${escapeHtml(location.origin)}/?company=ABC123).</div>
+      </div>`;
+    return;
+  }
+
+  if(!employeeToken){
+    renderPinScreen(el);
+    return;
+  }
+
+  el.innerHTML = `<div class="card"><div class="empty-state"><span class="spinner"></span> Loading&hellip;</div></div>`;
+  try{
+    const [sitesRes, entRes, setRes] = await Promise.all([
+      employeeApi('/api/data?resource=sites'),
+      employeeApi('/api/data?resource=entries'),
+      employeeApi('/api/data?resource=settings')
+    ]);
+    sites = sitesRes.sites;
+    entries = entRes.entries;
+    settings = setRes.settings;
+    syncSessionPersistence();
+    if((settings.autoMode || 'ask') !== 'manual'){
+      startGeofenceWatch();
+    } else {
+      stopGeofenceWatch();
+    }
+  }catch(err){
+    if(err.status === 401){
+      localStorage.removeItem('gc_active_session');
+      employeeToken = null;
+      employeeId = null;
+      renderEmployee();
+      return;
+    }
+    el.innerHTML = `<div class="card"><div class="msg msg-error">${escapeHtml(err.message)}</div></div>`;
+    return;
+  }
+
+  const active = activeEntryForMe();
+  const activeSite = active ? sites.find(s => s.id === active.siteId) : null;
+  const myEntries = [...entries].sort((a,b)=> new Date(b.clockIn)-new Date(a.clockIn)).slice(0,8);
+  const allTime = totalHours(entries);
+  const thisWeek = hoursThisWeek(entries);
+
+  if(sites.length === 1 && !selectedSiteId){ selectedSiteId = sites[0].id; }
+  const selectedSite = sites.find(s => s.id === selectedSiteId);
+
+  el.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:19px;font-weight:700;">${escapeHtml(employeeName)}</div>
+        <a href="#" class="text-link" id="employee-logout">Log Out</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Your Hours</h2>
+      <div class="totals-grid">
+        <div class="totals-box"><div class="num">${thisWeek.toFixed(1)}</div><div class="lbl">This Week</div></div>
+        <div class="totals-box"><div class="num">${allTime.toFixed(1)}</div><div class="lbl">All Time</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Privacy Zone</h2>
+      ${privacyZone ? `
+        <div class="entry-meta" style="margin-bottom:12px;">GeoClock won't track or prompt you inside your privacy zone (about ${fmtDistance(privacyZone.radius)} around the spot you set - like home).</div>
+        <button class="btn btn-outline" id="clear-privacy-zone">Clear Privacy Zone</button>
+      ` : `
+        <div class="entry-meta" style="margin-bottom:12px;">Set a zone (like home) where GeoClock never tracks your location or prompts you to clock in/out, even in Automatic mode.</div>
+        <button class="btn btn-outline" id="set-privacy-zone">Set My Current Location as Privacy Zone</button>
+      `}
+      <div id="privacy-zone-status"></div>
+    </div>
+
+    ${active ? `
+    <div class="card">
+      <div class="big-status">
+        <div class="icon">&#9989;</div>
+        <div class="headline">You're Clocked In</div>
+        <div class="sub">${escapeHtml(activeSite ? activeSite.name : 'Unknown site')} &middot; since ${fmtTime(active.clockIn)}</div>
+      </div>
+      ${(settings.autoMode === 'auto') ? `<div class="entry-meta" style="text-align:center;margin:10px 0;">This should clock you out automatically when you leave. If it doesn't, tap below &mdash; it always works, from anywhere.</div>` : ''}
+      <div id="geo-status-out" style="margin-top:14px;"></div>
+      <button class="btn btn-red big-btn" id="clock-out-btn">Clock Out</button>
+    </div>
+    ` : `
+    <div class="card">
+      ${sites.length === 0 ? `<div class="msg msg-error">No job sites set up yet. Ask your boss to add one.</div>` : sites.length > 1 && !selectedSiteId ? `
+        <h2>Where Are You Working?</h2>
+        <div class="pick-list">
+          ${sites.map(s => `<button class="pick-btn" data-pick-site="${s.id}">${escapeHtml(s.name)}</button>`).join('')}
+        </div>
+      ` : `
+        ${sites.length > 1 ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="font-size:15px;color:var(--text-dim);">Site: <strong style="color:var(--text);">${escapeHtml(selectedSite ? selectedSite.name : '')}</strong></div>
+          <a href="#" class="text-link" id="switch-site">Change</a>
+        </div>
+        ` : ''}
+        ${settings.requirePhotoOnClockIn ? `
+          ${capturedPhoto ? `<img class="photo-preview" src="${capturedPhoto}">` : ''}
+          <input type="file" accept="image/*" capture="user" id="photo-input" style="display:none;">
+          <button type="button" class="photo-btn" id="take-photo-btn">${capturedPhoto ? '&#128247; Retake Photo' : '&#128247; Take Photo to Clock In'}</button>
+        ` : ''}
+        <div id="geo-status-in"></div>
+        <button class="btn btn-gold big-btn" id="clock-in-btn">Clock In</button>
+      `}
+    </div>
+    `}
+
+    <div class="card">
+      <h2>Recent Activity</h2>
+      ${myEntries.length === 0 ? `<div class="empty-state">No time entries yet.</div>` : myEntries.map(e => {
+        const site = sites.find(s=>s.id===e.siteId);
+        const hrs = e.clockOut ? hoursBetween(e.clockIn, e.clockOut).toFixed(2) : null;
+        return `<div class="entry-row">
+          <div class="entry-left">
+            <div class="entry-name">${escapeHtml(site ? site.name : 'Unknown site')}</div>
+            <div class="entry-meta">${fmtDate(e.clockIn)} &middot; ${fmtTime(e.clockIn)} ${e.clockOut ? '&rarr; '+fmtTime(e.clockOut) : '(active)'}</div>
+          </div>
+          <div class="entry-hours">${hrs ? hrs+'h' : '&mdash;'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+
+  document.getElementById('employee-logout').addEventListener('click', (ev) => {
+    ev.preventDefault();
+    stopGeofenceWatch();
+    localStorage.removeItem('gc_active_session');
+    employeeToken = null;
+    employeeId = null;
+    employeeName = '';
+    entries = [];
+    renderEmployee();
+  });
+
+  const setZoneBtn = document.getElementById('set-privacy-zone');
+  if(setZoneBtn){
+    setZoneBtn.addEventListener('click', async () => {
+      const statusEl = document.getElementById('privacy-zone-status');
+      statusEl.innerHTML = `<div class="msg" style="color:var(--text-dim);"><span class="spinner"></span> Getting your location...</div>`;
+      try{
+        const coords = await getPosition();
+        const zone = { lat: coords.latitude, lng: coords.longitude, radius: feetToMeters(300) };
+        await employeeApi('/api/employee-prefs', { method:'POST', body: JSON.stringify({ privacyZone: zone }) });
+        privacyZone = zone;
+        renderEmployee();
+      }catch(err){
+        statusEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      }
+    });
+  }
+  const clearZoneBtn = document.getElementById('clear-privacy-zone');
+  if(clearZoneBtn){
+    clearZoneBtn.addEventListener('click', async () => {
+      await employeeApi('/api/employee-prefs', { method:'POST', body: JSON.stringify({ privacyZone: null }) });
+      privacyZone = null;
+      renderEmployee();
+    });
+  }
+
+  const takePhotoBtn = document.getElementById('take-photo-btn');
+  const photoInput = document.getElementById('photo-input');
+  if(takePhotoBtn && photoInput){
+    takePhotoBtn.addEventListener('click', () => photoInput.click());
+    photoInput.addEventListener('change', (ev) => {
+      const file = ev.target.files[0];
+      if(!file) return;
+      compressPhoto(file, (dataUrl) => {
+        capturedPhoto = dataUrl;
+        renderEmployee();
+      });
+    });
+  }
+
+  document.querySelectorAll('[data-pick-site]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedSiteId = btn.dataset.pickSite;
+      renderEmployee();
+    });
+  });
+
+  const switchSiteEl = document.getElementById('switch-site');
+  if(switchSiteEl){
+    switchSiteEl.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      selectedSiteId = null;
+      renderEmployee();
+    });
+  }
+
+  if(active){
+    document.getElementById('clock-out-btn').addEventListener('click', handleClockOut);
+  } else if (selectedSiteId){
+    document.getElementById('clock-in-btn').addEventListener('click', handleClockIn);
+  }
+}
+
+function renderPinScreen(el){
+  const dots = [0,1,2,3].map(i => `<div class="pin-dot ${i < pinEntry.length ? 'filled' : ''}"></div>`).join('');
+  el.innerHTML = `
+    <div class="card">
+      <h2 style="text-align:center;">Enter Your PIN</h2>
+      <div class="pin-display">${dots}</div>
+      ${pinError ? `<div class="msg msg-error" style="text-align:center;">${escapeHtml(pinError)}</div>` : ''}
+      <div class="pin-keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="pin-key" data-digit="${n}">${n}</button>`).join('')}
+        <div></div>
+        <button class="pin-key" data-digit="0">0</button>
+        <button class="pin-key wide" data-backspace="1">&larr;</button>
+      </div>
+    </div>
+  `;
+  document.querySelectorAll('[data-digit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(pinEntry.length >= 4) return;
+      pinEntry += btn.dataset.digit;
+      pinError = '';
+      if(pinEntry.length === 4){
+        submitPin();
+      } else {
+        renderPinScreen(el);
+      }
+    });
+  });
+  const backBtn = document.querySelector('[data-backspace]');
+  if(backBtn){
+    backBtn.addEventListener('click', () => {
+      pinEntry = pinEntry.slice(0, -1);
+      renderPinScreen(el);
+    });
+  }
+}
+
+async function submitPin(){
+  const el = document.getElementById('employee-view');
+  el.innerHTML = `<div class="card"><div class="empty-state"><span class="spinner"></span> Checking PIN...</div></div>`;
+  try{
+    const data = await api('/api/employee-auth', {
+      method: 'POST',
+      body: JSON.stringify({ companyCode, pin: pinEntry })
+    });
+    employeeToken = data.token;
+    employeeId = data.employeeId;
+    employeeName = data.employeeName;
+    privacyZone = data.privacyZone || null;
+    pinEntry = '';
+    pinError = '';
+    renderEmployee();
+  }catch(err){
+    pinError = err.message;
+    pinEntry = '';
+    renderPinScreen(el);
+  }
+}
+
+async function handleClockIn(){
+  const site = sites.find(s => s.id === selectedSiteId);
+  if(!site) return;
+  const btn = document.getElementById('clock-in-btn');
+  const statusEl = document.getElementById('geo-status-in');
+  if(settings.requirePhotoOnClockIn && !capturedPhoto){
+    statusEl.innerHTML = `<div class="msg msg-error" style="font-size:14px;">Take a photo before clocking in.</div>`;
+    return;
+  }
+  btn.disabled = true;
+  statusEl.innerHTML = `<div class="msg" style="color:var(--text-dim);font-size:14px;"><span class="spinner"></span> Checking that you're at the job site...</div>`;
+  try{
+    const coords = await getPosition();
+    await employeeApi('/api/data?resource=entries', {
+      method: 'POST',
+      body: JSON.stringify({ siteId: site.id, lat: coords.latitude, lng: coords.longitude, photo: capturedPhoto || undefined })
+    });
+    capturedPhoto = null;
+    renderEmployee();
+  }catch(err){
+    if(err.status === 403 && err.data && typeof err.data.distance === 'number'){
+      statusEl.innerHTML = `<div class="msg msg-error" style="font-size:14px;">You're not close enough to ${escapeHtml(site.name)} yet (about ${fmtDistance(err.data.distance)} away). Move closer and try again.</div>`;
+    } else {
+      statusEl.innerHTML = `<div class="msg msg-error" style="font-size:14px;">${escapeHtml(err.message)}</div>`;
+    }
+    btn.disabled = false;
+  }
+}
+
+async function handleClockOut(){
+  const active = activeEntryForMe();
+  if(!active) return;
+  const statusEl = document.getElementById('geo-status-out');
+  const btn = document.getElementById('clock-out-btn');
+  btn.disabled = true;
+  statusEl.innerHTML = `<div class="msg" style="color:var(--text-dim);font-size:14px;"><span class="spinner"></span> Clocking you out...</div>`;
+  // Clock-out always works, from anywhere - it's the safety net for when
+  // auto-clock-out doesn't fire. We still attach location if we can get it
+  // quickly, but we never block on it or require it.
+  let coords = null;
+  try{ coords = await getPosition(); }catch(e){ /* fine - clock out anyway */ }
+  try{
+    await employeeApi(`/api/data?resource=entries&id=${active.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ lat: coords ? coords.latitude : undefined, lng: coords ? coords.longitude : undefined })
+    });
+    renderEmployee();
+  }catch(err){
+    statusEl.innerHTML = `<div class="msg msg-error" style="font-size:14px;">${escapeHtml(err.message)}</div>`;
+    btn.disabled = false;
+  }
+}
+
+// ---------- live geofence watching ----------
+// Only runs while this tab/app is open - the browser will not wake this up
+// if the app is fully closed or the phone is locked for an extended time.
+// That's a platform limit (iOS and Android both restrict background
+// location for web apps), not a choice made here.
+function startGeofenceWatch(){
+  if(geoWatchId !== null || !navigator.geolocation) return;
+  wasInsideAnySite = false;
+  wasInsideActiveSite = true;
+  geoWatchId = navigator.geolocation.watchPosition(handleGeoUpdate, () => {}, {
+    enableHighAccuracy: true, maximumAge: 20000, timeout: 25000
+  });
+}
+
+function stopGeofenceWatch(){
+  if(geoWatchId !== null){
+    navigator.geolocation.clearWatch(geoWatchId);
+    geoWatchId = null;
+  }
+}
+
+// iOS and Android both pause or throttle background location for web apps,
+// so the passive watch above can miss the moment someone actually left a
+// site while the phone was locked. To catch up fast, force one fresh
+// position check the instant the app comes back to the foreground, rather
+// than waiting for the next passive tick.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && geoWatchId !== null && navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(handleGeoUpdate, () => {}, {
+      enableHighAccuracy: true, maximumAge: 0, timeout: 15000
+    });
+  }
+});
+
+function handleGeoUpdate(pos){
+  if(geoPromptShown) return;
+
+  // Never track or prompt inside the employee's own privacy zone (e.g. home).
+  if(privacyZone){
+    const insideZone = clientDistance(pos.coords.latitude, pos.coords.longitude, privacyZone.lat, privacyZone.lng) <= privacyZone.radius;
+    if(insideZone) return;
+  }
+
+  const active = activeEntryForMe();
+
+  if(active){
+    const site = sites.find(s => s.id === active.siteId);
+    if(!site) return;
+    const inside = clientDistance(pos.coords.latitude, pos.coords.longitude, site.lat, site.lng) <= site.radius;
+    if(!inside && wasInsideActiveSite){
+      handleSiteExit(site, active);
+    }
+    wasInsideActiveSite = inside;
+  } else {
+    let foundInside = false;
+    for(const site of sites){
+      const inside = clientDistance(pos.coords.latitude, pos.coords.longitude, site.lat, site.lng) <= site.radius;
+      if(inside){
+        foundInside = true;
+        if(!wasInsideAnySite){
+          handleSiteEnter(site);
+        }
+        break;
+      }
+    }
+    wasInsideAnySite = foundInside;
+  }
+}
+
+// Clock Mode ('ask' vs 'auto') is set by the business admin in Settings.
+// 'auto' silently clocks the employee in/out, like ConstructionClock's
+// automatic tracking. 'ask' prompts first. Photo-required businesses always
+// fall back to asking, since a photo needs the employee to actually take it.
+async function handleSiteEnter(site){
+  const mode = settings.autoMode || 'ask';
+  if(mode === 'auto' && !settings.requirePhotoOnClockIn){
+    geoPromptShown = true;
+    try{
+      const coords = await getPosition();
+      await employeeApi('/api/data?resource=entries', {
+        method: 'POST',
+        body: JSON.stringify({ siteId: site.id, lat: coords.latitude, lng: coords.longitude })
+      });
+      showToast('&#9989;', `Automatically clocked in at ${site.name}`);
+      renderEmployee();
+    }catch(err){ /* stay quiet - they may just be a few feet outside still */ }
+    geoPromptShown = false;
+    return;
+  }
+
+  geoPromptShown = true;
+  const wantsClockIn = confirm(`You've arrived at ${site.name}. Clock in now?`);
+  if(wantsClockIn){
+    selectedSiteId = site.id;
+    await renderEmployee();
+    setTimeout(() => {
+      const btn = document.getElementById('clock-in-btn');
+      if(btn) handleClockIn();
+    }, 50);
+  }
+  geoPromptShown = false;
+}
+
+async function handleSiteExit(site, active){
+  const mode = settings.autoMode || 'ask';
+  if(mode === 'auto'){
+    geoPromptShown = true;
+    try{
+      let coords = null;
+      try{ coords = await getPosition(); }catch(e){}
+      await employeeApi(`/api/data?resource=entries&id=${active.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ lat: coords ? coords.latitude : undefined, lng: coords ? coords.longitude : undefined })
+      });
+      showToast('&#128075;', `Automatically clocked out of ${site.name}`);
+      renderEmployee();
+    }catch(err){ /* stay quiet */ }
+    geoPromptShown = false;
+    return;
+  }
+
+  geoPromptShown = true;
+  const wantsClockOut = confirm(`You've left ${site.name}. Clock out now?`);
+  if(wantsClockOut){
+    await renderEmployee();
+    setTimeout(() => {
+      const btn = document.getElementById('clock-out-btn');
+      if(btn) handleClockOut();
+    }, 50);
+  }
+  geoPromptShown = false;
+}
+
+// ================= ADMIN VIEW =================
+async function renderAdmin(){
+  const el = document.getElementById('admin-view');
+
+  if(!token){
+    renderAuthScreen(el);
+    return;
+  }
+
+  el.innerHTML = `<div class="card"><div class="empty-state"><span class="spinner"></span> Loading dashboard&hellip;</div></div>`;
+  try{
+    account = await api('/api/me');
+  }catch(err){
+    token = null;
+    localStorage.removeItem('gc_token');
+    renderAuthScreen(el);
+    return;
+  }
+
+  try{
+    const [sitesRes, empRes, entRes, setRes, teamRes] = await Promise.all([
+      api('/api/data?resource=sites'),
+      api('/api/data?resource=employees'),
+      api('/api/data?resource=entries'),
+      api('/api/data?resource=settings'),
+      api('/api/team')
+    ]);
+    sites = sitesRes.sites;
+    employees = empRes.employees;
+    entries = entRes.entries;
+    settings = setRes.settings;
+    teamMembers = teamRes.managers;
+  }catch(err){
+    el.innerHTML = `<div class="card"><div class="msg msg-error">${escapeHtml(err.message)}</div></div>`;
+    return;
+  }
+
+  renderDashboard(el);
+  if(account.linkedEmployeeId){
+    startMyGeofenceWatch();
+  } else {
+    stopMyGeofenceWatch();
+  }
+}
+
+function renderAuthScreen(el){
+  if(adminScreen === 'signup'){
+    el.innerHTML = `
+      <div class="card">
+        <h2>Start Your Free Trial</h2>
+        <div class="entry-meta" style="margin-bottom:14px;">14 days, full access, no card required. Add your whole team and try it for real.</div>
+        <label>Business Name</label>
+        <input type="text" id="su-business" placeholder="e.g. J&amp;M Contracting">
+        <label>Email</label>
+        <input type="email" id="su-email" placeholder="you@business.com">
+        <label>Password</label>
+        <input type="password" id="su-password" placeholder="6+ characters">
+        <div id="auth-error"></div>
+        <button class="btn btn-gold" id="su-submit">Start Free Trial</button>
+        <div class="switch-link">Already have an account? <a class="text-link" id="go-login">Log in</a></div>
+      </div>`;
+    document.getElementById('go-login').addEventListener('click', () => { adminScreen='login'; renderAuthScreen(el); });
+    document.getElementById('su-submit').addEventListener('click', async () => {
+      const businessName = document.getElementById('su-business').value.trim();
+      const email = document.getElementById('su-email').value.trim();
+      const password = document.getElementById('su-password').value;
+      const errEl = document.getElementById('auth-error');
+      errEl.innerHTML = '';
+      try{
+        const data = await api('/api/auth', { method:'POST', body: JSON.stringify({ action:'signup', businessName, email, password }) });
+        token = data.token;
+        renderAdmin();
+      }catch(err){
+        errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      }
+    });
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <h2>Admin Log In</h2>
+      <label>Email</label>
+      <input type="email" id="li-email" placeholder="you@business.com">
+      <label>Password</label>
+      <input type="password" id="li-password" placeholder="Your password">
+      <div id="auth-error"></div>
+      <button class="btn btn-gold" id="li-submit">Log In</button>
+      <div class="switch-link">New here? <a class="text-link" id="go-signup">Sign up free</a></div>
+    </div>`;
+  document.getElementById('go-signup').addEventListener('click', () => { adminScreen='signup'; renderAuthScreen(el); });
+  document.getElementById('li-submit').addEventListener('click', async () => {
+    const email = document.getElementById('li-email').value.trim();
+    const password = document.getElementById('li-password').value;
+    const errEl = document.getElementById('auth-error');
+    errEl.innerHTML = '';
+    try{
+      const data = await api('/api/auth', { method:'POST', body: JSON.stringify({ action:'login', email, password }) });
+      token = data.token;
+      renderAdmin();
+    }catch(err){
+      errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+    }
+  });
+}
+
+function addMapViewToggle(map){
+  const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, subdomains: 'abcd' });
+  const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
+  lightLayer.addTo(map);
+  let current = 'light';
+
+  const ToggleControl = L.Control.extend({
+    onAdd: function(){
+      const div = L.DomUtil.create('div', 'map-view-toggle');
+      div.innerHTML = `<button type="button" data-view="light" class="active">Map</button><button type="button" data-view="sat">Satellite</button>`;
+      L.DomEvent.disableClickPropagation(div);
+      const setActive = (view) => {
+        div.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      };
+      div.querySelector('[data-view="light"]').addEventListener('click', () => {
+        if(current === 'light') return;
+        map.removeLayer(satLayer);
+        lightLayer.addTo(map);
+        current = 'light';
+        setActive('light');
+      });
+      div.querySelector('[data-view="sat"]').addEventListener('click', () => {
+        if(current === 'sat') return;
+        map.removeLayer(lightLayer);
+        satLayer.addTo(map);
+        current = 'sat';
+        setActive('sat');
+      });
+      return div;
+    }
+  });
+  map.addControl(new ToggleControl({ position: 'topright' }));
+}
+
+function myActiveEntry(){
+  if(!account || !account.linkedEmployeeId) return null;
+  return entries.find(e => e.employeeId === account.linkedEmployeeId && !e.clockOut);
+}
+
+function renderMyTimeCard(){
+  const active = myActiveEntry();
+  const activeSite = active ? sites.find(s => s.id === active.siteId) : null;
+  if(sites.length === 1 && !myClockInSiteId){ myClockInSiteId = sites[0].id; }
+  const selectedSite = sites.find(s => s.id === myClockInSiteId);
+
+  return `
+    <div class="card">
+      <h2>Your Time</h2>
+      ${active ? `
+        <div class="big-status">
+          <div class="icon">&#9989;</div>
+          <div class="headline">You're Clocked In</div>
+          <div class="sub">${escapeHtml(activeSite ? activeSite.name : 'Unknown site')} &middot; since ${fmtTime(active.clockIn)}</div>
+        </div>
+        <div id="my-geo-status" style="margin-top:14px;"></div>
+        <button class="btn btn-red big-btn" id="my-clockout-btn">Clock Out</button>
+      ` : sites.length === 0 ? `
+        <div class="msg msg-error">No job sites set up yet.</div>
+      ` : `
+        ${sites.length > 1 ? `
+        <label>Job Site</label>
+        <select id="my-site-select">${sites.map(s => `<option value="${s.id}" ${myClockInSiteId===s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}</select>
+        ` : ''}
+        <div id="my-geo-status"></div>
+        <button class="btn btn-gold big-btn" id="my-clockin-btn">Clock In</button>
+      `}
+    </div>
+  `;
+}
+
+async function handleMyClockIn(){
+  if(!myClockInSiteId) return;
+  const btn = document.getElementById('my-clockin-btn');
+  const statusEl = document.getElementById('my-geo-status');
+  if(btn) btn.disabled = true;
+  if(statusEl) statusEl.innerHTML = `<div class="msg" style="color:var(--text-dim);font-size:13px;"><span class="spinner"></span> Clocking in...</div>`;
+  try{
+    await api('/api/data?resource=entries', { method:'POST', body: JSON.stringify({ employeeId: account.linkedEmployeeId, siteId: myClockInSiteId }) });
+    renderAdmin();
+  }catch(err){
+    if(statusEl) statusEl.innerHTML = `<div class="msg msg-error" style="font-size:13px;">${escapeHtml(err.message)}</div>`;
+    if(btn) btn.disabled = false;
+  }
+}
+
+async function handleMyClockOut(){
+  const active = myActiveEntry();
+  if(!active) return;
+  const btn = document.getElementById('my-clockout-btn');
+  const statusEl = document.getElementById('my-geo-status');
+  if(btn) btn.disabled = true;
+  if(statusEl) statusEl.innerHTML = `<div class="msg" style="color:var(--text-dim);font-size:13px;"><span class="spinner"></span> Clocking out...</div>`;
+  try{
+    await api(`/api/data?resource=entries&id=${active.id}`, { method:'PATCH' });
+    renderAdmin();
+  }catch(err){
+    if(statusEl) statusEl.innerHTML = `<div class="msg msg-error" style="font-size:13px;">${escapeHtml(err.message)}</div>`;
+    if(btn) btn.disabled = false;
+  }
+}
+
+// Same idea as the employee-side geofence watch, but for whoever's logged
+// into Admin with a linked time-tracking record (e.g. a manager who never
+// uses the PIN screen). Runs while the Admin tab is open.
+function startMyGeofenceWatch(){
+  if(myGeoWatchId !== null || !navigator.geolocation) return;
+  if(!account || !account.linkedEmployeeId) return;
+  if((settings.autoMode || 'ask') === 'manual') return;
+  myWasInsideAnySite = false;
+  myWasInsideActiveSite = true;
+  myGeoWatchId = navigator.geolocation.watchPosition(handleMyGeoUpdate, () => {}, {
+    enableHighAccuracy: true, maximumAge: 20000, timeout: 25000
+  });
+}
+
+function stopMyGeofenceWatch(){
+  if(myGeoWatchId !== null){
+    navigator.geolocation.clearWatch(myGeoWatchId);
+    myGeoWatchId = null;
+  }
+}
+
+function handleMyGeoUpdate(pos){
+  if(myGeoPromptShown) return;
+  const active = myActiveEntry();
+  if(active){
+    const site = sites.find(s => s.id === active.siteId);
+    if(!site) return;
+    const inside = clientDistance(pos.coords.latitude, pos.coords.longitude, site.lat, site.lng) <= site.radius;
+    if(!inside && myWasInsideActiveSite){
+      handleMySiteExit(site, active);
+    }
+    myWasInsideActiveSite = inside;
+  } else {
+    let found = false;
+    for(const site of sites){
+      const inside = clientDistance(pos.coords.latitude, pos.coords.longitude, site.lat, site.lng) <= site.radius;
+      if(inside){
+        found = true;
+        if(!myWasInsideAnySite){
+          handleMySiteEnter(site);
+        }
+        break;
+      }
+    }
+    myWasInsideAnySite = found;
+  }
+}
+
+async function handleMySiteEnter(site){
+  myGeoPromptShown = true;
+  const mode = settings.autoMode || 'ask';
+  const doClockIn = async () => {
+    try{ await api('/api/data?resource=entries', { method:'POST', body: JSON.stringify({ employeeId: account.linkedEmployeeId, siteId: site.id }) }); renderAdmin(); }catch(e){}
+  };
+  if(mode === 'auto'){
+    await doClockIn();
+  } else if(confirm(`You've arrived at ${site.name}. Clock in now?`)){
+    await doClockIn();
+  }
+  myGeoPromptShown = false;
+}
+
+async function handleMySiteExit(site, active){
+  myGeoPromptShown = true;
+  const mode = settings.autoMode || 'ask';
+  const doClockOut = async () => {
+    try{ await api(`/api/data?resource=entries&id=${active.id}`, { method:'PATCH' }); renderAdmin(); }catch(e){}
+  };
+  if(mode === 'auto'){
+    await doClockOut();
+  } else if(confirm(`You've left ${site.name}. Clock out now?`)){
+    await doClockOut();
+  }
+  myGeoPromptShown = false;
+}
+
+function planPillHtml(plan){
+  if(!plan) return '';
+  if(plan.status === 'unlimited') return '<span class="status-pill pill-in">Unlimited</span>';
+  if(plan.status === 'subscribed') return `<span class="status-pill pill-in">${escapeHtml(TIER_INFO[plan.tier]?.name || plan.tier)} Plan</span>`;
+  if(plan.status === 'trial') return `<span class="status-pill pill-out">Trial &mdash; ${plan.trial.daysLeft} day${plan.trial.daysLeft===1?'':'s'} left</span>`;
+  return '<span class="status-pill" style="background:rgba(255,92,92,0.14);color:var(--red);border:1px solid rgba(255,92,92,0.3);">Trial Expired</span>';
+}
+
+function tierLink(tierKey, account){
+  const t = TIER_INFO[tierKey];
+  return `${t.link}?client_reference_id=${account.id}&prefilled_email=${encodeURIComponent(account.email)}`;
+}
+
+function renderDashboard(el){
+  const totalHours = entries.reduce((sum,e) => e.clockOut ? sum + hoursBetween(e.clockIn,e.clockOut) : sum, 0);
+  const activeCount = entries.filter(e => !e.clockOut).length;
+  const byEmployee = {};
+  entries.forEach(e => { if(!e.clockOut) return; byEmployee[e.employee] = (byEmployee[e.employee]||0) + hoursBetween(e.clockIn,e.clockOut); });
+  const empRows = Object.entries(byEmployee).sort((a,b)=>b[1]-a[1]);
+  const allEntriesSorted = [...entries].sort((a,b) => new Date(b.clockIn) - new Date(a.clockIn));
+  const clockInLink = `${location.origin}${location.pathname}?company=${account.companyCode}`;
+
+  el.innerHTML = `
+    <div class="card">
+      <h2>${escapeHtml(account.businessName)} ${planPillHtml(account.plan)}</h2>
+      <div class="entry-meta" style="margin-bottom:10px;">Logged in as ${escapeHtml(account.name || account.email)} ${account.role === 'manager' ? '<span class="status-pill pill-out" style="margin-left:4px;">Manager</span>' : '<span class="status-pill pill-in" style="margin-left:4px;">Owner</span>'}</div>
+      <div class="summary-grid">
+        <div class="summary-box"><div class="num">${totalHours.toFixed(1)}</div><div class="lbl">Total Hours</div></div>
+        <div class="summary-box"><div class="num">${activeCount}</div><div class="lbl">Currently Clocked In</div></div>
+      </div>
+      <a href="#" class="export-link" id="export-csv">&darr; Export CSV</a>
+      &nbsp;&middot;&nbsp;
+      <a href="#" class="export-link" id="export-pdf">&darr; Export PDF</a>
+      &nbsp;&middot;&nbsp;
+      <a href="#" class="export-link" id="log-out">Log Out</a>
+    </div>
+
+    ${account.linkedEmployeeId ? renderMyTimeCard() : ''}
+
+    <div class="card">
+      <h2>Employee Clock-In Link</h2>
+      <div class="entry-meta" style="margin-bottom:10px;">Share this link with your team &mdash; they'll bookmark it on their phone.</div>
+      <div class="link-box"><span id="clockin-link">${escapeHtml(clockInLink)}</span><button class="btn btn-outline btn-sm" id="copy-link">Copy</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Employees</h2>
+      ${account.plan.status === 'trial' ? `<div class="entry-meta" style="margin-bottom:12px;">Trial: ${employees.length}/${account.plan.limit} employees used &middot; ${account.plan.trial.daysLeft} day${account.plan.trial.daysLeft===1?'':'s'} left</div>` : ''}
+      ${account.plan.status === 'subscribed' ? `<div class="entry-meta" style="margin-bottom:12px;">${escapeHtml(TIER_INFO[account.plan.tier]?.name || account.plan.tier)} plan: ${employees.length}/${account.plan.limit} employees used</div>` : ''}
+      ${account.plan.status === 'expired' ? `<div class="entry-meta" style="margin-bottom:12px;">Trial expired &middot; ${employees.length} employee${employees.length===1?'':'s'} (frozen until you subscribe)</div>` : ''}
+      <div id="employees-list">
+        ${employees.length === 0 ? `<div class="empty-state">No employees added yet.</div>` : employees.map(e => {
+          if(editingEmployeeId === e.id){
+            return `
+            <div class="emp-card">
+              <label>Name</label>
+              <input type="text" id="edit-emp-name-${e.id}" value="${escapeHtml(e.name)}">
+              <label>Phone</label>
+              <input type="text" id="edit-emp-phone-${e.id}" value="${escapeHtml(e.phone || '')}" placeholder="(555) 123-4567">
+              <label>Email</label>
+              <input type="email" id="edit-emp-email-${e.id}" value="${escapeHtml(e.email || '')}" placeholder="name@example.com">
+              <div id="edit-emp-error-${e.id}"></div>
+              <div class="row2">
+                <button class="btn btn-gold btn-sm" data-save-employee="${e.id}">Save</button>
+                <button class="btn btn-outline btn-sm" data-cancel-employee-edit="${e.id}">Cancel</button>
+              </div>
+            </div>`;
+          }
+          return `
+          <div class="emp-card">
+            <div class="emp-card-top">
+              <div class="emp-card-name">${escapeHtml(e.name)}</div>
+              <span class="emp-pin">PIN ${escapeHtml(e.pin || '----')}</span>
+            </div>
+            ${(e.phone || e.email) ? `
+            <div class="emp-card-contact">
+              ${e.phone ? `<div><span class="row-icon">&#9742;</span> ${escapeHtml(e.phone)}</div>` : ''}
+              ${e.email ? `<div><span class="row-icon">&#9993;</span> ${escapeHtml(e.email)}</div>` : ''}
+            </div>` : ''}
+            <div class="emp-card-actions">
+              <button class="btn btn-outline btn-sm" data-edit-employee="${e.id}">Edit</button>
+              <a href="#" class="text-link" data-regen-pin="${e.id}" style="font-size:12px;align-self:center;">Regenerate PIN</a>
+              <button class="btn btn-outline btn-sm" data-delete-employee="${e.id}" style="margin-left:auto;">Remove</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="circuit-line"></div>
+      ${(employees.length < account.plan.limit) ? `
+        <label>Employee Name</label>
+        <div class="row2">
+          <input type="text" id="new-emp-name" placeholder="e.g. Marcus Reyes">
+          <button class="btn btn-gold btn-sm" id="add-emp-btn">Add</button>
+        </div>
+        <div id="emp-error"></div>
+      ` : account.role === 'owner' ? `
+        <div class="msg msg-error">${account.plan.status === 'expired' ? "Your trial ended. Subscribe to add more employees." : `You've reached the ${escapeHtml(TIER_INFO[account.plan.tier]?.name || 'plan')} limit of ${account.plan.limit} employees.`}</div>
+        <div style="padding:8px 0 4px;">
+          ${Object.entries(TIER_INFO).map(([key, t]) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;${account.plan.tier===key?'border-color:var(--gold);':''}">
+              <div>
+                <div style="font-weight:700;font-size:14px;">${t.name} <span class="entry-meta" style="display:inline;">&mdash; up to ${t.limit}</span></div>
+                <div class="mono" style="font-size:13px;color:var(--gold);">${t.price}/mo</div>
+              </div>
+              <a href="${tierLink(key, account)}" target="_blank" rel="noopener" style="text-decoration:none;">
+                <button class="btn btn-gold btn-sm">${account.plan.tier===key?'Current':'Choose'}</button>
+              </a>
+            </div>
+          `).join('')}
+          <button class="btn btn-outline" id="refresh-status-btn" style="margin-top:6px;">Already Subscribed? Refresh Status</button>
+        </div>
+      ` : `
+        <div class="msg msg-error">${account.plan.status === 'expired' ? "The trial ended. Ask the account owner to subscribe." : `You've reached the ${account.plan.limit}-employee limit. Ask the account owner to upgrade.`}</div>
+      `}
+      ${(account.plan.status !== 'subscribed' && account.plan.status !== 'unlimited' && account.role === 'owner') ? `
+        <div style="text-align:center;margin-top:14px;">
+          <a href="#" class="text-link" id="show-redeem">Have an unlock code?</a>
+        </div>
+        <div id="redeem-box" style="display:none;margin-top:12px;">
+          <div class="row2">
+            <input type="text" id="redeem-code-input" placeholder="Enter code">
+            <button class="btn btn-outline btn-sm" id="redeem-btn">Unlock</button>
+          </div>
+          <div id="redeem-error"></div>
+        </div>
+      ` : ''}
+    </div>
+
+    <div class="card">
+      <h2>Manually Clock In</h2>
+      ${employees.length === 0 || sites.length === 0 ? `
+        <div class="entry-meta">Add at least one employee and one job site first.</div>
+      ` : `
+        <label>Employee</label>
+        <select id="manual-clockin-employee">
+          ${employees.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('')}
+        </select>
+        <label>Job Site</label>
+        <select id="manual-clockin-site">
+          ${sites.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')}
+        </select>
+        <div id="manual-clockin-error"></div>
+        <button class="btn btn-gold" id="manual-clockin-btn">Clock In Now</button>
+      `}
+    </div>
+
+    <div class="card">
+      <h2>Job Sites</h2>
+      <div id="sites-list">
+        ${sites.length === 0 ? `<div class="empty-state">No sites yet.</div>` : sites.map(s => {
+          if(editingSiteId === s.id){
+            return `
+            <div class="site-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+              <label>Site Name</label>
+              <input type="text" id="edit-name-${s.id}" value="${escapeHtml(s.name)}">
+              <label>Geofence Radius (feet)</label>
+              <input type="number" id="edit-radius-${s.id}" value="${Math.round(metersToFeet(s.radius))}" min="10">
+              <div class="entry-meta">Center: ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</div>
+              <div id="edit-map-${s.id}" class="site-map" style="height:180px;"></div>
+              <div class="entry-meta" style="margin-bottom:8px;">Tap the map or drag the pin to move this site.</div>
+              <button class="btn btn-outline btn-sm" data-recapture-site="${s.id}" style="width:100%;margin-bottom:8px;">Update to My Current Location</button>
+              <div class="row2">
+                <input type="text" id="edit-address-${s.id}" placeholder="Or enter a new address">
+                <button class="btn btn-outline btn-sm" data-lookup-site="${s.id}">Look Up</button>
+              </div>
+              <div id="edit-address-matches-${s.id}"></div>
+              <div class="row2">
+                <button class="btn btn-gold btn-sm" data-save-site="${s.id}">Save</button>
+                <button class="btn btn-outline btn-sm" data-cancel-edit="${s.id}">Cancel</button>
+              </div>
+            </div>`;
+          }
+          return `
+          <div class="site-row">
+            <div class="site-info">
+              <div class="name">${escapeHtml(s.name)}</div>
+              <div class="meta">${s.lat.toFixed(5)}, ${s.lng.toFixed(5)} &middot; ${fmtDistance(s.radius)} radius</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-outline btn-sm" data-edit-site="${s.id}">Edit</button>
+              <button class="btn btn-outline btn-sm" data-delete-site="${s.id}">Remove</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="circuit-line"></div>
+      <label>Site Name</label>
+      <input type="text" id="new-site-name" placeholder="e.g. J&amp;M Contracting Warehouse">
+      <label>Geofence Radius (feet)</label>
+      <input type="number" id="new-site-radius" value="300" min="10">
+      <div class="entry-meta" style="margin-bottom:10px;">~300 ft suits most job sites and small offices.</div>
+
+      <label>Set Location</label>
+      <div id="new-site-map" class="site-map"></div>
+      <div class="entry-meta" style="margin-bottom:10px;">Tap the map or drag the pin to set the exact spot, or use one of the shortcuts below.</div>
+      <button class="btn btn-outline" id="use-current-loc" style="margin-bottom:10px;">Use My Current Location</button>
+      <div style="text-align:center;color:var(--text-faint);font-size:11px;margin:2px 0 10px;font-family:'JetBrains Mono',monospace;">&mdash; or &mdash;</div>
+      <div class="row2">
+        <input type="text" id="new-site-address" placeholder="Enter an address">
+        <button class="btn btn-outline btn-sm" id="lookup-address-btn">Look Up</button>
+      </div>
+      <div id="address-matches" style="margin-bottom:10px;"></div>
+      <div id="new-site-coords" class="entry-meta" style="margin-bottom:10px;"></div>
+      <button class="btn btn-gold" id="add-site-btn" disabled>Add Site</button>
+    </div>
+
+    <div class="card">
+      <h2>Clock Mode</h2>
+      <div class="entry-meta" style="margin-bottom:12px;">Controls what happens when an employee's phone crosses a job site's geofence. Only works while they have the app open.</div>
+      <div class="mode-options">
+        <div class="mode-option ${(settings.autoMode||'ask')==='manual'?'selected':''}" data-set-mode="manual">
+          <div class="title">Manual</div>
+          <div class="desc">Employees tap Clock In / Clock Out themselves. No automatic prompts.</div>
+        </div>
+        <div class="mode-option ${(settings.autoMode||'ask')==='ask'?'selected':''}" data-set-mode="ask">
+          <div class="title">Ask First</div>
+          <div class="desc">When they arrive or leave, GeoClock asks before clocking them in/out.</div>
+        </div>
+        <div class="mode-option ${(settings.autoMode||'ask')==='auto'?'selected':''}" data-set-mode="auto">
+          <div class="title">Fully Automatic</div>
+          <div class="desc">Clocks them in/out silently the moment they cross the geofence. No tapping, no asking.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="toggle-row">
+        <span>Require a photo to clock in</span>
+        <div class="switch ${settings.requirePhotoOnClockIn ? 'on':''}" id="toggle-photo"><div class="knob"></div></div>
+      </div>
+      <div class="entry-meta">Photo requirement forces Clock Mode to "Ask First" for clocking in, since a photo needs the employee to actually take it. Clocking out never requires a photo or being on-site &mdash; it always works from anywhere, as a safety net.</div>
+    </div>
+
+    <div class="card">
+      <h2>Team</h2>
+      <div class="entry-meta" style="margin-bottom:12px;">${account.role === 'owner' ? "People who can log into this Admin panel besides you. They can manage sites, employees, and time cards, but not billing or the team." : "People who can log into this Admin panel."}</div>
+      <div id="team-list">
+        ${teamMembers.length === 0 ? `<div class="empty-state">No other team members yet.</div>` : teamMembers.map(m => `
+          <div class="site-row">
+            <div class="site-info">
+              <div class="name">${escapeHtml(m.name)}</div>
+              <div class="meta">${escapeHtml(m.email)} &middot; Manager ${m.linkedEmployeeId ? '&middot; <span style="color:var(--green);">Time tracked</span>' : '&middot; <span style="color:var(--text-faint);">Not time-tracked</span>'}</div>
+            </div>
+            ${account.role === 'owner' ? `
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+              ${!m.linkedEmployeeId ? `<button class="btn btn-outline btn-sm" data-link-manager="${m.id}">Enable Time Tracking</button>` : ''}
+              <button class="btn btn-outline btn-sm" data-reset-manager="${m.id}">Reset Password</button>
+              <button class="btn btn-outline btn-sm" data-remove-manager="${m.id}">Remove</button>
+            </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+      ${account.role === 'owner' ? `
+      <div class="circuit-line"></div>
+      <label>Name</label>
+      <input type="text" id="new-manager-name" placeholder="e.g. Jordan Smith">
+      <label>Email</label>
+      <input type="email" id="new-manager-email" placeholder="jordan@example.com">
+      <label>Password</label>
+      <input type="password" id="new-manager-password" placeholder="6+ characters">
+      <div class="toggle-row">
+        <span>Track their hours as an employee too</span>
+        <div class="switch on" id="toggle-track-time"><div class="knob"></div></div>
+      </div>
+      <div class="entry-meta" style="margin-bottom:10px;">Counts against your employee limit, same as any other employee.</div>
+      <div id="manager-error"></div>
+      <button class="btn btn-gold" id="add-manager-btn">Add Team Member</button>
+      ` : ''}
+    </div>
+
+    <div class="card">
+      <h2>Employee Hours (completed shifts)</h2>
+      ${empRows.length === 0 ? `<div class="empty-state">No completed shifts yet.</div>` : empRows.map(([name,hrs]) => `
+        <div class="entry-row">
+          <div class="entry-left"><div class="entry-name">${escapeHtml(name)}</div></div>
+          <div class="entry-hours">${hrs.toFixed(2)}h</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card">
+      <h2>All Entries</h2>
+      ${allEntriesSorted.length === 0 ? `<div class="empty-state">No entries yet.</div>` : allEntriesSorted.map(e => {
+        const site = sites.find(s=>s.id===e.siteId);
+        const hrs = e.clockOut ? hoursBetween(e.clockIn,e.clockOut).toFixed(2)+'h' : 'active';
+        if(editingEntryId === e.id){
+          return `<div class="entry-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+            <div class="entry-name">${escapeHtml(e.employee)} &middot; ${escapeHtml(site?site.name:'?')}</div>
+            <label>Clock In</label>
+            <input type="datetime-local" id="edit-entry-in-${e.id}" value="${toLocalInputValue(e.clockIn)}">
+            <label>Clock Out ${e.clockOut ? '' : '<span class="entry-meta">(currently still clocked in)</span>'}</label>
+            <input type="datetime-local" id="edit-entry-out-${e.id}" value="${e.clockOut ? toLocalInputValue(e.clockOut) : ''}">
+            <div id="edit-entry-error-${e.id}"></div>
+            <div class="row2">
+              <button class="btn btn-gold btn-sm" data-save-entry="${e.id}">Save</button>
+              <button class="btn btn-outline btn-sm" data-cancel-entry-edit="${e.id}">Cancel</button>
+            </div>
+          </div>`;
+        }
+        return `<div class="entry-row">
+          <div class="entry-left" style="display:flex;align-items:center;gap:10px;">
+            ${e.photo ? `<a href="${e.photo}" target="_blank" rel="noopener"><img src="${e.photo}" style="width:38px;height:38px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;"></a>` : ''}
+            <div>
+              <div class="entry-name">${escapeHtml(e.employee)}</div>
+              <div class="entry-meta">${escapeHtml(site?site.name:'?')} &middot; ${fmtDate(e.clockIn)} ${fmtTime(e.clockIn)}${e.clockOut ? ' &rarr; '+fmtTime(e.clockOut):''} ${e.editedByAdmin ? '<span style="color:var(--gold);">&middot; edited</span>' : ''}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="entry-hours">${hrs}</div>
+            ${!e.clockOut ? `<button class="btn btn-red btn-sm" data-quick-clockout="${e.id}">Clock Out</button>` : ''}
+            <button class="btn btn-outline btn-sm" data-edit-entry="${e.id}">Edit</button>
+            <button class="btn btn-outline btn-sm" data-delete-entry="${e.id}">&times;</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+
+  wireDashboardEvents(el);
+}
+
+function wireDashboardEvents(el){
+  document.getElementById('log-out').addEventListener('click', (ev) => {
+    ev.preventDefault();
+    stopMyGeofenceWatch();
+    token = null;
+    account = null;
+    localStorage.removeItem('gc_token');
+    adminScreen = 'login';
+    renderAdmin();
+  });
+
+  const myClockinBtn = document.getElementById('my-clockin-btn');
+  if(myClockinBtn){
+    myClockinBtn.addEventListener('click', handleMyClockIn);
+  }
+  const myClockoutBtn = document.getElementById('my-clockout-btn');
+  if(myClockoutBtn){
+    myClockoutBtn.addEventListener('click', handleMyClockOut);
+  }
+  const mySiteSelect = document.getElementById('my-site-select');
+  if(mySiteSelect){
+    mySiteSelect.addEventListener('change', (ev) => { myClockInSiteId = ev.target.value; });
+  }
+
+  document.getElementById('copy-link').addEventListener('click', () => {
+    const text = document.getElementById('clockin-link').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-link');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+  });
+
+  const manualClockinBtn = document.getElementById('manual-clockin-btn');
+  if(manualClockinBtn){
+    manualClockinBtn.addEventListener('click', async () => {
+      const employeeId = document.getElementById('manual-clockin-employee').value;
+      const siteId = document.getElementById('manual-clockin-site').value;
+      const errEl = document.getElementById('manual-clockin-error');
+      try{
+        await api('/api/data?resource=entries', { method:'POST', body: JSON.stringify({ employeeId, siteId }) });
+        renderAdmin();
+      }catch(err){
+        errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-quick-clockout]').forEach(b => {
+    b.addEventListener('click', async () => {
+      if(!confirm("Clock this person out now?")) return;
+      await api(`/api/data?resource=entries&id=${b.dataset.quickClockout}`, { method:'PATCH' });
+      renderAdmin();
+    });
+  });
+
+  const trackTimeToggle = document.getElementById('toggle-track-time');
+  if(trackTimeToggle){
+    trackTimeToggle.addEventListener('click', () => {
+      trackTimeToggle.classList.toggle('on');
+    });
+  }
+
+  const addManagerBtn = document.getElementById('add-manager-btn');
+  if(addManagerBtn){
+    addManagerBtn.addEventListener('click', async () => {
+      const name = document.getElementById('new-manager-name').value.trim();
+      const email = document.getElementById('new-manager-email').value.trim();
+      const password = document.getElementById('new-manager-password').value;
+      const trackTime = document.getElementById('toggle-track-time').classList.contains('on');
+      const errEl = document.getElementById('manager-error');
+      if(!name || !email || !password) return;
+      try{
+        const data = await api('/api/team', { method:'POST', body: JSON.stringify({ name, email, password, trackTime }) });
+        renderAdmin();
+        if(data.note) alert(data.note);
+      }catch(err){
+        errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-remove-manager]').forEach(b => {
+    b.addEventListener('click', async () => {
+      if(!confirm("Remove this team member's access?")) return;
+      await api(`/api/team?id=${b.dataset.removeManager}`, { method:'DELETE' });
+      renderAdmin();
+    });
+  });
+
+  document.querySelectorAll('[data-link-manager]').forEach(b => {
+    b.addEventListener('click', async () => {
+      try{
+        await api(`/api/team?id=${b.dataset.linkManager}`, { method:'PUT', body: JSON.stringify({ linkTimeTracking: true }) });
+        renderAdmin();
+      }catch(err){
+        alert(err.message);
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-reset-manager]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const newPassword = prompt("Enter a new password for this team member (6+ characters):");
+      if(!newPassword) return;
+      if(newPassword.length < 6){ alert("Password must be 6+ characters."); return; }
+      try{
+        await api(`/api/team?id=${b.dataset.resetManager}`, { method:'PUT', body: JSON.stringify({ password: newPassword }) });
+        alert("Password updated.");
+      }catch(err){
+        alert(err.message);
+      }
+    });
+  });
+
+  const addEmpBtn = document.getElementById('add-emp-btn');
+  if(addEmpBtn){
+    addEmpBtn.addEventListener('click', async () => {
+      const nameInput = document.getElementById('new-emp-name');
+      const name = nameInput.value.trim();
+      const errEl = document.getElementById('emp-error');
+      if(!name) return;
+      try{
+        const data = await api('/api/data?resource=employees', { method:'POST', body: JSON.stringify({ name }) });
+        renderAdmin();
+        alert(`${name} was added. Their PIN is ${data.employee.pin} - give this to them so they can log in and clock in/out.`);
+      }catch(err){
+        errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-regen-pin]').forEach(b => {
+    b.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const id = b.dataset.regenPin;
+      if(!confirm("Generate a new PIN for this employee? Their old PIN will stop working.")) return;
+      const data = await api(`/api/data?resource=employees&id=${id}`, { method:'PUT', body: JSON.stringify({ regeneratePin: true }) });
+      renderAdmin();
+      alert(`New PIN: ${data.employee.pin}`);
+    });
+  });
+
+  document.querySelectorAll('[data-edit-employee]').forEach(b => {
+    b.addEventListener('click', () => { editingEmployeeId = b.dataset.editEmployee; renderDashboard(el); });
+  });
+  document.querySelectorAll('[data-cancel-employee-edit]').forEach(b => {
+    b.addEventListener('click', () => { editingEmployeeId = null; renderDashboard(el); });
+  });
+  document.querySelectorAll('[data-save-employee]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const id = b.dataset.saveEmployee;
+      const name = document.getElementById(`edit-emp-name-${id}`).value.trim();
+      const phone = document.getElementById(`edit-emp-phone-${id}`).value.trim();
+      const email = document.getElementById(`edit-emp-email-${id}`).value.trim();
+      const errEl = document.getElementById(`edit-emp-error-${id}`);
+      if(!name){ errEl.innerHTML = `<div class="msg msg-error">Name is required.</div>`; return; }
+      try{
+        await api(`/api/data?resource=employees&id=${id}`, { method:'PUT', body: JSON.stringify({ name, phone, email }) });
+        editingEmployeeId = null;
+        renderAdmin();
+      }catch(err){
+        errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-delete-employee]').forEach(b => {
+    b.addEventListener('click', async () => {
+      if(!confirm("Remove this employee? They won't be able to clock in until re-added.")) return;
+      await api(`/api/data?resource=employees&id=${b.dataset.deleteEmployee}`, { method:'DELETE' });
+      renderAdmin();
+    });
+  });
+
+  const refreshBtn = document.getElementById('refresh-status-btn');
+  if(refreshBtn){
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.textContent = 'Checking...';
+      refreshBtn.disabled = true;
+      try{
+        account = await api('/api/me');
+        renderAdmin();
+      }catch(err){
+        refreshBtn.textContent = 'Already Subscribed? Refresh Status';
+        refreshBtn.disabled = false;
+      }
+    });
+  }
+
+  const showRedeemLink = document.getElementById('show-redeem');
+  if(showRedeemLink){
+    showRedeemLink.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const box = document.getElementById('redeem-box');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+
+  const redeemBtn = document.getElementById('redeem-btn');
+  if(redeemBtn){
+    redeemBtn.addEventListener('click', async () => {
+      const codeInput = document.getElementById('redeem-code-input');
+      const errEl = document.getElementById('redeem-error');
+      const code = codeInput.value.trim();
+      if(!code) return;
+      redeemBtn.disabled = true;
+      redeemBtn.textContent = 'Checking...';
+      try{
+        await api('/api/redeem', { method:'POST', body: JSON.stringify({ code }) });
+        account = await api('/api/me');
+        renderAdmin();
+      }catch(err){
+        errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+        redeemBtn.disabled = false;
+        redeemBtn.textContent = 'Unlock';
+      }
+    });
+  }
+
+  let pendingCoords = null;
+
+  // Set up the interactive map. Default view is a wide US shot until the
+  // admin taps the map, drags the pin, uses their location, or searches an
+  // address - all three feed into the same marker + geofence circle.
+  if(siteMapInstance){ siteMapInstance.remove(); siteMapInstance = null; }
+  siteMapInstance = L.map('new-site-map', { attributionControl: false }).setView([39.8283, -98.5795], 4);
+  addMapViewToggle(siteMapInstance);
+  L.control.attribution({ prefix: false }).addTo(siteMapInstance).addAttribution('&copy; OpenStreetMap &copy; CARTO &copy; Esri');
+  siteMapMarker = null;
+  siteMapCircle = null;
+
+  function currentRadiusMeters(){
+    const ft = parseInt(document.getElementById('new-site-radius').value, 10) || 300;
+    return feetToMeters(ft);
+  }
+
+  function setMapPin(lat, lng, recenter){
+    pendingCoords = { lat, lng };
+    if(!siteMapMarker){
+      siteMapMarker = L.marker([lat, lng], { draggable: true }).addTo(siteMapInstance);
+      siteMapMarker.on('dragend', () => {
+        const pos = siteMapMarker.getLatLng();
+        setMapPin(pos.lat, pos.lng, false);
+      });
+      siteMapCircle = L.circle([lat, lng], {
+        radius: currentRadiusMeters(), color: '#d4af37', fillColor: '#d4af37', fillOpacity: 0.15, weight: 2
+      }).addTo(siteMapInstance);
+    } else {
+      siteMapMarker.setLatLng([lat, lng]);
+      siteMapCircle.setLatLng([lat, lng]);
+    }
+    if(recenter){ siteMapInstance.setView([lat, lng], 16); }
+    document.getElementById('new-site-coords').textContent = `Pin set: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    document.getElementById('add-site-btn').disabled = false;
+  }
+
+  siteMapInstance.on('click', (e) => setMapPin(e.latlng.lat, e.latlng.lng, false));
+
+  const radiusInput = document.getElementById('new-site-radius');
+  if(radiusInput){
+    radiusInput.addEventListener('input', () => {
+      if(siteMapCircle) siteMapCircle.setRadius(currentRadiusMeters());
+    });
+  }
+
+  document.getElementById('use-current-loc').addEventListener('click', async () => {
+    const coordEl = document.getElementById('new-site-coords');
+    document.getElementById('address-matches').innerHTML = '';
+    coordEl.innerHTML = `<span class="spinner"></span> Getting location...`;
+    try{
+      const coords = await getPosition();
+      setMapPin(coords.latitude, coords.longitude, true);
+    }catch(err){
+      coordEl.innerHTML = `<span style="color:var(--red);">${escapeHtml(err.message)}</span>`;
+    }
+  });
+
+  document.getElementById('lookup-address-btn').addEventListener('click', async () => {
+    const addressInput = document.getElementById('new-site-address');
+    const address = addressInput.value.trim();
+    const matchesEl = document.getElementById('address-matches');
+    const coordEl = document.getElementById('new-site-coords');
+    if(!address) return;
+    matchesEl.innerHTML = `<div class="entry-meta"><span class="spinner"></span> Looking up address...</div>`;
+    coordEl.innerHTML = '';
+    try{
+      const data = await api(`/api/geocode?address=${encodeURIComponent(address)}`);
+      if(data.matches.length === 1){
+        setMapPin(data.matches[0].lat, data.matches[0].lng, true);
+        matchesEl.innerHTML = '';
+      } else {
+        matchesEl.innerHTML = `
+          <div class="entry-meta" style="margin-bottom:8px;">Multiple matches found &mdash; pick the right one:</div>
+          <div class="pick-list">
+            ${data.matches.map((m,i) => `<button class="pick-btn" data-match-index="${i}" style="font-size:14px;padding:12px 14px;">${escapeHtml(m.displayName)}</button>`).join('')}
+          </div>`;
+        data.matches.forEach((m, i) => {
+          document.querySelector(`[data-match-index="${i}"]`).addEventListener('click', () => {
+            setMapPin(m.lat, m.lng, true);
+            matchesEl.innerHTML = '';
+          });
+        });
+      }
+    }catch(err){
+      matchesEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+    }
+  });
+
+  document.getElementById('add-site-btn').addEventListener('click', async () => {
+    const name = document.getElementById('new-site-name').value.trim();
+    const radiusFt = parseInt(document.getElementById('new-site-radius').value, 10) || 300;
+    if(!name || !pendingCoords) return;
+    await api('/api/data?resource=sites', { method:'POST', body: JSON.stringify({ name, lat: pendingCoords.lat, lng: pendingCoords.lng, radius: feetToMeters(radiusFt) }) });
+    pendingCoords = null;
+    renderAdmin();
+  });
+
+  document.querySelectorAll('[data-delete-site]').forEach(b => {
+    b.addEventListener('click', async () => {
+      if(!confirm("Remove this site?")) return;
+      await api(`/api/data?resource=sites&id=${b.dataset.deleteSite}`, { method:'DELETE' });
+      renderAdmin();
+    });
+  });
+
+  document.querySelectorAll('[data-edit-site]').forEach(b => {
+    b.addEventListener('click', () => { editingSiteId = b.dataset.editSite; renderDashboard(el); });
+  });
+  document.querySelectorAll('[data-cancel-edit]').forEach(b => {
+    b.addEventListener('click', () => { editingSiteId = null; renderDashboard(el); });
+  });
+
+  if(editingSiteId){
+    const editSite = sites.find(s => s.id === editingSiteId);
+    const mapContainer = document.getElementById(`edit-map-${editingSiteId}`);
+    if(editSite && mapContainer){
+      const emap = L.map(mapContainer, { attributionControl: false }).setView([editSite.lat, editSite.lng], 16);
+      addMapViewToggle(emap);
+      L.control.attribution({ prefix: false }).addTo(emap).addAttribution('&copy; OpenStreetMap &copy; CARTO &copy; Esri');
+      const emarker = L.marker([editSite.lat, editSite.lng], { draggable: true }).addTo(emap);
+      const ecircle = L.circle([editSite.lat, editSite.lng], {
+        radius: editSite.radius, color: '#d4af37', fillColor: '#d4af37', fillOpacity: 0.15, weight: 2
+      }).addTo(emap);
+
+      async function applyEditPin(lat, lng){
+        emarker.setLatLng([lat, lng]);
+        ecircle.setLatLng([lat, lng]);
+        try{
+          await api(`/api/data?resource=sites&id=${editingSiteId}`, { method:'PUT', body: JSON.stringify({ lat, lng }) });
+          editSite.lat = lat;
+          editSite.lng = lng;
+        }catch(err){
+          alert(err.message);
+        }
+      }
+
+      emarker.on('dragend', () => { const p = emarker.getLatLng(); applyEditPin(p.lat, p.lng); });
+      emap.on('click', (e) => applyEditPin(e.latlng.lat, e.latlng.lng));
+
+      const editRadiusInput = document.getElementById(`edit-radius-${editingSiteId}`);
+      if(editRadiusInput){
+        editRadiusInput.addEventListener('input', () => {
+          const ft = parseInt(editRadiusInput.value, 10) || 300;
+          ecircle.setRadius(feetToMeters(ft));
+        });
+      }
+    }
+  }
+  document.querySelectorAll('[data-recapture-site]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const id = b.dataset.recaptureSite;
+      const original = b.textContent;
+      b.textContent = 'Getting location...';
+      b.disabled = true;
+      try{
+        const coords = await getPosition();
+        await api(`/api/data?resource=sites&id=${id}`, { method:'PUT', body: JSON.stringify({ lat: coords.latitude, lng: coords.longitude }) });
+        renderAdmin();
+      }catch(err){
+        alert(err.message);
+        b.textContent = original;
+        b.disabled = false;
+      }
+    });
+  });
+  document.querySelectorAll('[data-lookup-site]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const id = b.dataset.lookupSite;
+      const addressInput = document.getElementById(`edit-address-${id}`);
+      const matchesEl = document.getElementById(`edit-address-matches-${id}`);
+      const address = addressInput.value.trim();
+      if(!address) return;
+      matchesEl.innerHTML = `<div class="entry-meta"><span class="spinner"></span> Looking up address...</div>`;
+      try{
+        const data = await api(`/api/geocode?address=${encodeURIComponent(address)}`);
+        const applyMatch = async (m) => {
+          matchesEl.innerHTML = `<div class="entry-meta"><span class="spinner"></span> Updating...</div>`;
+          await api(`/api/data?resource=sites&id=${id}`, { method:'PUT', body: JSON.stringify({ lat: m.lat, lng: m.lng }) });
+          renderAdmin();
+        };
+        if(data.matches.length === 1){
+          await applyMatch(data.matches[0]);
+        } else {
+          matchesEl.innerHTML = `
+            <div class="entry-meta" style="margin:8px 0;">Pick the right one:</div>
+            <div class="pick-list">
+              ${data.matches.map((m,i) => `<button class="pick-btn" data-edit-match="${id}-${i}" style="font-size:13px;padding:10px 12px;">${escapeHtml(m.displayName)}</button>`).join('')}
+            </div>`;
+          data.matches.forEach((m, i) => {
+            document.querySelector(`[data-edit-match="${id}-${i}"]`).addEventListener('click', () => applyMatch(m));
+          });
+        }
+      }catch(err){
+        matchesEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      }
+    });
+  });
+  document.querySelectorAll('[data-save-site]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const id = b.dataset.saveSite;
+      const name = document.getElementById(`edit-name-${id}`).value.trim();
+      const radiusFt = parseInt(document.getElementById(`edit-radius-${id}`).value, 10);
+      if(!name || !radiusFt) return;
+      await api(`/api/data?resource=sites&id=${id}`, { method:'PUT', body: JSON.stringify({ name, radius: feetToMeters(radiusFt) }) });
+      editingSiteId = null;
+      renderAdmin();
+    });
+  });
+
+  document.getElementById('toggle-photo').addEventListener('click', async () => {
+    settings.requirePhotoOnClockIn = !settings.requirePhotoOnClockIn;
+    await api('/api/data?resource=settings', { method:'PATCH', body: JSON.stringify({ requirePhotoOnClockIn: settings.requirePhotoOnClockIn }) });
+    renderAdmin();
+  });
+
+  document.querySelectorAll('[data-set-mode]').forEach(el2 => {
+    el2.addEventListener('click', async () => {
+      settings.autoMode = el2.dataset.setMode;
+      await api('/api/data?resource=settings', { method:'PATCH', body: JSON.stringify({ autoMode: settings.autoMode }) });
+      renderAdmin();
+    });
+  });
+
+  document.querySelectorAll('[data-delete-entry]').forEach(b => {
+    b.addEventListener('click', async () => {
+      if(!confirm("Delete this entry?")) return;
+      await api(`/api/data?resource=entries&id=${b.dataset.deleteEntry}`, { method:'DELETE' });
+      renderAdmin();
+    });
+  });
+
+  document.querySelectorAll('[data-edit-entry]').forEach(b => {
+    b.addEventListener('click', () => { editingEntryId = b.dataset.editEntry; renderDashboard(el); });
+  });
+  document.querySelectorAll('[data-cancel-entry-edit]').forEach(b => {
+    b.addEventListener('click', () => { editingEntryId = null; renderDashboard(el); });
+  });
+  document.querySelectorAll('[data-save-entry]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const id = b.dataset.saveEntry;
+      const inVal = document.getElementById(`edit-entry-in-${id}`).value;
+      const outVal = document.getElementById(`edit-entry-out-${id}`).value;
+      const errEl = document.getElementById(`edit-entry-error-${id}`);
+      if(!inVal){ errEl.innerHTML = `<div class="msg msg-error">Clock-in time is required.</div>`; return; }
+      try{
+        await api(`/api/data?resource=entries&id=${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ clockIn: new Date(inVal).toISOString(), clockOut: outVal ? new Date(outVal).toISOString() : null })
+        });
+        editingEntryId = null;
+        renderAdmin();
+      }catch(err){
+        errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      }
+    });
+  });
+
+  document.getElementById('export-csv').addEventListener('click', (ev) => {
+    ev.preventDefault();
+    const allEntriesSorted = [...entries].sort((a,b) => new Date(b.clockIn) - new Date(a.clockIn));
+    const rows = [["Employee","Site","Clock In","Clock Out","Hours"]];
+    allEntriesSorted.forEach(e => {
+      const site = sites.find(s=>s.id===e.siteId);
+      rows.push([e.employee, site?site.name:"", e.clockIn, e.clockOut||"", e.clockOut?hoursBetween(e.clockIn,e.clockOut).toFixed(2):""]);
+    });
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'geoclock-timesheet.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('export-pdf').addEventListener('click', (ev) => {
+    ev.preventDefault();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const byEmployeePdf = {};
+    entries.forEach(e => { if(!e.clockOut) return; byEmployeePdf[e.employee] = (byEmployeePdf[e.employee]||0) + hoursBetween(e.clockIn,e.clockOut); });
+    const summaryRows = Object.entries(byEmployeePdf).sort((a,b)=>b[1]-a[1]).map(([name,hrs]) => [name, hrs.toFixed(2)]);
+    const totalAll = Object.values(byEmployeePdf).reduce((a,b)=>a+b,0);
+
+    doc.setFontSize(18);
+    doc.setTextColor(20,25,45);
+    doc.text('GeoClock Payroll Report', 14, 18);
+    doc.setFontSize(11);
+    doc.setTextColor(90,95,110);
+    doc.text(`${account.businessName}`, 14, 26);
+    doc.text(`Generated ${new Date().toLocaleString()}`, 14, 32);
+
+    doc.autoTable({
+      startY: 40,
+      head: [['Employee', 'Total Hours']],
+      body: summaryRows.length ? summaryRows : [['No completed shifts yet', '']],
+      foot: [['Total', totalAll.toFixed(2)]],
+      headStyles: { fillColor: [10, 17, 40] },
+      footStyles: { fillColor: [212, 175, 55], textColor: [10,17,40], fontStyle: 'bold' },
+      theme: 'striped'
+    });
+
+    const detailRows = [...entries].sort((a,b) => new Date(b.clockIn) - new Date(a.clockIn)).map(e => {
+      const site = sites.find(s=>s.id===e.siteId);
+      return [
+        e.employee,
+        site ? site.name : '',
+        new Date(e.clockIn).toLocaleString(),
+        e.clockOut ? new Date(e.clockOut).toLocaleString() : 'Active',
+        e.clockOut ? hoursBetween(e.clockIn, e.clockOut).toFixed(2) : ''
+      ];
+    });
+
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 12,
+      head: [['Employee', 'Site', 'Clock In', 'Clock Out', 'Hours']],
+      body: detailRows.length ? detailRows : [['No entries yet', '', '', '', '']],
+      headStyles: { fillColor: [10, 17, 40] },
+      styles: { fontSize: 8 },
+      theme: 'striped'
+    });
+
+    doc.save('geoclock-payroll.pdf');
+  });
+}
+
+// ---------- super admin (platform owner view, not a business admin) ----------
+let superAdminKey = '';
+
+function renderSuperAdminLogin(){
+  const el = document.getElementById('super-admin-view');
+  el.innerHTML = `
+    <div class="card">
+      <h2>Platform Signups</h2>
+      <div class="entry-meta" style="margin-bottom:14px;">Enter your super admin key to see every business that's signed up.</div>
+      <input type="password" id="sa-key-input" placeholder="Super admin key">
+      <div id="sa-error"></div>
+      <button class="btn btn-gold" id="sa-submit">View Signups</button>
+    </div>
+  `;
+  document.getElementById('sa-submit').addEventListener('click', async () => {
+    const val = document.getElementById('sa-key-input').value;
+    const errEl = document.getElementById('sa-error');
+    if(!val) return;
+    superAdminKey = val;
+    try{
+      await renderSuperAdminDashboard();
+    }catch(err){
+      errEl.innerHTML = `<div class="msg msg-error">${escapeHtml(err.message)}</div>`;
+      superAdminKey = '';
+    }
+  });
+}
+
+async function superAdminApi(path){
+  const res = await fetch(path, { headers: { 'x-super-admin-key': superAdminKey } });
+  let data = null;
+  try{ data = await res.json(); }catch(e){}
+  if(!res.ok){
+    const err = new Error((data && data.error) || 'Request failed');
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+async function renderSuperAdminDashboard(){
+  const el = document.getElementById('super-admin-view');
+  el.innerHTML = `<div class="card"><div class="empty-state"><span class="spinner"></span> Loading&hellip;</div></div>`;
+  const data = await superAdminApi('/api/super-admin');
+
+  el.innerHTML = `
+    <div class="card">
+      <h2>Platform Signups</h2>
+      <div class="summary-grid">
+        <div class="summary-box"><div class="num">${data.summary.total}</div><div class="lbl">Total Signups</div></div>
+        <div class="summary-box"><div class="num">${data.summary.trial}</div><div class="lbl">On Trial</div></div>
+        <div class="summary-box"><div class="num">${data.summary.subscribed}</div><div class="lbl">Subscribed</div></div>
+        <div class="summary-box"><div class="num">${data.summary.expired}</div><div class="lbl">Trial Expired</div></div>
+      </div>
+      <a href="#" class="export-link" id="sa-refresh">&#8635; Refresh</a>
+    </div>
+    <div class="card">
+      ${data.accounts.length === 0 ? `<div class="empty-state">No signups yet.</div>` : data.accounts.map(a => `
+        <div class="entry-row">
+          <div class="entry-left">
+            <div class="entry-name">${escapeHtml(a.businessName)}</div>
+            <div class="entry-meta">${escapeHtml(a.email)} &middot; ${a.employeeCount} employee${a.employeeCount===1?'':'s'} &middot; ${fmtDate(a.createdAt)}</div>
+          </div>
+          <div>${planPillHtml(a.plan)}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('sa-refresh').addEventListener('click', (ev) => {
+    ev.preventDefault();
+    renderSuperAdminDashboard();
+  });
+}
+
+// ---------- tabs ----------
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    document.getElementById('employee-view').style.display = which === 'employee' ? 'block' : 'none';
+    document.getElementById('admin-view').style.display = which === 'admin' ? 'block' : 'none';
+    if(which === 'admin') renderAdmin();
+  });
+});
+
+// ---------- init ----------
+(function init(){
+  const params = new URLSearchParams(location.search);
+  const tabBar = document.getElementById('tab-bar');
+
+  if(params.get('superadmin') === '1'){
+    if(tabBar) tabBar.style.display = 'none';
+    document.getElementById('employee-view').style.display = 'none';
+    document.getElementById('admin-view').style.display = 'none';
+    document.getElementById('super-admin-view').style.display = 'block';
+    renderSuperAdminLogin();
+    return;
+  }
+
+  // Restore a mid-shift session if one was saved (see syncSessionPersistence) -
+  // only valid for the same company link, and only ever exists while someone
+  // was actually clocked in when the tab/app last closed.
+  if(companyCode){
+    try{
+      const saved = JSON.parse(localStorage.getItem('gc_active_session') || 'null');
+      if(saved && saved.companyCode === companyCode){
+        employeeToken = saved.employeeToken;
+        employeeId = saved.employeeId;
+        employeeName = saved.employeeName;
+      }
+    }catch(e){ /* ignore malformed storage */ }
+  }
+
+  renderInstallBanner();
+
+  if(params.get('paid') === '1'){
+    document.querySelector('.tab[data-tab="admin"]').click();
+  } else if(params.get('signup') === '1'){
+    adminScreen = 'signup';
+    document.querySelector('.tab[data-tab="admin"]').click();
+  } else if (companyCode) {
+    // Someone arrived via a plain employee clock-in link (?company=CODE).
+    // Employees should only ever see the clock-in screen - no Admin tab,
+    // no way to even discover it's there. Admin access lives at the bare
+    // app URL (or the ?signup=1 / ?paid=1 links), never here.
+    if(tabBar) tabBar.style.display = 'none';
+    document.querySelector('.tab[data-tab="employee"]').classList.add('active');
+    document.querySelector('.tab[data-tab="admin"]').classList.remove('active');
+    renderEmployee();
+  } else {
+    renderEmployee();
+  }
+})();
+</script>
+</body>
+</html>
