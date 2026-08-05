@@ -151,6 +151,15 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .ai-chat-input::placeholder{color:#4a5270}
 .btn-ai-send{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px #6366f140}
 .btn-ai-send:disabled{opacity:.5;pointer-events:none}
+.btn-ai-photo{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:#1a1f2e;border:1px solid #3a4060;color:#8b8fff;display:flex;align-items:center;justify-content:center}
+.btn-ai-photo:active{border-color:#6366f1;background:#6366f115}
+.btn-ai-photo:disabled{opacity:.5;pointer-events:none}
+.ai-photo-chip{position:relative;display:inline-flex;align-items:center;gap:8px;background:#1a1f2e;border:1px solid #3a4060;border-radius:12px;padding:6px 10px 6px 6px;margin-bottom:8px}
+.ai-photo-chip img{width:40px;height:40px;object-fit:cover;border-radius:8px}
+.ai-photo-label{font-size:12px;color:#8b8fff;font-weight:500}
+.ai-photo-remove{width:20px;height:20px;border-radius:50%;background:#2a2f45;color:#8B95A8;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-photo-remove:active{background:#EF444430;color:#EF4444}
+.ai-msg-photo{display:block;width:100%;max-width:220px;border-radius:10px;margin-bottom:6px}
 .btn-ai-gapcheck{width:100%;margin-top:10px;padding:10px;background:#1a1f2e;border:1px dashed #3a4060;border-radius:var(--r-sm);color:#8b8fff;font-size:12.5px;font-weight:500}
 .btn-ai-gapcheck:active{border-color:#6366f1;background:#6366f115}
 .btn-ai-gapcheck:disabled{opacity:.5;pointer-events:none}
@@ -1669,12 +1678,15 @@ function pgBuilder() {
       + '<button class="ai-chat-clear" onclick="clearAiChat()" title="Start over">Reset</button></div>';
   html+='<div class="ai-body">';
   html+='<div id="ai-thread" class="ai-thread">' + buildAiThread() + '</div>';
+  html+='<div id="ai-photo-preview"></div>';
   html+='<div class="ai-input-row">'
+      + '<input type="file" id="ai-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(this)">'
+      + '<button class="btn-ai-photo" id="ai-photo-btn" onclick="document.getElementById(\'ai-photo-input\').click()" title="Add a photo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>'
       + '<textarea class="ai-chat-input" id="ai-in" placeholder="Describe the job, or ask me to add/remove/change items..." rows="1" oninput="autoGrowAiInput(this)"></textarea>'
       + '<button class="btn-ai-send" id="ai-send-btn" onclick="sendAiChat()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>'
       + '</div>';
   html+='<button class="btn-ai-gapcheck" id="ai-gapcheck-btn" onclick="checkForGaps()">&#128269; Check for anything I might have missed</button>';
-  html+='<div class="ai-hint">Try: "add a permit fee" &middot; "remove the tile item" &middot; "make the flooring 300 sqft instead"</div>';
+  html+='<div class="ai-hint">Try: "add a permit fee" &middot; snap a photo of the job &middot; "make the flooring 300 sqft instead"</div>';
   html+='</div></div></div>';
 
   // CLIENT INFO
@@ -2330,7 +2342,8 @@ function buildAiThread() {
   var html = '';
   chat.forEach(function(msg) {
     if (msg.role === 'user') {
-      html += '<div class="ai-msg ai-msg-user"><div class="ai-bubble ai-bubble-user">' + esc(msg.content) + '</div></div>';
+      var photoHtml = msg.photo ? '<img class="ai-msg-photo" src="' + msg.photo + '" alt="Uploaded photo">' : '';
+      html += '<div class="ai-msg ai-msg-user"><div class="ai-bubble ai-bubble-user">' + photoHtml + esc(msg.content) + '</div></div>';
     } else {
       html += '<div class="ai-msg ai-msg-ai"><div class="ai-bubble ai-bubble-ai">' + esc(msg.content) + '</div>';
       if (msg.actionsSummary) {
@@ -2358,6 +2371,81 @@ function clearAiChat() {
   if (t) t.innerHTML = buildAiThread();
   var i = document.getElementById('ai-in');
   if (i) i.value = '';
+  clearPendingPhoto();
+}
+
+// ── PHOTO UPLOAD FOR AI ───────────────────────
+// pendingPhoto holds a base64 data URL + mime type until the user
+// hits send — at which point it rides along with their text message.
+var pendingPhoto = null;
+
+function handlePhotoSelect(inputEl) {
+  var file = inputEl.files && inputEl.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    toast('Please choose an image file', 'err');
+    inputEl.value = '';
+    return;
+  }
+  // Keep raw uploads reasonable — mobile photos can be 5-10MB+ which is
+  // slow to upload on a job site and unnecessary for the AI to read clearly.
+  if (file.size > 12 * 1024 * 1024) {
+    toast('Photo is too large — try a smaller image', 'err');
+    inputEl.value = '';
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onload = function() {
+    resizeImageForUpload(reader.result, function(resizedDataUrl) {
+      pendingPhoto = resizedDataUrl;
+      renderPhotoPreview();
+    });
+  };
+  reader.onerror = function() {
+    toast('Could not read that photo, try again', 'err');
+  };
+  reader.readAsDataURL(file);
+  inputEl.value = ''; // allow selecting the same file again later
+}
+
+// Downscale large phone photos client-side before they ever leave the device —
+// keeps uploads fast on job-site connections and keeps the API payload small.
+function resizeImageForUpload(dataUrl, callback) {
+  var img = new Image();
+  img.onload = function() {
+    var maxDim = 1280;
+    var w = img.width, h = img.height;
+    if (w > maxDim || h > maxDim) {
+      if (w > h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+      else { w = Math.round(w * (maxDim / h)); h = maxDim; }
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', 0.82));
+  };
+  img.onerror = function() { callback(dataUrl); }; // fall back to original if resize fails
+  img.src = dataUrl;
+}
+
+function renderPhotoPreview() {
+  var el = document.getElementById('ai-photo-preview');
+  if (!el) return;
+  if (!pendingPhoto) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="ai-photo-chip">'
+    + '<img src="' + pendingPhoto + '" alt="Selected photo">'
+    + '<button class="ai-photo-remove" onclick="clearPendingPhoto()">&#10005;</button>'
+    + '<span class="ai-photo-label">Photo attached</span>'
+    + '</div>';
+}
+
+function clearPendingPhoto() {
+  pendingPhoto = null;
+  var el = document.getElementById('ai-photo-preview');
+  if (el) el.innerHTML = '';
 }
 
 async function checkForGaps() {
@@ -2380,18 +2468,24 @@ async function sendAiChat() {
   if (!inp || !thread) return;
 
   var text = inp.value.trim();
-  if (!text) return;
+  var photo = pendingPhoto; // snapshot before we clear it below
+
+  if (!text && !photo) return; // nothing to send
 
   if (!workbench) openNewEstimate();
   state.aiChat = state.aiChat || [];
 
-  // Add user message immediately
-  state.aiChat.push({ role: 'user', content: text });
+  // Add user message immediately — store the photo alongside it so it
+  // renders in the thread and survives re-renders of this session.
+  state.aiChat.push({ role: 'user', content: text || '(photo attached)', photo: photo });
   inp.value = '';
   inp.style.height = 'auto';
+  clearPendingPhoto();
   sendBtn.disabled = true;
   var gapBtn = document.getElementById('ai-gapcheck-btn');
   if (gapBtn) gapBtn.disabled = true;
+  var photoBtn = document.getElementById('ai-photo-btn');
+  if (photoBtn) photoBtn.disabled = true;
   thread.innerHTML = buildAiThread() + '<div class="ai-msg ai-msg-ai"><div class="ai-bubble ai-bubble-ai ai-thinking"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div></div>';
   scrollAiThreadToBottom();
 
@@ -2414,11 +2508,12 @@ async function sendAiChat() {
   var contractorLaborPct = Math.round(getLaborPctForTrade(workbench.tradeType) * 100);
 
   var systemContext = 'You are a conversational contractor estimating assistant embedded in an app. '
-    + 'You help the contractor build a line-item estimate through natural conversation. '
+    + 'You help the contractor build a line-item estimate through natural conversation, and sometimes from photos of the job site they send you. '
     + 'You can ADD items, REMOVE items (by index), or UPDATE items (by index) based on what the user says. '
     + 'Current line items on the estimate:\n' + currentItems + '\n\n'
     + (workbench.tradeType && TRADES[workbench.tradeType] ? 'This job is tagged as trade: ' + TRADES[workbench.tradeType].label + '.\n' : '')
     + 'Reference catalog for realistic pricing (id,name,basePrice,unit,trade):\n' + catalogLines.join('\n') + '\n\n'
+    + (photo ? 'The contractor just sent you a PHOTO of the job site along with their message. Look at it carefully — identify the space, its approximate condition, visible materials, rough dimensions if inferable, and anything that looks like it needs work. Use what you see to suggest realistic line items and quantities, same as you would from a text description. Briefly mention what you noticed in the photo as part of your reply.\n\n' : '')
     + 'Respond ONLY with a single JSON object, no markdown, no other text. Format:\n'
     + '{"reply":"short conversational reply to the user, 1-2 sentences","actions":[{"type":"add","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborAmt":45.00,"tradeLabel":"string"},{"type":"remove","index":0},{"type":"update","index":0,"qty":200}]}\n'
     + 'Rules: "actions" array can be empty if the user is just asking a question. For "update" actions, only include the fields being changed plus "index". '
@@ -2427,8 +2522,25 @@ async function sendAiChat() {
     + 'IMPORTANT: Whenever the current line items suggest a common gap for this type of job (e.g. a bathroom remodel with no permit fee or no demo/haul-away line, a roofing job with no flashing or underlayment, an electrical panel job with no permit or grounding), '
     + 'proactively mention ONE specific thing that seems commonly forgotten in your reply — phrase it as a quick question like "Want me to add a permit fee too?" rather than assuming and adding it yourself. Only do this if something genuinely looks missing; do not force it every turn.';
 
-  // Build the message history for the API: system context + chat turns
-  var apiMessages = [{ role: 'user', content: systemContext + '\n\nConversation so far:\n' + state.aiChat.map(function(m){ return (m.role==='user'?'Contractor':'Assistant') + ': ' + m.content; }).join('\n') + '\n\nRespond with the JSON object now.' }];
+  var fullPromptText = systemContext + '\n\nConversation so far:\n' + state.aiChat.map(function(m){ return (m.role==='user'?'Contractor':'Assistant') + ': ' + m.content; }).join('\n') + '\n\nRespond with the JSON object now.';
+
+  // Build the message content — plain text if no photo, or a multimodal
+  // content array (image block + text block) if a photo is attached.
+  var userContent;
+  if (photo) {
+    var commaIdx = photo.indexOf(',');
+    var meta = photo.slice(5, commaIdx); // e.g. "image/jpeg;base64"
+    var mediaType = meta.split(';')[0];
+    var base64Data = photo.slice(commaIdx + 1);
+    userContent = [
+      { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Data } },
+      { type: 'text', text: fullPromptText }
+    ];
+  } else {
+    userContent = fullPromptText;
+  }
+
+  var apiMessages = [{ role: 'user', content: userContent }];
 
   try {
     var resp = await fetch('/api/generate', {
