@@ -1468,6 +1468,26 @@ function saveWorkbenchToStorage() {
 function getEsts()  { return DB.get('dep_e')||[]; }
 function getInvs()  { return DB.get('dep_i')||[]; }
 function getCo()    { return DB.get('dep_c')||{}; }
+
+// ── CUSTOM LABOR RATES ─────────────────────────
+// Fully optional. If never touched, defaultPct falls back to 45 (the
+// existing hardcoded behavior) and no trade overrides exist.
+function getLaborRates() {
+  var r = DB.get('dep_labor_rates');
+  if (!r) r = { defaultPct: 45, byTrade: {} };
+  if (r.defaultPct == null) r.defaultPct = 45;
+  if (!r.byTrade) r.byTrade = {};
+  return r;
+}
+function saveLaborRates(r) { DB.set('dep_labor_rates', r); }
+
+// The single source of truth every part of the app should call to find
+// out what labor % to use as a default for a new line item on a given trade.
+function getLaborPctForTrade(tradeKey) {
+  var rates = getLaborRates();
+  if (tradeKey && rates.byTrade[tradeKey] != null) return rates.byTrade[tradeKey] / 100;
+  return rates.defaultPct / 100;
+}
 function getSub()   { return DB.get('dep_s'); }
 
 // ── LICENSE KEY SYSTEM ────────────────────────
@@ -1721,7 +1741,7 @@ function buildLineItems(e) {
   if (!items.length) return '<div style="padding:20px;text-align:center;background:var(--navy-light);border-radius:var(--r-sm);font-size:13px;color:var(--steel)">No items yet. Describe the job above or add manually.</div>';
   return items.map(function(item,i){
     var sub=(item.qty||0)*(item.unitPrice||0);
-    var laborAmt = item.laborAmt!=null ? item.laborAmt : Math.round(sub*0.45*100)/100;
+    var laborAmt = item.laborAmt!=null ? item.laborAmt : Math.round(sub*getLaborPctForTrade(e.tradeType)*100)/100;
     var html='<div class="li-row"><div class="li-top"><div class="li-name-wrap">';
     html+='<input class="li-name" value="'+esc(item.name||'')+'" placeholder="Item name" oninput="setLI('+i+',\'name\',this.value)">';
     html+='<span class="li-trade">'+esc(item.tradeLabel||'')+'</span></div>';
@@ -1763,10 +1783,11 @@ function buildTotals(e) {
 
 function calc(e) {
   var rates = getRegionalRates(e.projectZip||'');
+  var defaultLaborPct = getLaborPctForTrade(e.tradeType);
   var labor=0,mat=0;
   (e.lineItems||[]).forEach(function(it){
     var t = (it.qty||0)*(it.unitPrice||0);
-    var lAmt = it.laborAmt!=null ? it.laborAmt : t*0.45;
+    var lAmt = it.laborAmt!=null ? it.laborAmt : t*defaultLaborPct;
     lAmt = Math.max(0, Math.min(lAmt, t)); // labor can't be negative or exceed the line total
     var mAmt = t - lAmt;
     labor += lAmt*rates.labor;
@@ -1939,7 +1960,7 @@ function toInvoice(id) {
     dueDate:due.toISOString().split('T')[0], estimateId:e.id, status:'unpaid',
     clientName:e.clientName, clientEmail:e.clientEmail||'', clientPhone:e.clientPhone||'',
     projectName:e.projectName, projectAddress:e.projectAddress||'',
-    projectCity:e.projectCity||'', projectZip:e.projectZip||'',
+    projectCity:e.projectCity||'', projectZip:e.projectZip||'', tradeType:e.tradeType||'',
     lineItems:JSON.parse(JSON.stringify(e.lineItems||[])),
     overhead:e.overhead, profit:e.profit, taxRate:e.taxRate, depositPct:e.depositPct,
     total:c.total, laborAmt:c.labor, matAmt:c.mat, ohAmt:c.oh, prAmt:c.pr,
@@ -2019,7 +2040,7 @@ function pgEstDetail() {
   (e.lineItems||[]).forEach(function(it){
     var base = it.unitPrice||0;
     var lineTotal = (it.qty||0)*base;
-    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*0.45;
+    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*getLaborPctForTrade(e.tradeType);
     lAmt = Math.max(0, Math.min(lAmt, lineTotal));
     var mAmt = lineTotal - lAmt;
     var tot = lAmt*rates.labor + mAmt*rates.material;
@@ -2060,7 +2081,7 @@ function pgInvDetail() {
     var rates = getRegionalRates(inv.projectZip||'');
     var base = it.unitPrice||0;
     var lineTotal = (it.qty||0)*base;
-    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*0.45;
+    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*getLaborPctForTrade(inv.tradeType);
     lAmt = Math.max(0, Math.min(lAmt, lineTotal));
     var mAmt = lineTotal - lAmt;
     var tot = lAmt*rates.labor + mAmt*rates.material;
@@ -2089,6 +2110,7 @@ function pgSettings() {
   html+='<div class="form-row"><input class="inp" placeholder="License #" value="'+esc(c.license||'')+'" oninput="setCo(\'license\',this.value)"></div>';
   html+='<div class="form-row"><textarea class="inp" placeholder="Payment instructions..." oninput="setCo(\'payInfo\',this.value)">'+esc(c.payInfo||'')+'</textarea></div>';
   html+='<button class="btn-primary" onclick="saveCoInfo()">Save Company Info</button></div>';
+  html+=buildLaborRatesSection();
   html+='<div class="form-sec"><div class="form-sec-title">Subscription</div>';
   if (hasSub()) html+='<div class="sub-active"><div class="sub-ok">&#x2705; Active Subscription</div><p style="font-size:13px;color:var(--steel)">Full access &#8212; thank you!</p></div>';
   else html+='<div class="sub-trial"><p style="font-size:13px;color:var(--steel);margin-bottom:8px">'+(trialLeft()>0?trialLeft()+' free estimate'+(trialLeft()>1?'s':'')+' left to try out the app.':'Trial used &#8212; subscribe for full access.')+'</p><button class="btn-primary" onclick="go(\'subscribe\')">Subscribe $9.99/month</button></div>';
@@ -2102,6 +2124,105 @@ function pgSettings() {
 
 function setCo(f,v){var c=getCo();c[f]=v;saveCoDB(c);}
 function saveCoInfo(){toast('Company info saved!');}
+
+// ── LABOR RATES SETTINGS UI ────────────────────
+function buildLaborRatesSection() {
+  var rates = getLaborRates();
+  var html = '<div class="form-sec"><div class="form-sec-title">Labor Rates</div>';
+  html += '<p style="font-size:12px;color:var(--steel);margin-bottom:14px;line-height:1.5">Set your own labor split instead of the default. This controls what percentage of each new line item counts as labor vs. materials. Fully optional \u2014 leave as-is to keep using our defaults.</p>';
+
+  html += '<label class="lbl">Your Default Labor % (applies to all trades unless overridden below)</label>';
+  html += '<div class="form-row" style="display:flex;align-items:center;gap:10px">';
+  html += '<input class="inp" type="number" min="0" max="100" id="default-labor-pct" value="'+rates.defaultPct+'" style="max-width:100px" oninput="previewLaborPct(this.value)">';
+  html += '<span style="font-size:14px;color:var(--steel)">% of each job is labor (currently used default: 45%)</span>';
+  html += '</div>';
+  html += '<button class="btn-secondary" onclick="saveDefaultLaborRate()" style="margin-bottom:18px">Save Default Rate</button>';
+
+  html += '<label class="lbl">Per-Trade Overrides (optional)</label>';
+  html += '<p style="font-size:11px;color:var(--steel);margin-bottom:10px">Set a different labor % for specific trades \u2014 e.g. your electrical jobs might run heavier on labor than your painting jobs.</p>';
+  html += '<div id="trade-rate-list">' + buildTradeRateRows(rates) + '</div>';
+  html += '<button class="btn-secondary" onclick="showAddTradeRate()" id="add-trade-rate-btn">+ Add Trade Override</button>';
+  html += '<div id="add-trade-rate-picker"></div>';
+
+  html += '</div>';
+  return html;
+}
+
+function buildTradeRateRows(rates) {
+  var keys = Object.keys(rates.byTrade);
+  if (!keys.length) return '<p style="font-size:12px;color:var(--steel);margin-bottom:10px">No overrides set \u2014 all trades use your default rate above.</p>';
+  var html = '';
+  keys.forEach(function(tk) {
+    var trade = TRADES[tk];
+    if (!trade) return;
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;background:var(--navy-light);padding:10px 12px;border-radius:var(--r-sm)">';
+    html += '<span style="flex:1;font-size:14px">'+trade.icon+' '+trade.label+'</span>';
+    html += '<input class="inp" type="number" min="0" max="100" value="'+rates.byTrade[tk]+'" style="max-width:70px" onchange="updateTradeRate(\''+tk+'\',this.value)">';
+    html += '<span style="font-size:12px;color:var(--steel)">%</span>';
+    html += '<button class="li-del" onclick="removeTradeRate(\''+tk+'\')" style="flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>';
+    html += '</div>';
+  });
+  return html;
+}
+
+function previewLaborPct(val) {
+  // Live label update only, no save yet — keeps it obviously "pending" until they tap Save
+}
+
+function saveDefaultLaborRate() {
+  var val = parseFloat(document.getElementById('default-labor-pct').value);
+  if (isNaN(val) || val < 0 || val > 100) { toast('Enter a number between 0 and 100', 'err'); return; }
+  var rates = getLaborRates();
+  rates.defaultPct = val;
+  saveLaborRates(rates);
+  toast('Default labor rate saved!');
+}
+
+function showAddTradeRate() {
+  var picker = document.getElementById('add-trade-rate-picker');
+  var rates = getLaborRates();
+  var available = Object.entries(TRADES).filter(function(kv) { return rates.byTrade[kv[0]] == null; });
+  if (!available.length) { toast('All trades already have overrides', 'err'); return; }
+
+  var html = '<div style="margin-top:10px;padding:12px;background:var(--navy-light);border-radius:var(--r-sm)">';
+  html += '<select class="inp" id="new-trade-select" style="margin-bottom:8px">';
+  available.forEach(function(kv) { html += '<option value="'+kv[0]+'">'+kv[1].icon+' '+kv[1].label+'</option>'; });
+  html += '</select>';
+  html += '<div style="display:flex;gap:8px;align-items:center">';
+  html += '<input class="inp" type="number" min="0" max="100" id="new-trade-pct" value="45" style="max-width:80px">';
+  html += '<span style="font-size:12px;color:var(--steel)">% labor</span>';
+  html += '<button class="btn-secondary" style="margin-top:0;flex:1" onclick="addTradeRate()">Add</button>';
+  html += '</div></div>';
+  picker.innerHTML = html;
+}
+
+function addTradeRate() {
+  var tk = document.getElementById('new-trade-select').value;
+  var val = parseFloat(document.getElementById('new-trade-pct').value);
+  if (isNaN(val) || val < 0 || val > 100) { toast('Enter a number between 0 and 100', 'err'); return; }
+  var rates = getLaborRates();
+  rates.byTrade[tk] = val;
+  saveLaborRates(rates);
+  toast('Trade override added!');
+  render();
+}
+
+function updateTradeRate(tk, val) {
+  var v = parseFloat(val);
+  if (isNaN(v) || v < 0 || v > 100) { toast('Enter a number between 0 and 100', 'err'); return; }
+  var rates = getLaborRates();
+  rates.byTrade[tk] = v;
+  saveLaborRates(rates);
+  toast('Updated!');
+}
+
+function removeTradeRate(tk) {
+  var rates = getLaborRates();
+  delete rates.byTrade[tk];
+  saveLaborRates(rates);
+  toast('Override removed');
+  render();
+}
 function exportData(){var d={estimates:getEsts(),invoices:getInvs(),company:getCo(),exported:new Date().toISOString()};var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='driftocity-data.json';a.click();URL.revokeObjectURL(u);}
 function clearAll(){if(!confirm('Delete ALL data? Cannot be undone.'))return;localStorage.clear();location.reload();}
 
@@ -2286,9 +2407,11 @@ async function sendAiChat() {
   // Current line items so the model knows what's already there
   var currentItems = (workbench.lineItems || []).map(function(it, idx) {
     var lineTotal = (it.qty||0)*(it.unitPrice||0);
-    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*0.45;
+    var lAmt = it.laborAmt!=null ? it.laborAmt : lineTotal*getLaborPctForTrade(workbench.tradeType);
     return idx + ': ' + it.name + ' (qty ' + it.qty + ' ' + it.unit + ' @ $' + it.unitPrice + ', labor $' + lAmt.toFixed(2) + ' of $' + lineTotal.toFixed(2) + ' total)';
   }).join('\n') || '(none yet)';
+
+  var contractorLaborPct = Math.round(getLaborPctForTrade(workbench.tradeType) * 100);
 
   var systemContext = 'You are a conversational contractor estimating assistant embedded in an app. '
     + 'You help the contractor build a line-item estimate through natural conversation. '
@@ -2299,7 +2422,7 @@ async function sendAiChat() {
     + 'Respond ONLY with a single JSON object, no markdown, no other text. Format:\n'
     + '{"reply":"short conversational reply to the user, 1-2 sentences","actions":[{"type":"add","name":"string","qty":1,"unit":"sqft","unitPrice":100,"laborAmt":45.00,"tradeLabel":"string"},{"type":"remove","index":0},{"type":"update","index":0,"qty":200}]}\n'
     + 'Rules: "actions" array can be empty if the user is just asking a question. For "update" actions, only include the fields being changed plus "index". '
-    + 'laborAmt is the total dollar amount of labor for that entire line item (qty x unitPrice), not per-unit — it defaults to 45% of the line total unless the user or context implies otherwise, and must never exceed qty x unitPrice. '
+    + 'laborAmt is the total dollar amount of labor for that entire line item (qty x unitPrice), not per-unit — this contractor has set their own default labor rate of ' + contractorLaborPct + '% for this type of job, so use that percentage (not a generic 45%) when adding new items, unless the user or context implies a different split for that specific item. '
     + 'Keep "reply" brief and natural, like a helpful colleague — do not repeat the full item list back in the reply since the app already shows it visually. '
     + 'IMPORTANT: Whenever the current line items suggest a common gap for this type of job (e.g. a bathroom remodel with no permit fee or no demo/haul-away line, a roofing job with no flashing or underlayment, an electrical panel job with no permit or grounding), '
     + 'proactively mention ONE specific thing that seems commonly forgotten in your reply — phrase it as a quick question like "Want me to add a permit fee too?" rather than assuming and adding it yourself. Only do this if something genuinely looks missing; do not force it every turn.';
@@ -2376,7 +2499,7 @@ function applyAiActions(actions) {
     var unitPrice = Math.max(0, parseFloat(a.unitPrice) || 0);
     var qty = Math.max(0.01, parseFloat(a.qty) || 1);
     var lineTotal = unitPrice * qty;
-    var laborAmt = a.laborAmt != null ? Math.max(0, parseFloat(a.laborAmt)) : lineTotal*0.45;
+    var laborAmt = a.laborAmt != null ? Math.max(0, parseFloat(a.laborAmt)) : lineTotal*getLaborPctForTrade(workbench.tradeType);
     laborAmt = Math.min(laborAmt, lineTotal); // labor can't exceed the full line total
     workbench.lineItems.push({
       id: 'ai_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
