@@ -1443,10 +1443,48 @@ let state = { view:'dashboard', currentInvoiceId:null, aiChat:[] };
 let workbench = null;          // the estimate currently being edited (or null)
 let workbenchIsNew = true;     // true = brand new estimate, false = editing existing
 
+// ── SESSION PERSISTENCE ────────────────────────
+// Opening the camera (or switching apps) can cause Android/iOS to reload
+// the underlying browser tab. Since `workbench` and `state.aiChat` only
+// ever lived in memory, that reload used to silently wipe an in-progress
+// estimate. We now mirror the in-progress session to localStorage so a
+// reload can restore exactly where the contractor left off.
+function persistSession() {
+  try {
+    DB.set('dep_session', {
+      workbench: workbench,
+      workbenchIsNew: workbenchIsNew,
+      aiChat: state.aiChat || [],
+      view: state.view,
+      savedAt: Date.now()
+    });
+  } catch (e) { /* never let persistence errors break the app */ }
+}
+
+function restoreSessionIfAny() {
+  var sess = DB.get('dep_session');
+  if (!sess || !sess.workbench) return false;
+  // Only restore sessions from the last few hours — anything older is
+  // more likely a genuinely abandoned draft than an interrupted one.
+  var ageMs = Date.now() - (sess.savedAt || 0);
+  if (ageMs > 6 * 60 * 60 * 1000) { DB.delete ? DB.delete('dep_session') : DB.set('dep_session', null); return false; }
+
+  workbench = sess.workbench;
+  workbenchIsNew = !!sess.workbenchIsNew;
+  state.aiChat = sess.aiChat || [];
+  if (sess.view === 'new_estimate') state.view = 'new_estimate';
+  return true;
+}
+
+function clearPersistedSession() {
+  try { DB.set('dep_session', null); } catch (e) {}
+}
+
 function openNewEstimate() {
   workbench = blankEst();
   workbenchIsNew = true;
   state.aiChat = [];
+  persistSession();
 }
 
 function openEstimateInWorkbench(id) {
@@ -1456,6 +1494,7 @@ function openEstimateInWorkbench(id) {
   workbench = JSON.parse(JSON.stringify(src));
   workbenchIsNew = false;
   state.aiChat = [];
+  persistSession();
   return true;
 }
 
@@ -1470,6 +1509,7 @@ function saveWorkbenchToStorage() {
   else ests.push(workbench);
   saveEsts(ests);
   workbenchIsNew = false;
+  clearPersistedSession();
   return true;
 }
 
@@ -1571,6 +1611,7 @@ function go(v) {
     return;
   }
   state.view = v;
+  if (v === 'new_estimate') persistSession();
   render();
   window.scrollTo(0,0);
 }
@@ -1680,7 +1721,7 @@ function pgBuilder() {
   html+='<div id="ai-thread" class="ai-thread">' + buildAiThread() + '</div>';
   html+='<div id="ai-photo-preview"></div>';
   html+='<div class="ai-input-row">'
-      + '<input type="file" id="ai-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(this)">'
+      + '<input type="file" id="ai-photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)">'
       + '<button class="btn-ai-photo" id="ai-photo-btn" onclick="document.getElementById(\'ai-photo-input\').click()" title="Add a photo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>'
       + '<textarea class="ai-chat-input" id="ai-in" placeholder="Describe the job, or ask me to add/remove/change items..." rows="1" oninput="autoGrowAiInput(this)"></textarea>'
       + '<button class="btn-ai-send" id="ai-send-btn" onclick="sendAiChat()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>'
@@ -1824,16 +1865,19 @@ function refreshTotals() {
 function setF(field, value) {
   if (!workbench) openNewEstimate();
   workbench[field] = value;
+  persistSession();
 }
 
 function setLI(i, field, value) {
   if (!workbench || !workbench.lineItems || !workbench.lineItems[i]) return;
   workbench.lineItems[i][field] = value;
+  persistSession();
 }
 
 function delLI(i) {
   if (!workbench || !workbench.lineItems) return;
   workbench.lineItems.splice(i, 1);
+  persistSession();
   render();
 }
 
@@ -1841,6 +1885,7 @@ function addBlankItem() {
   if (!workbench) openNewEstimate();
   workbench.lineItems = workbench.lineItems || [];
   workbench.lineItems.push({id:'c_'+Date.now(), name:'Custom Item', qty:1, unit:'ls', unitPrice:0, tradeLabel:'Custom'});
+  persistSession();
   render();
 }
 
@@ -2565,6 +2610,7 @@ async function sendAiChat() {
     var summary = applyAiActions(actions);
 
     state.aiChat.push({ role: 'assistant', content: reply, actionsSummary: summary });
+    persistSession();
 
   } catch (err) {
     state.aiChat.push({ role: 'assistant', content: '⚠️ ' + (err.message || 'Something went wrong. Please try again.'), actionsSummary: '' });
@@ -2721,7 +2767,11 @@ function logEvent(eventType) {
 }
 
 document.addEventListener('DOMContentLoaded', function(){
+  var restored = restoreSessionIfAny();
   render();
+  if (restored && state.view === 'new_estimate') {
+    toast('Restored your in-progress estimate');
+  }
   var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   logEvent(isStandalone ? 'app_open_installed' : 'app_open_browser');
 });
