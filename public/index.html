@@ -1956,7 +1956,7 @@ function pgEstimates() {
   var ests=[].concat(getEsts()).sort(function(a,b){return b.date-a.date;});
   var html='<div class="filter-bar"><input class="search-inp" placeholder="Search..." oninput="filterEsts(this.value)">';
   html+='<select class="filter-sel" onchange="filterEstsStatus(this.value)"><option value="">All</option><option value="draft">Draft</option><option value="sent">Sent</option><option value="approved">Approved</option><option value="declined">Declined</option></select></div>';
-  html+='<div id="ests-list" style="padding:0 16px">';
+  html+='<div id="ests-list" style="padding:12px 16px 0">';
   if (ests.length) ests.forEach(function(e){html+=estCard(e,true);}); 
   else html='<div class="empty"><div class="empty-icon">&#x1F4CB;</div><h3>No estimates</h3></div>';
   html+='</div>';
@@ -2042,7 +2042,7 @@ function pgInvoices() {
   var invs=[].concat(getInvs()).sort(function(a,b){return b.date-a.date;});
   var html='<div class="filter-bar"><input class="search-inp" placeholder="Search...">';
   html+='<select class="filter-sel" onchange="filterInvStatus(this.value)"><option value="">All</option><option value="unpaid">Unpaid</option><option value="paid">Paid</option></select></div>';
-  html+='<div id="invs-list" style="padding:0 16px">';
+  html+='<div id="invs-list" style="padding:12px 16px 0">';
   if (invs.length) invs.forEach(function(i){html+=invCard(i);}); 
   else html+='<div class="empty"><div class="empty-icon">&#x1F4C4;</div><h3>No invoices</h3><p>Convert an estimate to create one</p></div>';
   html+='</div>';
