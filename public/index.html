@@ -501,27 +501,50 @@ const TRADES = {
           { id: "grading", name: "Grading & Leveling", unit: "sqft", basePrice: 1.80, laborPct: 0.60 },
           { id: "demo_interior", name: "Interior Demolition", unit: "sqft", basePrice: 3.50, laborPct: 0.75 },
           { id: "demo_exterior", name: "Exterior Demolition", unit: "sqft", basePrice: 5.00, laborPct: 0.70 },
+          { id: "demo_full_structure", name: "Full Structure Demolition (per sqft)", unit: "sqft", basePrice: 8.00, laborPct: 0.65 },
           { id: "hauling", name: "Debris Hauling (per load)", unit: "load", basePrice: 380, laborPct: 0.60 },
+          { id: "land_clearing", name: "Land Clearing (per acre)", unit: "ls", basePrice: 2800, laborPct: 0.55 },
+          { id: "soil_testing", name: "Soil Testing/Percolation Test", unit: "ls", basePrice: 650, laborPct: 0.80 },
         ]
       },
       {
         name: "Framing & Structure",
         items: [
           { id: "framing_wall", name: "Wall Framing (per LF)", unit: "lf", basePrice: 28, laborPct: 0.55 },
+          { id: "framing_interior_wall", name: "Interior Non-Load Wall Framing (LF)", unit: "lf", basePrice: 22, laborPct: 0.58 },
           { id: "framing_floor", name: "Floor Framing (per sqft)", unit: "sqft", basePrice: 8.50, laborPct: 0.50 },
           { id: "framing_roof", name: "Roof Framing (per sqft)", unit: "sqft", basePrice: 11, laborPct: 0.50 },
+          { id: "roof_truss_install", name: "Roof Truss Installation (per truss)", unit: "ea", basePrice: 280, laborPct: 0.52 },
           { id: "sheathing", name: "OSB/Plywood Sheathing", unit: "sqft", basePrice: 3.20, laborPct: 0.45 },
           { id: "subfloor", name: "Subfloor Installation", unit: "sqft", basePrice: 4.50, laborPct: 0.50 },
           { id: "lvl_beam", name: "LVL Beam Installation (per LF)", unit: "lf", basePrice: 95, laborPct: 0.55 },
+          { id: "steel_beam_install", name: "Steel I-Beam Installation (per LF)", unit: "lf", basePrice: 165, laborPct: 0.50 },
+          { id: "load_bearing_wall_removal", name: "Load-Bearing Wall Removal w/ Beam", unit: "ls", basePrice: 4200, laborPct: 0.55 },
+        ]
+      },
+      {
+        name: "Additions & Remodels",
+        items: [
+          { id: "room_addition_shell", name: "Room Addition Shell (per sqft)", unit: "sqft", basePrice: 180, laborPct: 0.45 },
+          { id: "second_story_addition", name: "Second Story Addition (per sqft)", unit: "sqft", basePrice: 220, laborPct: 0.45 },
+          { id: "garage_conversion", name: "Garage-to-Living-Space Conversion (sqft)", unit: "sqft", basePrice: 95, laborPct: 0.55 },
+          { id: "basement_finish", name: "Basement Finishing (per sqft)", unit: "sqft", basePrice: 45, laborPct: 0.55 },
+          { id: "kitchen_remodel_shell", name: "Kitchen Remodel Shell/Labor Package", unit: "ls", basePrice: 8500, laborPct: 0.60 },
+          { id: "bathroom_remodel_shell", name: "Bathroom Remodel Shell/Labor Package", unit: "ls", basePrice: 5200, laborPct: 0.62 },
+          { id: "adu_construction", name: "ADU/Guest House Construction (per sqft)", unit: "sqft", basePrice: 210, laborPct: 0.42 },
         ]
       },
       {
         name: "Project Management",
         items: [
           { id: "pm_daily", name: "Project Management (per day)", unit: "day", basePrice: 650, laborPct: 1.00 },
+          { id: "pm_hourly", name: "Project Management (per hour)", unit: "day", basePrice: 85, laborPct: 1.00 },
           { id: "permit_pull", name: "Permit Pulling & Filing", unit: "ls", basePrice: 450, laborPct: 0.80 },
+          { id: "architectural_plans", name: "Architectural Plans/Drafting", unit: "ls", basePrice: 2200, laborPct: 0.85 },
+          { id: "engineering_stamp", name: "Structural Engineer Stamp/Review", unit: "ls", basePrice: 850, laborPct: 0.90 },
           { id: "inspection", name: "Inspection Coordination", unit: "ls", basePrice: 300, laborPct: 1.00 },
           { id: "cleanup", name: "Final Cleanup", unit: "ls", basePrice: 550, laborPct: 0.85 },
+          { id: "punch_list", name: "Punch List Completion", unit: "ls", basePrice: 650, laborPct: 0.85 },
         ]
       },
       {
@@ -531,6 +554,9 @@ const TRADES = {
           { id: "temp_power", name: "Temporary Power/Fencing Setup", unit: "ls", basePrice: 650, laborPct: 0.55 },
           { id: "porta_potty", name: "Portable Toilet Rental (per month)", unit: "ls", basePrice: 175, laborPct: 0.10 },
           { id: "scaffolding_rental", name: "Scaffolding Rental (per week)", unit: "ls", basePrice: 380, laborPct: 0.30 },
+          { id: "equipment_rental_general", name: "Heavy Equipment Rental (per day)", unit: "day", basePrice: 450, laborPct: 0.20 },
+          { id: "site_security", name: "Site Security/Fencing (per week)", unit: "ls", basePrice: 220, laborPct: 0.25 },
+          { id: "material_delivery_fee", name: "Material Delivery Fee", unit: "ls", basePrice: 150, laborPct: 0.15 },
         ]
       }
     ]
@@ -568,7 +594,10 @@ const TRADES = {
         items: [
           { id: "outlet_install", name: "Outlet Installation", unit: "ea", basePrice: 185, laborPct: 0.65 },
           { id: "gfci_outlet", name: "GFCI Outlet Installation", unit: "ea", basePrice: 220, laborPct: 0.65 },
+          { id: "usb_outlet", name: "USB Charging Outlet", unit: "ea", basePrice: 195, laborPct: 0.65 },
           { id: "switch_install", name: "Switch Installation", unit: "ea", basePrice: 175, laborPct: 0.65 },
+          { id: "dimmer_switch", name: "Dimmer Switch Install", unit: "ea", basePrice: 210, laborPct: 0.65 },
+          { id: "smart_switch", name: "Smart Switch/WiFi Switch Install", unit: "ea", basePrice: 260, laborPct: 0.62 },
           { id: "light_fixture", name: "Light Fixture Install", unit: "ea", basePrice: 195, laborPct: 0.60 },
           { id: "recessed_light", name: "Recessed Lighting (per can)", unit: "ea", basePrice: 280, laborPct: 0.60 },
           { id: "ceiling_fan", name: "Ceiling Fan Installation", unit: "ea", basePrice: 310, laborPct: 0.65 },
@@ -759,6 +788,9 @@ const TRADES = {
           { id: "pipe_boot", name: "Pipe Boot/Flashing Replace", unit: "ea", basePrice: 165, laborPct: 0.68 },
           { id: "roof_wall_flashing", name: "Roof-to-Wall Flashing (per LF)", unit: "lf", basePrice: 24, laborPct: 0.62 },
           { id: "snow_guards", name: "Snow Guards (per LF)", unit: "lf", basePrice: 28, laborPct: 0.58 },
+          { id: "roof_leak_repair", name: "Roof Leak Repair/Patch", unit: "ls", basePrice: 480, laborPct: 0.72 },
+          { id: "roof_inspection", name: "Roof Inspection Report", unit: "ls", basePrice: 250, laborPct: 0.85 },
+          { id: "shingle_spot_repair", name: "Shingle Spot Repair (per sq)", unit: "sq", basePrice: 320, laborPct: 0.68 },
         ]
       }
     ]
@@ -772,10 +804,15 @@ const TRADES = {
       {
         name: "Hardwood & Engineered",
         items: [
-          { id: "hw_solid", name: "Solid Hardwood (per sqft)", unit: "sqft", basePrice: 12, laborPct: 0.48 },
+          { id: "hw_solid", name: "Solid Hardwood Oak (per sqft)", unit: "sqft", basePrice: 12, laborPct: 0.48 },
+          { id: "hw_solid_maple", name: "Solid Hardwood Maple (per sqft)", unit: "sqft", basePrice: 13, laborPct: 0.48 },
+          { id: "hw_solid_walnut", name: "Solid Hardwood Walnut (per sqft)", unit: "sqft", basePrice: 18, laborPct: 0.45 },
           { id: "hw_engineered", name: "Engineered Hardwood (per sqft)", unit: "sqft", basePrice: 9.50, laborPct: 0.48 },
+          { id: "hw_bamboo", name: "Bamboo Flooring (per sqft)", unit: "sqft", basePrice: 7.50, laborPct: 0.50 },
           { id: "hw_refinish", name: "Hardwood Refinish (per sqft)", unit: "sqft", basePrice: 4.50, laborPct: 0.80 },
           { id: "hw_sand_stain", name: "Sand, Stain & Poly (per sqft)", unit: "sqft", basePrice: 6.50, laborPct: 0.78 },
+          { id: "hw_recoat", name: "Screen & Recoat (no sanding, sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.82 },
+          { id: "hw_repair_plank", name: "Hardwood Plank Repair (per sqft)", unit: "sqft", basePrice: 15, laborPct: 0.68 },
         ]
       },
       {
@@ -784,9 +821,13 @@ const TRADES = {
           { id: "tile_ceramic", name: "Ceramic Tile (per sqft)", unit: "sqft", basePrice: 8.50, laborPct: 0.55 },
           { id: "tile_porcelain", name: "Porcelain Tile (per sqft)", unit: "sqft", basePrice: 12, laborPct: 0.52 },
           { id: "tile_natural", name: "Natural Stone Tile (per sqft)", unit: "sqft", basePrice: 18, laborPct: 0.50 },
+          { id: "tile_marble", name: "Marble Tile (per sqft)", unit: "sqft", basePrice: 24, laborPct: 0.48 },
+          { id: "tile_travertine", name: "Travertine Tile (per sqft)", unit: "sqft", basePrice: 16, laborPct: 0.50 },
           { id: "tile_large", name: "Large Format Tile 24x24+ (sqft)", unit: "sqft", basePrice: 22, laborPct: 0.50 },
           { id: "tile_mosaic", name: "Mosaic/Backsplash Tile (sqft)", unit: "sqft", basePrice: 28, laborPct: 0.58 },
+          { id: "tile_herringbone_pattern", name: "Herringbone Pattern Install (sqft)", unit: "sqft", basePrice: 26, laborPct: 0.60 },
           { id: "tile_grout", name: "Grout Only (per sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.82 },
+          { id: "tile_heated_floor", name: "Heated Tile Floor System (per sqft)", unit: "sqft", basePrice: 18, laborPct: 0.52 },
         ]
       },
       {
@@ -795,7 +836,10 @@ const TRADES = {
           { id: "lvp", name: "Luxury Vinyl Plank (per sqft)", unit: "sqft", basePrice: 7.50, laborPct: 0.48 },
           { id: "lvt", name: "Luxury Vinyl Tile (per sqft)", unit: "sqft", basePrice: 7.00, laborPct: 0.48 },
           { id: "laminate", name: "Laminate Flooring (per sqft)", unit: "sqft", basePrice: 6.00, laborPct: 0.50 },
+          { id: "sheet_vinyl", name: "Sheet Vinyl Flooring (per sqft)", unit: "sqft", basePrice: 4.50, laborPct: 0.52 },
           { id: "carpet", name: "Carpet Installation (per sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.45 },
+          { id: "carpet_berber", name: "Berber Carpet Installation (sqft)", unit: "sqft", basePrice: 6.50, laborPct: 0.45 },
+          { id: "carpet_tile", name: "Carpet Tile/Squares (per sqft)", unit: "sqft", basePrice: 5.00, laborPct: 0.50 },
           { id: "carpet_pad", name: "Carpet Padding (per sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.65 },
           { id: "floor_remove", name: "Old Flooring Removal (sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.80 },
         ]
@@ -808,6 +852,8 @@ const TRADES = {
           { id: "stair_tread", name: "Stair Tread/Riser Install (per step)", unit: "ea", basePrice: 145, laborPct: 0.62 },
           { id: "transition_strip", name: "Transition Strip/Threshold", unit: "ea", basePrice: 65, laborPct: 0.70 },
           { id: "radiant_floor_mat", name: "Radiant Floor Heat Mat (sqft)", unit: "sqft", basePrice: 14, laborPct: 0.55 },
+          { id: "floor_moisture_test", name: "Moisture Testing (subfloor)", unit: "ls", basePrice: 180, laborPct: 0.85 },
+          { id: "plywood_subfloor_repair", name: "Plywood Subfloor Repair (per sqft)", unit: "sqft", basePrice: 6.50, laborPct: 0.60 },
         ]
       }
     ]
@@ -822,12 +868,17 @@ const TRADES = {
         name: "Interior Painting",
         items: [
           { id: "int_wall", name: "Interior Walls (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.72 },
+          { id: "int_wall_2coat", name: "Interior Walls, 2-Coat (per sqft)", unit: "sqft", basePrice: 3.60, laborPct: 0.72 },
           { id: "int_ceiling", name: "Interior Ceiling (per sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.74 },
+          { id: "int_ceiling_vaulted", name: "Vaulted/High Ceiling (per sqft)", unit: "sqft", basePrice: 4.20, laborPct: 0.75 },
           { id: "int_room", name: "Room Paint (walls + ceiling)", unit: "room", basePrice: 650, laborPct: 0.70 },
+          { id: "int_accent_wall", name: "Accent Wall (per wall)", unit: "ea", basePrice: 220, laborPct: 0.75 },
           { id: "int_trim", name: "Trim & Baseboard (per LF)", unit: "lf", basePrice: 4.50, laborPct: 0.75 },
           { id: "int_door", name: "Interior Door Paint", unit: "ea", basePrice: 180, laborPct: 0.75 },
           { id: "int_cabinet", name: "Cabinet Painting (per door/drawer)", unit: "ea", basePrice: 95, laborPct: 0.75 },
+          { id: "int_cabinet_full_kitchen", name: "Full Kitchen Cabinet Paint Package", unit: "ls", basePrice: 3200, laborPct: 0.72 },
           { id: "int_full_house", name: "Full House Interior (sqft)", unit: "sqft", basePrice: 3.20, laborPct: 0.70 },
+          { id: "int_stairwell", name: "Stairwell/Stairs Painting", unit: "ls", basePrice: 480, laborPct: 0.75 },
         ]
       },
       {
@@ -836,9 +887,12 @@ const TRADES = {
           { id: "ext_siding", name: "Exterior Siding (per sqft)", unit: "sqft", basePrice: 3.50, laborPct: 0.68 },
           { id: "ext_trim", name: "Exterior Trim (per LF)", unit: "lf", basePrice: 6.00, laborPct: 0.72 },
           { id: "ext_door", name: "Exterior Door Paint", unit: "ea", basePrice: 280, laborPct: 0.72 },
+          { id: "ext_shutters", name: "Shutters Painting (per pair)", unit: "ea", basePrice: 85, laborPct: 0.75 },
           { id: "ext_full_house", name: "Full Exterior House (sqft)", unit: "sqft", basePrice: 4.20, laborPct: 0.66 },
+          { id: "ext_fascia_soffit", name: "Fascia & Soffit Painting (per LF)", unit: "lf", basePrice: 5.50, laborPct: 0.70 },
           { id: "deck_stain", name: "Deck Stain (per sqft)", unit: "sqft", basePrice: 3.00, laborPct: 0.70 },
-          { id: "power_wash", name: "Power Washing (per sqft)", unit: "sqft", basePrice: 0.50, laborPct: 0.80 },
+          { id: "fence_paint", name: "Fence Painting (per LF)", unit: "lf", basePrice: 3.80, laborPct: 0.72 },
+          { id: "power_wash", name: "Power Washing Prep (per sqft)", unit: "sqft", basePrice: 0.50, laborPct: 0.80 },
         ]
       },
       {
@@ -850,9 +904,12 @@ const TRADES = {
           { id: "popcorn_remove", name: "Popcorn Ceiling Removal (sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.82 },
           { id: "faux_finish", name: "Faux/Decorative Finish (sqft)", unit: "sqft", basePrice: 12, laborPct: 0.75 },
           { id: "wallpaper_removal", name: "Wallpaper Removal (sqft)", unit: "sqft", basePrice: 2.20, laborPct: 0.85 },
+          { id: "wallpaper_install", name: "Wallpaper Installation (per sqft)", unit: "sqft", basePrice: 3.50, laborPct: 0.68 },
           { id: "caulking", name: "Caulking (per LF)", unit: "lf", basePrice: 3.20, laborPct: 0.80 },
           { id: "stain_block_primer", name: "Stain-Blocking Primer (sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.70 },
           { id: "fence_staining", name: "Fence Staining (per LF)", unit: "lf", basePrice: 4.50, laborPct: 0.72 },
+          { id: "line_striping", name: "Parking Lot/Line Striping (per LF)", unit: "lf", basePrice: 1.20, laborPct: 0.75 },
+          { id: "anti_graffiti_coating", name: "Anti-Graffiti Coating (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.65 },
         ]
       }
     ]
@@ -924,9 +981,13 @@ const TRADES = {
           { id: "dw_tape_mud", name: "Tape & Mud Only (per sqft)", unit: "sqft", basePrice: 2.20, laborPct: 0.78 },
           { id: "dw_complete", name: "Full Install + Finish (sqft)", unit: "sqft", basePrice: 4.50, laborPct: 0.68 },
           { id: "dw_ceiling", name: "Ceiling Drywall (per sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.68 },
-          { id: "dw_moisture", name: "Moisture Resistant DW (sqft)", unit: "sqft", basePrice: 5.80, laborPct: 0.65 },
-          { id: "dw_fire", name: "Fire-rated Drywall (per sqft)", unit: "sqft", basePrice: 6.20, laborPct: 0.65 },
+          { id: "dw_moisture", name: "Moisture Resistant DW / Green Board (sqft)", unit: "sqft", basePrice: 5.80, laborPct: 0.65 },
+          { id: "dw_fire", name: "Fire-rated Drywall / Type X (per sqft)", unit: "sqft", basePrice: 6.20, laborPct: 0.65 },
           { id: "dw_sound", name: "Soundproof Drywall (per sqft)", unit: "sqft", basePrice: 8.00, laborPct: 0.62 },
+          { id: "dw_cement_board", name: "Cement Board (tile backer, sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.60 },
+          { id: "dw_5_8_standard", name: "5/8\" Standard Drywall (sqft)", unit: "sqft", basePrice: 2.20, laborPct: 0.58 },
+          { id: "dw_half_inch", name: "1/2\" Standard Drywall (sqft)", unit: "sqft", basePrice: 1.90, laborPct: 0.58 },
+          { id: "dw_level5_finish", name: "Level 5 Skim Coat Finish (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.80 },
         ]
       },
       {
@@ -937,6 +998,22 @@ const TRADES = {
           { id: "patch_large", name: "Large Area Patch (per sqft)", unit: "sqft", basePrice: 12, laborPct: 0.78 },
           { id: "crack_repair", name: "Crack Repair (per LF)", unit: "lf", basePrice: 18, laborPct: 0.82 },
           { id: "water_damage", name: "Water Damage Repair (sqft)", unit: "sqft", basePrice: 18, laborPct: 0.75 },
+          { id: "nail_pop_repair", name: "Nail Pop Repair (per spot)", unit: "ea", basePrice: 35, laborPct: 0.88 },
+          { id: "seam_repair", name: "Seam/Joint Repair (per LF)", unit: "lf", basePrice: 14, laborPct: 0.82 },
+          { id: "ceiling_crack_repair", name: "Ceiling Crack Repair (per LF)", unit: "lf", basePrice: 22, laborPct: 0.80 },
+          { id: "impact_damage_repair", name: "Impact/Structural Damage Patch", unit: "ea", basePrice: 380, laborPct: 0.72 },
+        ]
+      },
+      {
+        name: "Plaster & Texture",
+        items: [
+          { id: "plaster_repair", name: "Plaster Wall Repair (per sqft)", unit: "sqft", basePrice: 14, laborPct: 0.75 },
+          { id: "plaster_skim_coat", name: "Plaster Skim Coat Full Wall (sqft)", unit: "sqft", basePrice: 4.20, laborPct: 0.72 },
+          { id: "texture_orange_peel", name: "Orange Peel Texture (per sqft)", unit: "sqft", basePrice: 1.60, laborPct: 0.78 },
+          { id: "texture_knockdown", name: "Knockdown Texture (per sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.78 },
+          { id: "texture_smooth_wall", name: "Smooth Wall Finish (per sqft)", unit: "sqft", basePrice: 2.20, laborPct: 0.80 },
+          { id: "texture_match_existing", name: "Texture Match to Existing (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.82 },
+          { id: "venetian_plaster", name: "Venetian Plaster Finish (per sqft)", unit: "sqft", basePrice: 9.50, laborPct: 0.75 },
         ]
       },
       {
@@ -945,6 +1022,8 @@ const TRADES = {
           { id: "corner_bead", name: "Corner Bead Installation (per LF)", unit: "lf", basePrice: 6.50, laborPct: 0.75 },
           { id: "access_panel", name: "Access Panel Cutout/Install", unit: "ea", basePrice: 165, laborPct: 0.72 },
           { id: "soundproof_insulation", name: "Soundproofing Insulation (sqft)", unit: "sqft", basePrice: 3.20, laborPct: 0.60 },
+          { id: "arch_curve_wall", name: "Curved/Arched Wall Section (per LF)", unit: "lf", basePrice: 45, laborPct: 0.70 },
+          { id: "dw_ceiling_medallion", name: "Ceiling Medallion Install", unit: "ea", basePrice: 220, laborPct: 0.65 },
         ]
       }
     ]
@@ -990,7 +1069,10 @@ const TRADES = {
           { id: "stone_veneer", name: "Stone Veneer (per sqft)", unit: "sqft", basePrice: 32, laborPct: 0.55 },
           { id: "chimney_repair", name: "Chimney Repair (per ea)", unit: "ls", basePrice: 1800, laborPct: 0.65 },
           { id: "chimney_rebuild", name: "Chimney Rebuild (per LF)", unit: "lf", basePrice: 380, laborPct: 0.62 },
+          { id: "chimney_cap", name: "Chimney Cap Installation", unit: "ea", basePrice: 320, laborPct: 0.68 },
           { id: "fireplace_install", name: "Fireplace Installation", unit: "ls", basePrice: 4500, laborPct: 0.55 },
+          { id: "paver_install_concrete", name: "Concrete Paver Installation (per sqft)", unit: "sqft", basePrice: 16, laborPct: 0.58 },
+          { id: "concrete_countertop", name: "Concrete Countertop (per sqft)", unit: "sqft", basePrice: 95, laborPct: 0.48 },
         ]
       }
     ]
@@ -1065,19 +1147,48 @@ const TRADES = {
           { id: "batt_mineral", name: "Mineral Wool Batt (sqft)", unit: "sqft", basePrice: 2.50, laborPct: 0.60 },
           { id: "blown_attic", name: "Blown Attic Insulation (sqft)", unit: "sqft", basePrice: 1.50, laborPct: 0.65 },
           { id: "blown_wall", name: "Dense Pack Wall (per sqft)", unit: "sqft", basePrice: 2.20, laborPct: 0.68 },
+          { id: "blown_cellulose", name: "Blown-In Cellulose (per sqft)", unit: "sqft", basePrice: 1.60, laborPct: 0.65 },
           { id: "spray_open", name: "Open Cell Spray Foam (sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.55 },
-          { id: "spray_closed", name: "Closed Cell Spray Foam (sqft)", unit: "sqft", basePrice: 3.50, laborPct: 0.52 },
-          { id: "rigid_foam", name: "Rigid Foam Board (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.58 },
+          { id: "spray_closed", name: "Closed Cell Spray Foam (sqft)", unit: "sqft", basePrice: 4.00, laborPct: 0.52 },
+          { id: "rigid_foam", name: "Rigid Foam Board / XPS (per sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.58 },
+          { id: "rigid_foam_polyiso", name: "Polyiso Rigid Board (per sqft)", unit: "sqft", basePrice: 3.20, laborPct: 0.58 },
           { id: "radiant_barrier", name: "Radiant Barrier (per sqft)", unit: "sqft", basePrice: 1.20, laborPct: 0.65 },
           { id: "crawl_encap", name: "Crawl Space Encapsulation (sqft)", unit: "sqft", basePrice: 5.50, laborPct: 0.60 },
+        ]
+      },
+      {
+        name: "Attic Packages (by R-Value)",
+        items: [
+          { id: "attic_r30_cellulose", name: "Attic R-30 Blown Cellulose (whole attic)", unit: "ls", basePrice: 1800, laborPct: 0.55 },
+          { id: "attic_r38_cellulose", name: "Attic R-38 Blown Cellulose (whole attic)", unit: "ls", basePrice: 2200, laborPct: 0.55 },
+          { id: "attic_r49_cellulose", name: "Attic R-49 Blown Cellulose (whole attic)", unit: "ls", basePrice: 2700, laborPct: 0.55 },
+          { id: "attic_r60_cellulose", name: "Attic R-60 Blown Cellulose (whole attic)", unit: "ls", basePrice: 3200, laborPct: 0.55 },
+          { id: "attic_closed_cell_full", name: "Attic Closed-Cell Spray Foam (whole attic)", unit: "ls", basePrice: 4800, laborPct: 0.48 },
+          { id: "attic_topoff", name: "Attic Insulation Top-Off (existing, per sqft)", unit: "sqft", basePrice: 0.90, laborPct: 0.70 },
+        ]
+      },
+      {
+        name: "Basement, Crawl Space & Rim Joist",
+        items: [
+          { id: "rim_joist_spray", name: "Rim Joist Closed-Cell Spray Foam (per LF)", unit: "lf", basePrice: 12, laborPct: 0.55 },
+          { id: "basement_wall_spray", name: "Basement Wall Closed-Cell Spray Foam (sqft)", unit: "sqft", basePrice: 4.50, laborPct: 0.50 },
+          { id: "crawl_batt", name: "Crawl Space Floor Joist Batt (per sqft)", unit: "sqft", basePrice: 2.00, laborPct: 0.65 },
+          { id: "crawl_vapor_barrier", name: "Crawl Space Vapor Barrier (heavy mil, sqft)", unit: "sqft", basePrice: 1.10, laborPct: 0.60 },
+          { id: "crawl_dehumidifier", name: "Crawl Space Dehumidifier Install", unit: "ls", basePrice: 850, laborPct: 0.45 },
+          { id: "sump_liner_insulation", name: "Sump Pit Insulated Cover", unit: "ea", basePrice: 120, laborPct: 0.55 },
         ]
       },
       {
         name: "Removal & Air Sealing",
         items: [
           { id: "insulation_removal", name: "Insulation Removal (old/contaminated, sqft)", unit: "sqft", basePrice: 1.80, laborPct: 0.80 },
+          { id: "insulation_removal_vermiculite", name: "Vermiculite Removal (suspected asbestos, sqft)", unit: "sqft", basePrice: 4.50, laborPct: 0.70 },
           { id: "vapor_barrier", name: "Vapor Barrier Installation (sqft)", unit: "sqft", basePrice: 0.85, laborPct: 0.65 },
           { id: "weatherstripping", name: "Weatherstripping/Air Sealing (per door/window)", unit: "ea", basePrice: 65, laborPct: 0.75 },
+          { id: "air_sealing_whole_house", name: "Whole House Air Sealing Package", unit: "ls", basePrice: 1450, laborPct: 0.85 },
+          { id: "blower_door_test", name: "Blower Door Test (energy audit)", unit: "ls", basePrice: 350, laborPct: 0.90 },
+          { id: "duct_sealing_mastic", name: "Duct Sealing with Mastic (per LF)", unit: "lf", basePrice: 8, laborPct: 0.75 },
+          { id: "attic_hatch_insulate", name: "Attic Hatch/Access Insulation Kit", unit: "ea", basePrice: 145, laborPct: 0.65 },
         ]
       }
     ]
@@ -1092,25 +1203,47 @@ const TRADES = {
         name: "Windows",
         items: [
           { id: "window_dh", name: "Double Hung Window Replace", unit: "ea", basePrice: 850, laborPct: 0.45 },
+          { id: "window_single_hung", name: "Single Hung Window Replace", unit: "ea", basePrice: 650, laborPct: 0.45 },
           { id: "window_casement", name: "Casement Window Replace", unit: "ea", basePrice: 950, laborPct: 0.45 },
+          { id: "window_awning", name: "Awning Window Replace", unit: "ea", basePrice: 780, laborPct: 0.45 },
+          { id: "window_sliding", name: "Sliding Window Replace", unit: "ea", basePrice: 850, laborPct: 0.45 },
           { id: "window_picture", name: "Picture Window Replace", unit: "ea", basePrice: 1100, laborPct: 0.42 },
           { id: "window_bay", name: "Bay Window Replace", unit: "ea", basePrice: 3200, laborPct: 0.40 },
+          { id: "window_bow", name: "Bow Window Replace", unit: "ea", basePrice: 4800, laborPct: 0.38 },
           { id: "window_egress", name: "Egress Window Install", unit: "ea", basePrice: 2800, laborPct: 0.45 },
           { id: "window_storm", name: "Storm Window Install", unit: "ea", basePrice: 380, laborPct: 0.55 },
+          { id: "window_fiberglass", name: "Fiberglass Frame Window Replace", unit: "ea", basePrice: 1250, laborPct: 0.42 },
+          { id: "window_wood_clad", name: "Wood-Clad Window Replace", unit: "ea", basePrice: 1800, laborPct: 0.40 },
+          { id: "window_triple_pane_upgrade", name: "Triple-Pane Glass Upgrade (add-on)", unit: "ea", basePrice: 380, laborPct: 0.30 },
+          { id: "window_lowe_argon", name: "Low-E + Argon Gas Upgrade (add-on)", unit: "ea", basePrice: 140, laborPct: 0.25 },
+          { id: "window_glass_only", name: "Window Glass Pane Replacement Only", unit: "ea", basePrice: 450, laborPct: 0.55 },
+          { id: "window_skylight_new", name: "New Skylight Installation", unit: "ea", basePrice: 2800, laborPct: 0.48 },
         ]
       },
       {
         name: "Doors",
         items: [
           { id: "entry_door", name: "Entry Door Replace (incl. frame)", unit: "ea", basePrice: 1800, laborPct: 0.42 },
+          { id: "entry_door_steel", name: "Steel Entry Door Replace", unit: "ea", basePrice: 1200, laborPct: 0.45 },
+          { id: "entry_door_fiberglass", name: "Fiberglass Entry Door Replace", unit: "ea", basePrice: 1600, laborPct: 0.42 },
+          { id: "entry_door_wood", name: "Solid Wood Entry Door Replace", unit: "ea", basePrice: 2600, laborPct: 0.38 },
           { id: "storm_door", name: "Storm Door Install", unit: "ea", basePrice: 650, laborPct: 0.55 },
           { id: "sliding_patio", name: "Sliding Patio Door", unit: "ea", basePrice: 2200, laborPct: 0.42 },
           { id: "french_door", name: "French Patio Door", unit: "ea", basePrice: 2800, laborPct: 0.40 },
+          { id: "interior_door_hollow", name: "Hollow Core Interior Door", unit: "ea", basePrice: 280, laborPct: 0.62 },
+          { id: "interior_door_solid", name: "Solid Core Interior Door", unit: "ea", basePrice: 420, laborPct: 0.58 },
+          { id: "interior_door_prehung", name: "Pre-Hung Interior Door Set", unit: "ea", basePrice: 480, laborPct: 0.55 },
           { id: "garage_door_single", name: "Garage Door (Single)", unit: "ea", basePrice: 1400, laborPct: 0.50 },
           { id: "garage_door_double", name: "Garage Door (Double)", unit: "ea", basePrice: 2200, laborPct: 0.48 },
+          { id: "garage_door_insulated", name: "Insulated Garage Door Upgrade", unit: "ea", basePrice: 2800, laborPct: 0.45 },
           { id: "garage_opener", name: "Garage Door Opener", unit: "ea", basePrice: 580, laborPct: 0.55 },
+          { id: "garage_opener_smart", name: "Smart Garage Door Opener (WiFi)", unit: "ea", basePrice: 780, laborPct: 0.55 },
           { id: "door_hardware", name: "Door Hardware/Lockset Replace", unit: "ea", basePrice: 145, laborPct: 0.68 },
+          { id: "door_deadbolt_smart", name: "Smart Lock/Deadbolt Install", unit: "ea", basePrice: 280, laborPct: 0.65 },
           { id: "closet_door_bifold", name: "Bifold/Bypass Closet Door", unit: "ea", basePrice: 320, laborPct: 0.60 },
+          { id: "closet_door_sliding", name: "Sliding Closet Door Set", unit: "ea", basePrice: 380, laborPct: 0.58 },
+          { id: "barn_door_install", name: "Barn/Sliding Door Hardware Install", unit: "ea", basePrice: 650, laborPct: 0.55 },
+          { id: "pocket_door_install", name: "Pocket Door Installation", unit: "ea", basePrice: 950, laborPct: 0.48 },
         ]
       },
       {
@@ -1118,6 +1251,10 @@ const TRADES = {
         items: [
           { id: "window_well", name: "Window Well Installation (basement)", unit: "ea", basePrice: 480, laborPct: 0.55 },
           { id: "pet_door", name: "Pet Door Installation", unit: "ea", basePrice: 280, laborPct: 0.65 },
+          { id: "window_screen_repair", name: "Window Screen Repair/Replace", unit: "ea", basePrice: 55, laborPct: 0.70 },
+          { id: "door_weatherstrip", name: "Door Weatherstripping Replace", unit: "ea", basePrice: 85, laborPct: 0.78 },
+          { id: "window_shutters_exterior", name: "Exterior Shutters Install (per pair)", unit: "ea", basePrice: 220, laborPct: 0.62 },
+          { id: "door_threshold_replace", name: "Door Threshold Replacement", unit: "ea", basePrice: 120, laborPct: 0.70 },
         ]
       }
     ]
@@ -1132,12 +1269,21 @@ const TRADES = {
         name: "Siding Materials",
         items: [
           { id: "siding_vinyl", name: "Vinyl Siding (per sqft)", unit: "sqft", basePrice: 6.50, laborPct: 0.55 },
-          { id: "siding_hardie", name: "Fiber Cement (per sqft)", unit: "sqft", basePrice: 11, laborPct: 0.52 },
+          { id: "siding_vinyl_premium", name: "Premium/Insulated Vinyl (per sqft)", unit: "sqft", basePrice: 8.50, laborPct: 0.52 },
+          { id: "siding_hardie", name: "Fiber Cement Lap (per sqft)", unit: "sqft", basePrice: 11, laborPct: 0.52 },
+          { id: "siding_hardie_shingle", name: "Fiber Cement Shingle Style (sqft)", unit: "sqft", basePrice: 13, laborPct: 0.50 },
           { id: "siding_wood", name: "Wood Clapboard (per sqft)", unit: "sqft", basePrice: 14, laborPct: 0.52 },
           { id: "siding_cedar", name: "Cedar Shake Siding (sqft)", unit: "sqft", basePrice: 16, laborPct: 0.50 },
+          { id: "siding_board_batten_vinyl", name: "Board & Batten Vinyl (per sqft)", unit: "sqft", basePrice: 7, laborPct: 0.53 },
+          { id: "siding_board_batten_fiber", name: "Board & Batten Fiber Cement (sqft)", unit: "sqft", basePrice: 10, laborPct: 0.50 },
+          { id: "siding_engineered_wood", name: "Engineered Wood/LP SmartSide (sqft)", unit: "sqft", basePrice: 8, laborPct: 0.53 },
+          { id: "siding_metal_panel", name: "Metal Panel Siding (per sqft)", unit: "sqft", basePrice: 9.50, laborPct: 0.52 },
+          { id: "siding_composite", name: "Composite Siding (per sqft)", unit: "sqft", basePrice: 7.50, laborPct: 0.53 },
+          { id: "siding_brick_veneer", name: "Brick Veneer (per sqft)", unit: "sqft", basePrice: 10.50, laborPct: 0.55 },
           { id: "stucco_apply", name: "Stucco Application (sqft)", unit: "sqft", basePrice: 12, laborPct: 0.55 },
           { id: "eifs_apply", name: "EIFS System (per sqft)", unit: "sqft", basePrice: 14, laborPct: 0.52 },
           { id: "siding_remove", name: "Old Siding Removal (sqft)", unit: "sqft", basePrice: 2.80, laborPct: 0.78 },
+          { id: "siding_asbestos_removal", name: "Asbestos Siding Removal (per sqft)", unit: "sqft", basePrice: 5.00, laborPct: 0.70 },
           { id: "house_wrap", name: "House Wrap (per sqft)", unit: "sqft", basePrice: 1.50, laborPct: 0.62 },
           { id: "soffit_fascia", name: "Soffit & Fascia (per LF)", unit: "lf", basePrice: 18, laborPct: 0.60 },
         ]
@@ -1147,6 +1293,106 @@ const TRADES = {
         items: [
           { id: "j_channel", name: "J-Channel/Trim Pieces (per LF)", unit: "lf", basePrice: 3.80, laborPct: 0.65 },
           { id: "corner_posts", name: "Corner Posts (per LF)", unit: "lf", basePrice: 5.20, laborPct: 0.62 },
+          { id: "siding_batten_strips", name: "Batten Strips (per LF)", unit: "lf", basePrice: 4.20, laborPct: 0.65 },
+          { id: "starter_strip", name: "Starter Strip (per LF)", unit: "lf", basePrice: 2.80, laborPct: 0.68 },
+          { id: "window_door_trim_siding", name: "Window/Door Trim Wrap (per opening)", unit: "ea", basePrice: 95, laborPct: 0.65 },
+          { id: "frieze_board", name: "Frieze Board Installation (per LF)", unit: "lf", basePrice: 8.50, laborPct: 0.62 },
+        ]
+      },
+      {
+        name: "Repair & Maintenance",
+        items: [
+          { id: "siding_repair_minor", name: "Siding Repair, Minor (per sqft)", unit: "sqft", basePrice: 8, laborPct: 0.75 },
+          { id: "siding_repair_panel", name: "Single Panel/Board Replacement", unit: "ea", basePrice: 145, laborPct: 0.70 },
+          { id: "siding_caulking", name: "Siding Caulking & Sealing (per LF)", unit: "lf", basePrice: 2.20, laborPct: 0.80 },
+          { id: "siding_powerwash_prep", name: "Pre-Paint Power Wash Prep (per sqft)", unit: "sqft", basePrice: 0.35, laborPct: 0.85 },
+        ]
+      }
+    ]
+  },
+
+  cleaning: {
+    label: "Cleaning & Janitorial",
+    icon: "\u{1F9F9}",
+    description: "Residential, commercial, and specialty cleaning services",
+    categories: [
+      {
+        name: "Residential Cleaning",
+        items: [
+          { id: "clean_standard", name: "Standard House Cleaning (per sqft)", unit: "sqft", basePrice: 0.14, laborPct: 0.90 },
+          { id: "clean_standard_flat", name: "Standard Cleaning Visit (flat)", unit: "ls", basePrice: 180, laborPct: 0.88 },
+          { id: "clean_deep", name: "Deep Cleaning (per sqft)", unit: "sqft", basePrice: 0.22, laborPct: 0.85 },
+          { id: "clean_deep_flat", name: "Deep Cleaning Visit (flat)", unit: "ls", basePrice: 320, laborPct: 0.85 },
+          { id: "clean_moveout", name: "Move-In/Move-Out Cleaning (per sqft)", unit: "sqft", basePrice: 0.28, laborPct: 0.85 },
+          { id: "clean_moveout_flat", name: "Move-In/Move-Out Cleaning (flat)", unit: "ls", basePrice: 375, laborPct: 0.85 },
+          { id: "clean_apartment", name: "Apartment Cleaning (per unit)", unit: "ls", basePrice: 135, laborPct: 0.90 },
+          { id: "clean_airbnb_turnover", name: "Airbnb/Vacation Rental Turnover", unit: "ls", basePrice: 120, laborPct: 0.88 },
+          { id: "clean_recurring_biweekly", name: "Recurring Biweekly Visit", unit: "ls", basePrice: 155, laborPct: 0.90 },
+          { id: "clean_hourly", name: "Hourly Cleaning Rate (per cleaner)", unit: "day", basePrice: 55, laborPct: 0.92 },
+          { id: "clean_post_construction", name: "Post-Construction Cleaning (per sqft)", unit: "sqft", basePrice: 0.35, laborPct: 0.82 },
+          { id: "clean_event_cleanup", name: "Event Cleanup (before/after)", unit: "ls", basePrice: 280, laborPct: 0.88 },
+        ]
+      },
+      {
+        name: "Commercial & Janitorial",
+        items: [
+          { id: "clean_office_visit", name: "Office Cleaning (per sqft/visit)", unit: "sqft", basePrice: 0.15, laborPct: 0.85 },
+          { id: "clean_office_monthly", name: "Office Cleaning Contract (monthly, per sqft)", unit: "sqft", basePrice: 0.20, laborPct: 0.82 },
+          { id: "clean_office_hourly", name: "Janitorial Hourly Rate (per cleaner)", unit: "day", basePrice: 50, laborPct: 0.90 },
+          { id: "clean_warehouse", name: "Warehouse/Industrial Cleaning (per sqft)", unit: "sqft", basePrice: 0.12, laborPct: 0.85 },
+          { id: "clean_medical_facility", name: "Medical Facility Cleaning (per sqft)", unit: "sqft", basePrice: 0.24, laborPct: 0.80 },
+          { id: "clean_restaurant", name: "Restaurant/Kitchen Cleaning (per sqft)", unit: "sqft", basePrice: 0.22, laborPct: 0.82 },
+          { id: "clean_retail", name: "Retail Space Cleaning (per sqft)", unit: "sqft", basePrice: 0.16, laborPct: 0.85 },
+          { id: "clean_restroom_service", name: "Restroom Deep Sanitizing (per restroom)", unit: "ea", basePrice: 65, laborPct: 0.90 },
+          { id: "clean_breakroom", name: "Breakroom/Kitchenette Cleaning", unit: "ls", basePrice: 45, laborPct: 0.90 },
+          { id: "clean_trash_removal", name: "Trash & Recycling Removal (per visit)", unit: "ls", basePrice: 35, laborPct: 0.92 },
+          { id: "clean_supply_restock", name: "Supply Restocking Service (per visit)", unit: "ls", basePrice: 40, laborPct: 0.60 },
+        ]
+      },
+      {
+        name: "Carpet, Floor & Upholstery",
+        items: [
+          { id: "clean_carpet_room", name: "Carpet Cleaning (per room)", unit: "ea", basePrice: 55, laborPct: 0.85 },
+          { id: "clean_carpet_sqft", name: "Carpet Cleaning (per sqft)", unit: "sqft", basePrice: 0.35, laborPct: 0.82 },
+          { id: "clean_carpet_wholehome", name: "Whole Home Carpet Cleaning (3BR avg)", unit: "ls", basePrice: 240, laborPct: 0.85 },
+          { id: "clean_carpet_pet", name: "Pet Odor/Stain Treatment (add-on)", unit: "ea", basePrice: 60, laborPct: 0.88 },
+          { id: "clean_upholstery", name: "Upholstery/Furniture Cleaning (per piece)", unit: "ea", basePrice: 90, laborPct: 0.85 },
+          { id: "clean_area_rug", name: "Area Rug Cleaning (per sqft)", unit: "sqft", basePrice: 4.50, laborPct: 0.75 },
+          { id: "clean_mattress", name: "Mattress Cleaning/Sanitizing", unit: "ea", basePrice: 80, laborPct: 0.85 },
+          { id: "clean_tile_grout", name: "Tile & Grout Cleaning (per sqft)", unit: "sqft", basePrice: 1.10, laborPct: 0.75 },
+          { id: "clean_grout_sealing", name: "Grout Sealing (per sqft)", unit: "sqft", basePrice: 0.40, laborPct: 0.70 },
+          { id: "clean_hardwood_floor", name: "Hardwood Floor Cleaning/Polish (per sqft)", unit: "sqft", basePrice: 0.45, laborPct: 0.72 },
+          { id: "clean_lvp_floor", name: "LVP/Laminate Floor Deep Clean (per sqft)", unit: "sqft", basePrice: 0.30, laborPct: 0.80 },
+          { id: "clean_air_duct", name: "Air Duct Cleaning (whole system)", unit: "ls", basePrice: 425, laborPct: 0.70 },
+        ]
+      },
+      {
+        name: "Window & Exterior Cleaning",
+        items: [
+          { id: "clean_window_pane", name: "Window Cleaning (per pane)", unit: "ea", basePrice: 4.50, laborPct: 0.85 },
+          { id: "clean_window_full", name: "Window Cleaning (per window, in+out)", unit: "ea", basePrice: 12, laborPct: 0.85 },
+          { id: "clean_window_wholehouse", name: "Whole House Window Cleaning (flat)", unit: "ls", basePrice: 260, laborPct: 0.85 },
+          { id: "clean_screen", name: "Window Screen Cleaning (per screen)", unit: "ea", basePrice: 8, laborPct: 0.85 },
+          { id: "pressure_wash_house", name: "Pressure Wash House Exterior (per sqft)", unit: "sqft", basePrice: 0.30, laborPct: 0.75 },
+          { id: "pressure_wash_driveway", name: "Pressure Wash Driveway (per sqft)", unit: "sqft", basePrice: 0.40, laborPct: 0.75 },
+          { id: "pressure_wash_deck", name: "Pressure Wash Deck/Patio (per sqft)", unit: "sqft", basePrice: 0.45, laborPct: 0.75 },
+          { id: "pressure_wash_roof_soft", name: "Roof Soft Washing (flat)", unit: "ls", basePrice: 450, laborPct: 0.72 },
+          { id: "clean_gutter", name: "Gutter Cleaning (per LF)", unit: "lf", basePrice: 2.20, laborPct: 0.85 },
+          { id: "clean_gutter_flat", name: "Gutter Cleaning (flat, avg home)", unit: "ls", basePrice: 165, laborPct: 0.85 },
+        ]
+      },
+      {
+        name: "Specialty & Add-Ons",
+        items: [
+          { id: "clean_disinfect_sanitize", name: "Disinfecting/Sanitizing Service (per sqft)", unit: "sqft", basePrice: 0.18, laborPct: 0.85 },
+          { id: "clean_appliance_interior", name: "Interior Appliance Cleaning (oven/fridge)", unit: "ea", basePrice: 45, laborPct: 0.92 },
+          { id: "clean_cabinet_interior", name: "Interior Cabinet Cleaning", unit: "ls", basePrice: 65, laborPct: 0.92 },
+          { id: "clean_baseboards", name: "Baseboard & Trim Detail Cleaning (per LF)", unit: "lf", basePrice: 1.20, laborPct: 0.90 },
+          { id: "clean_blinds", name: "Blinds Cleaning (per set)", unit: "ea", basePrice: 15, laborPct: 0.90 },
+          { id: "clean_chandelier_fixture", name: "Light Fixture/Chandelier Cleaning", unit: "ea", basePrice: 35, laborPct: 0.90 },
+          { id: "clean_eco_friendly_upcharge", name: "Eco-Friendly/Green Product Upcharge", unit: "ls", basePrice: 25, laborPct: 0.20 },
+          { id: "clean_same_day_fee", name: "Same-Day/Emergency Service Fee", unit: "ls", basePrice: 75, laborPct: 0.95 },
+          { id: "clean_supply_kit", name: "Cleaning Supplies & Materials Kit", unit: "ls", basePrice: 35, laborPct: 0.10 },
         ]
       }
     ]
